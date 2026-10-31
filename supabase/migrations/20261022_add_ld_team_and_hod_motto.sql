@@ -36,17 +36,21 @@ ALTER TABLE public.hod_motto ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ld_team_members ENABLE ROW LEVEL SECURITY;
 
 -- Anonymous and Authenticated users can read published records
+DROP POLICY IF EXISTS "Anyone can read published HOD motto" ON public.hod_motto;
 CREATE POLICY "Anyone can read published HOD motto" ON public.hod_motto
     FOR SELECT USING (is_published = true OR auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Anyone can read published team members" ON public.ld_team_members;
 CREATE POLICY "Anyone can read published team members" ON public.ld_team_members
     FOR SELECT USING (is_published = true OR auth.role() = 'authenticated');
 
 -- Authenticated admins can insert, update, delete
+DROP POLICY IF EXISTS "Admins have full access to HOD motto" ON public.hod_motto;
 CREATE POLICY "Admins have full access to HOD motto" ON public.hod_motto
     FOR ALL TO authenticated
     USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
 
+DROP POLICY IF EXISTS "Admins have full access to team members" ON public.ld_team_members;
 CREATE POLICY "Admins have full access to team members" ON public.ld_team_members
     FOR ALL TO authenticated
     USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));

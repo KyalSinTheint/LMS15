@@ -25,11 +25,10 @@ export const PendingApprovalPage: React.FC<PendingApprovalPageProps> = ({
   onApprovalDetected,
   onLogout,
 }) => {
-  const { currentUser, checkUserApprovalStatus, refreshData, approveUser } = useLms();
+  const { currentUser, checkUserApprovalStatus, refreshData } = useLms();
   const [isChecking, setIsChecking] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date>(new Date());
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [autoSimulateApproval, setAutoSimulateApproval] = useState(false);
 
   // Poll periodically every 10 seconds to detect approval without user interaction
   useEffect(() => {
@@ -69,22 +68,6 @@ export const PendingApprovalPage: React.FC<PendingApprovalPageProps> = ({
       setStatusMessage('Unable to connect to Supabase server. Please try again.');
     } finally {
       setIsChecking(false);
-    }
-  };
-
-  // Quick helper for evaluation: simulate immediate admin approval
-  const handleSimulateApproval = async () => {
-    setAutoSimulateApproval(true);
-    try {
-      await approveUser(currentUser.id);
-      setStatusMessage('Account successfully approved by Administrator! Loading Learner Portal...');
-      setTimeout(() => {
-        onApprovalDetected();
-      }, 1000);
-    } catch {
-      setStatusMessage('Simulation failed. Please use Admin Console to approve.');
-    } finally {
-      setAutoSimulateApproval(false);
     }
   };
 
@@ -220,18 +203,8 @@ export const PendingApprovalPage: React.FC<PendingApprovalPageProps> = ({
             </button>
           </div>
 
-          {/* Admin Simulation Tester (Direct button for reviewer/user convenience) */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+          <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-400">
             <span>Last verified: {lastChecked.toLocaleTimeString()}</span>
-            <button
-              onClick={handleSimulateApproval}
-              disabled={autoSimulateApproval}
-              className="text-[#00529B] font-bold hover:underline flex items-center gap-1 cursor-pointer"
-              title="Instantly approve this account via server API for evaluation"
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>Simulate Admin Approval</span>
-            </button>
           </div>
         </div>
       </div>

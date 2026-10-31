@@ -33,6 +33,7 @@ import {
   ProductQuizQuestion,
 } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
+import { uploadImageFile } from '../../lib/storageUtils';
 import { ProductKnowledgeRichEditor } from './ProductKnowledgeRichEditor';
 import { getProductRichContent } from '../../lib/productKnowledgeUtils';
 import { PdfQuizGeneratorModal, GeneratedQuestionItem } from './PdfQuizGeneratorModal';
@@ -201,42 +202,15 @@ export const ProductManagement: React.FC = () => {
 
     setIsUploading(true);
     try {
-      // Read as Data URL
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64Data = reader.result as string;
-        try {
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              fileName: file.name,
-              fileType: file.type,
-              dataUrl: base64Data,
-              bucket: 'product-images',
-            }),
-          });
-
-          const data = await res.json();
-          if (data.success && data.url) {
-            setProductForm((prev) => ({ ...prev, image_url: data.url }));
-            showToast('success', 'Image Uploaded', 'Product image stored successfully.');
-          } else {
-            // Local data URL fallback
-            setProductForm((prev) => ({ ...prev, image_url: base64Data }));
-            showToast('info', 'Image Loaded', 'Image loaded from device.');
-          }
-        } catch {
-          setProductForm((prev) => ({ ...prev, image_url: base64Data }));
-          showToast('info', 'Image Loaded', 'Image loaded locally from device.');
-        } finally {
-          setIsUploading(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch {
+      const result = await uploadImageFile(file, 'product-images');
+      if (result.success && result.url) {
+        setProductForm((prev) => ({ ...prev, image_url: result.url! }));
+        showToast('success', 'Image Uploaded', 'Product image stored successfully.');
+      } else {
+        showToast('error', 'Upload Failed', result.error || 'Could not upload the selected image.');
+      }
+    } finally {
       setIsUploading(false);
-      showToast('error', 'Upload Failed', 'Could not process the selected image.');
     }
   };
 

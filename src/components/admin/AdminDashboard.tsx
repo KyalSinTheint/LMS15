@@ -40,7 +40,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-white/90 mb-4 backdrop-blur-xs">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>
-              {isSupabaseLive ? 'Supabase Live Sync Connected' : 'Local Persistence Engine Active'}
+              {isSupabaseLive ? 'Supabase Live Sync Connected' : 'Supabase connection issue — check migrations'}
             </span>
           </div>
 

@@ -5,6 +5,14 @@
 
 import { getSupabaseClient } from './supabase';
 
+/** Authorization header carrying the signed-in user's Supabase access token. */
+async function authHeader(): Promise<Record<string, string>> {
+  const client = getSupabaseClient();
+  if (!client) return {};
+  const { data } = await client.auth.getSession();
+  return data.session?.access_token ? { Authorization: `Bearer ${data.session.access_token}` } : {};
+}
+
 export interface UploadResult {
   success: boolean;
   url?: string;
@@ -170,7 +178,7 @@ export async function uploadImageFile(
 
     const res = await fetch('/api/upload', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
       body: JSON.stringify({
         fileName: file.name,
         fileType: file.type,
@@ -241,6 +249,7 @@ export async function uploadLargeFileChunked(
   const uploadId = `up_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
   let uploadedBytes = 0;
+  const headersAuth = await authHeader();
 
   for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
     if (signal?.aborted) {
@@ -262,6 +271,7 @@ export async function uploadLargeFileChunked(
           'x-file-type': file.type || 'application/octet-stream',
           'x-bucket': bucket,
           'Content-Type': 'application/octet-stream',
+          ...headersAuth,
         },
         body: chunkBlob,
         signal,
