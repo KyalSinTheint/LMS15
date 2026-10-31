@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
+  BookOpen,
   Package,
   Plus,
   Search,
@@ -64,6 +65,7 @@ export const ProductManagement: React.FC = () => {
     short_description: string;
     content: string;
     image_url: string;
+    pamphlet_cover_url: string;
     is_published: boolean;
     display_order: number;
   }>({
@@ -73,6 +75,7 @@ export const ProductManagement: React.FC = () => {
     short_description: '',
     content: '',
     image_url: '',
+    pamphlet_cover_url: '',
     is_published: true,
     display_order: 1,
   });
@@ -155,6 +158,8 @@ export const ProductManagement: React.FC = () => {
 
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isCoverUploading, setIsCoverUploading] = useState<boolean>(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   // Available Categories
   const CATEGORIES = [
@@ -214,6 +219,29 @@ export const ProductManagement: React.FC = () => {
     }
   };
 
+  // Pamphlet cover upload (front page of the learner Pamphlet View)
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('error', 'Invalid File', 'Please select an image file (PNG, JPG, WebP).');
+      return;
+    }
+    setIsCoverUploading(true);
+    try {
+      const result = await uploadImageFile(file, 'product-images');
+      if (result.success && result.url) {
+        setProductForm((prev) => ({ ...prev, pamphlet_cover_url: result.url! }));
+        showToast('success', 'Cover Uploaded', 'Pamphlet cover stored. Save the product to publish it.');
+      } else {
+        showToast('error', 'Upload Failed', result.error || 'Could not upload the selected cover.');
+      }
+    } finally {
+      setIsCoverUploading(false);
+    }
+  };
+
   // Open Product Modal for Create
   const handleOpenCreateModal = () => {
     setEditingProductId(null);
@@ -224,6 +252,7 @@ export const ProductManagement: React.FC = () => {
       short_description: '',
       content: '',
       image_url: '',
+      pamphlet_cover_url: '',
       is_published: true,
       display_order: products.length + 1,
     });
@@ -241,6 +270,7 @@ export const ProductManagement: React.FC = () => {
       short_description: product.short_description || '',
       content: richContent,
       image_url: product.image_url || '',
+      pamphlet_cover_url: product.pamphlet_cover_url || '',
       is_published: product.is_published ?? (product.status === 'published'),
       display_order: product.display_order ?? 1,
     });
@@ -272,6 +302,11 @@ export const ProductManagement: React.FC = () => {
       description: cleanContent,
       content: cleanContent,
       image_url: productForm.image_url,
+      // Only send the cover field when a cover is set or being removed, so saving
+      // still works on databases where the pamphlet migration hasn't run yet.
+      ...(productForm.pamphlet_cover_url || editingProduct?.pamphlet_cover_url
+        ? { pamphlet_cover_url: productForm.pamphlet_cover_url || null }
+        : {}),
       is_published: productForm.is_published,
       status: (productForm.is_published ? 'published' : 'draft') as 'published' | 'draft',
       display_order: Number(productForm.display_order) || 1,
@@ -928,6 +963,58 @@ export const ProductManagement: React.FC = () => {
                       </div>
                       <p className="text-[11px] text-slate-500">
                         Select a product banner or 3D visual from your local storage (JPEG, PNG, WebP).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pamphlet Cover Upload */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Pamphlet Cover (Front Page of the Learner Pamphlet View)
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50">
+                    {productForm.pamphlet_cover_url ? (
+                      <div className="w-[72px] h-24 rounded-md overflow-hidden border border-slate-200 bg-white shrink-0 shadow-sm">
+                        <img src={productForm.pamphlet_cover_url} alt="Pamphlet cover preview" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-[72px] h-24 rounded-md bg-slate-200 flex flex-col items-center justify-center text-slate-400 shrink-0 gap-1">
+                        <BookOpen className="w-6 h-6" />
+                        <span className="text-[9px] font-bold uppercase">No cover</span>
+                      </div>
+                    )}
+
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          ref={coverInputRef}
+                          onChange={handleCoverUpload}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => coverInputRef.current?.click()}
+                          disabled={isCoverUploading}
+                          className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 shadow-2xs flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                        >
+                          <Upload className="w-4 h-4 text-[#176B98]" />
+                          <span>{isCoverUploading ? 'Uploading...' : productForm.pamphlet_cover_url ? 'Replace Cover' : 'Upload Cover'}</span>
+                        </button>
+                        {productForm.pamphlet_cover_url && (
+                          <button
+                            type="button"
+                            onClick={() => setProductForm({ ...productForm, pamphlet_cover_url: '' })}
+                            className="px-3 py-2 rounded-xl bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500">
+                        Portrait image works best (3:4, e.g. 1200 × 1600 px). Without a cover, a branded cover is generated from the product title and image.
                       </p>
                     </div>
                   </div>
