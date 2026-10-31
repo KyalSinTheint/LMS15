@@ -17,6 +17,7 @@ import {
 import { useLms } from '../../context/LmsContext';
 import { uploadImageFile, validateImageFile } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 
 interface LearnerProfileModalProps {
   isOpen: boolean;
@@ -242,11 +243,8 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
             <div className="flex items-center gap-3">
               <div className="relative">
                 <img
-                  src={
-                    avatarUrl ||
-                    currentUser.avatar_url ||
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'
-                  }
+                  src={getUserAvatar({ ...currentUser, avatar_url: avatarUrl || currentUser.avatar_url })}
+                  onError={avatarFallbackOnError(currentUser.id)}
                   alt={currentUser.full_name}
                   className="w-14 h-14 rounded-2xl object-cover border-2 border-white/40 shadow-md"
                 />
@@ -336,10 +334,8 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
                 </label>
                 <div className="flex items-center gap-3">
                   <img
-                    src={
-                      avatarUrl ||
-                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'
-                    }
+                    src={getUserAvatar({ ...currentUser, avatar_url: avatarUrl })}
+                    onError={avatarFallbackOnError(currentUser.id)}
                     alt="Preview"
                     className="w-12 h-12 rounded-xl object-cover border border-slate-300 dark:border-slate-600 shadow-2xs"
                   />

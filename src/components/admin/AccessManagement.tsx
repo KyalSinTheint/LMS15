@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
 import { Profile, AccountStatus, UserRole } from '../../types/lms';
+import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 
 export const AccessManagement: React.FC = () => {
   const {
@@ -143,10 +144,8 @@ export const AccessManagement: React.FC = () => {
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <img
-                      src={
-                        user.avatar_url ||
-                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80'
-                      }
+                      src={getUserAvatar(user)}
+                      onError={avatarFallbackOnError(user.id || '')}
                       alt={user.full_name}
                       className="w-8 h-8 rounded-full object-cover shrink-0 border border-white/20"
                     />
@@ -191,10 +190,8 @@ export const AccessManagement: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-3.5">
                   <img
-                    src={
-                      selectedUser.avatar_url ||
-                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80'
-                    }
+                    src={getUserAvatar(selectedUser)}
+                    onError={avatarFallbackOnError(selectedUser.id || '')}
                     alt={selectedUser.full_name}
                     className="w-14 h-14 rounded-full object-cover border-2 border-[#176B98]/20"
                   />

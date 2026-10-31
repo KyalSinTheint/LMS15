@@ -21,6 +21,7 @@ import {
 
 import { useLms } from '../context/LmsContext';
 import { LearnerProfileModal } from './learner/LearnerProfileModal';
+import { getUserAvatar, avatarFallbackOnError } from '../lib/avatar';
 
 export type NavTabId = 'our-company' | 'product-knowledge' | 'learning-dev' | 'company-bulletin';
 export type OurCompanySubpage = 'overview' | 'news' | 'videos' | 'top-performers';
@@ -464,10 +465,8 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
                 title="Account menu"
               >
                 <img
-                  src={
-                    currentUser.avatar_url ||
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&q=80'
-                  }
+                  src={getUserAvatar(currentUser)}
+                  onError={avatarFallbackOnError(currentUser.id || '')}
                   alt={currentUser.full_name}
                   className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-slate-700"
                 />
@@ -486,10 +485,8 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
                 <div className="absolute right-0 mt-3 w-72 bg-white dark:bg-[#10243C] rounded-2xl shadow-xl border border-slate-200 dark:border-[#1E426D] py-2 z-50 text-slate-800 dark:text-slate-100 text-xs">
                   <div className="px-4 py-3 border-b border-slate-100 dark:border-[#1E426D] flex items-center gap-3">
                     <img
-                      src={
-                        currentUser.avatar_url ||
-                        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&q=80'
-                      }
+                      src={getUserAvatar(currentUser)}
+                      onError={avatarFallbackOnError(currentUser.id || '')}
                       alt={currentUser.full_name}
                       className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
                     />
@@ -680,10 +677,8 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
             {/* Mobile Learner Account Card */}
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center gap-3">
               <img
-                src={
-                  currentUser.avatar_url ||
-                  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&q=80'
-                }
+                src={getUserAvatar(currentUser)}
+                onError={avatarFallbackOnError(currentUser.id || '')}
                 alt={currentUser.full_name}
                 className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
               />

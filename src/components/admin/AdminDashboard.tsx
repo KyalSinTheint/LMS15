@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
 import { AdminTabId } from './AdminLayout';
+import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 
 interface AdminDashboardProps {
   onNavigateTab: (tab: AdminTabId) => void;
@@ -406,7 +407,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <img
-                      src={p.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80'}
+                      src={getUserAvatar(p)}
+                      onError={avatarFallbackOnError(p.id || '')}
                       alt={p.full_name}
                       className="w-7 h-7 rounded-full object-cover shrink-0"
                     />
