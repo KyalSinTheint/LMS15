@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ProductKnowledgeItem } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
+import { normalizeProductTheme, ProductIcon } from '../../lib/productVisuals';
 import { ProductDetailPage } from './ProductDetailPage';
 
 export const ProductKnowledgeHubPage: React.FC = () => {
@@ -68,26 +69,6 @@ export const ProductKnowledgeHubPage: React.FC = () => {
   // Card thematic styles based on color theme, closely matching reference photo_2026-10-23_13.31.37_001bb28e.jpeg
   const getCardTheme = (theme?: string) => {
     switch (theme) {
-      case 'amber':
-        return {
-          bg: 'bg-amber-500 hover:bg-amber-600',
-          textColor: 'text-white',
-          kickerColor: 'text-amber-100',
-          descColor: 'text-amber-50',
-          btnBg: 'bg-white text-amber-800 hover:bg-amber-50',
-          badgeBg: 'bg-amber-600/60 text-white',
-          ring: 'focus:ring-amber-400',
-        };
-      case 'rose':
-        return {
-          bg: 'bg-rose-500 hover:bg-rose-600',
-          textColor: 'text-white',
-          kickerColor: 'text-rose-100',
-          descColor: 'text-rose-50',
-          btnBg: 'bg-white text-rose-800 hover:bg-rose-50',
-          badgeBg: 'bg-rose-600/60 text-white',
-          ring: 'focus:ring-rose-400',
-        };
       case 'indigo':
         return {
           bg: 'bg-indigo-600 hover:bg-indigo-700',
@@ -261,7 +242,7 @@ export const ProductKnowledgeHubPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProducts.map((product) => {
-            const theme = getCardTheme(product.card_color_theme);
+            const theme = getCardTheme(normalizeProductTheme(product.card_color_theme));
             const quizStatus = getProductQuizStatus(product.id);
 
             return (
@@ -323,23 +304,10 @@ export const ProductKnowledgeHubPage: React.FC = () => {
                     <ChevronRight className="w-4 h-4" />
                   </button>
 
-                  {/* Thumbnail / 3D Asset illustration in lower right matching visual reference */}
-                  {product.image_url ? (
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-white/10 backdrop-blur-xs border border-white/20 shadow-md shrink-0 flex items-center justify-center p-1 transform group-hover:scale-105 transition-transform duration-300">
-                      <img
-                        src={product.image_url}
-                        alt={product.title}
-                        className="w-full h-full object-cover rounded-xl"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-white/70">
-                      <Shield className="w-8 h-8" />
-                    </div>
-                  )}
+                  {/* Insurance icon chosen by the administrator */}
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/15 backdrop-blur-xs border border-white/25 shadow-md shrink-0 flex items-center justify-center text-white transform group-hover:scale-105 transition-transform duration-300">
+                    <ProductIcon product={product} className="w-10 h-10 sm:w-12 sm:h-12" />
+                  </div>
                 </div>
 
                 {/* Ambient background blur pattern */}

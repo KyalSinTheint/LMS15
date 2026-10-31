@@ -132,20 +132,28 @@ export async function uploadImageFile(
   const timestamp = Date.now();
   const randomStr = Math.random().toString(36).substring(2, 8);
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
-  const storagePath = `${timestamp}_${randomStr}_${sanitizedName}`;
+  const baseName = `${timestamp}_${randomStr}_${sanitizedName}`;
 
   // 1. Direct Supabase Storage attempt
   const supabase = getSupabaseClient();
   if (supabase) {
     try {
+      // Keep each user's files in their own folder (e.g. profile-pictures/<user-id>/...)
+      const userId = (await supabase.auth.getSession()).data.session?.user.id;
+      const storagePath = userId ? `${userId}/${baseName}` : baseName;
       const { data: uploadData, error: uploadErr } = await supabase.storage
         .from(bucketName)
         .upload(storagePath, file, {
           cacheControl: '3600',
-          upsert: true,
+          // Paths are unique, so never overwrite. upsert would also require an
+          // UPDATE storage policy, which ordinary users don't have.
+          upsert: false,
           contentType: file.type,
         });
 
+      if (uploadErr) {
+        console.warn('[KBZLife Storage] Direct Supabase upload failed, trying server route:', uploadErr.message);
+      }
       if (!uploadErr && uploadData?.path) {
         const { data: publicUrlData } = supabase.storage
           .from(bucketName)

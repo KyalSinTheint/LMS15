@@ -8,6 +8,7 @@ import { useLms } from '../../context/LmsContext';
 import { ProductQuizModal } from './ProductQuizModal';
 import { ProductPamphletViewer } from './ProductPamphletViewer';
 import { getProductRichContent } from '../../lib/productKnowledgeUtils';
+import { normalizeProductTheme } from '../../lib/productVisuals';
 
 interface ProductDetailPageProps {
   product: ProductKnowledgeItem;
@@ -64,12 +65,6 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
   // Color theme mapping for the hero card
   const themeClasses: Record<string, { bg: string; text: string; badge: string; border: string }> = {
-    amber: {
-      bg: 'bg-gradient-to-r from-[#D97706] to-[#B45309]',
-      text: 'text-white',
-      badge: 'bg-amber-400 text-slate-950 font-black',
-      border: 'border-amber-500',
-    },
     navy: {
       bg: 'bg-gradient-to-r from-[#176B98] to-[#0F3E57]',
       text: 'text-white',
@@ -94,12 +89,6 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       badge: 'bg-teal-200 text-teal-950 font-black',
       border: 'border-teal-500',
     },
-    rose: {
-      bg: 'bg-gradient-to-r from-[#E11D48] to-[#BE123C]',
-      text: 'text-white',
-      badge: 'bg-rose-200 text-rose-950 font-black',
-      border: 'border-rose-500',
-    },
     sky: {
       bg: 'bg-gradient-to-r from-[#0284C7] to-[#0369A1]',
       text: 'text-white',
@@ -114,7 +103,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     },
   };
 
-  const theme = themeClasses[product.card_color_theme || 'navy'] || themeClasses.navy;
+  const theme = themeClasses[normalizeProductTheme(product.card_color_theme)] || themeClasses.navy;
 
   // Full knowledge content: the admin's rich text, or one composed from the structured fields
   const pamphletContent = getProductRichContent(product);
