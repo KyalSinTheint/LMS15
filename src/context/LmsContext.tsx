@@ -740,15 +740,21 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setIsLoading(true);
     try {
-      const { data: me, error: meError } = await client.from('profiles').select('*').eq('id', uid).maybeSingle();
+      const { data: existingMe, error: meError } = await client.from('profiles').select('*').eq('id', uid).maybeSingle();
       if (meError) throw meError;
+      let me = existingMe;
+      if (!me) {
+        // Self-heal accounts created before the sign-up trigger existed
+        const { data: created } = await client.rpc('ensure_my_profile');
+        me = created && (created as Profile).id ? created : null;
+      }
       if (authUserIdRef.current !== uid) return; // signed out meanwhile
       setMyProfile((me as Profile) || null);
       if (!me) {
         showToast(
           'error',
           'Profile Missing',
-          'No profile row exists for this account. Make sure the database migrations (auth trigger) have been applied.'
+          'No profile row exists for this account. Make sure every file in supabase/migrations (including 20261101_backfill_profiles.sql) has been applied.'
         );
         return;
       }
@@ -1021,12 +1027,19 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return { success: false, message: signInError?.message || 'Invalid username or password.' };
       }
 
-      const { data: profile, error: profileError } = await client
+      const { data: existingProfile, error: profileError } = await client
         .from('profiles')
         .select('*')
         .eq('id', signIn.user.id)
         .maybeSingle();
       if (profileError) throw profileError;
+      // Accounts created before the sign-up trigger existed have no profile yet: create it.
+      let profile = existingProfile;
+      if (!profile) {
+        const { data: created, error: ensureError } = await client.rpc('ensure_my_profile');
+        if (ensureError) console.warn('[KBZLife LMS] ensure_my_profile failed:', ensureError.message);
+        profile = created && (created as Profile).id ? created : null;
+      }
       if (!profile) {
         await client.auth.signOut();
         return { success: false, message: 'No profile exists for this account. Please contact the LMS Administrator.' };
