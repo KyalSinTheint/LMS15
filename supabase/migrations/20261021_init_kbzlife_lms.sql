@@ -287,39 +287,61 @@ ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.email_logs ENABLE ROW LEVEL SECURITY;
 
 -- Profiles
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
 CREATE POLICY "Users can read own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Admins can read all profiles" ON public.profiles;
 CREATE POLICY "Admins can read all profiles" ON public.profiles FOR SELECT USING (public.is_admin(auth.uid()));
+DROP POLICY IF EXISTS "Users can update personal profile details" ON public.profiles;
 CREATE POLICY "Users can update personal profile details" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Admins can manage all profiles" ON public.profiles;
 CREATE POLICY "Admins can manage all profiles" ON public.profiles FOR ALL USING (public.is_admin(auth.uid()));
 
 -- Courses & Channels
+DROP POLICY IF EXISTS "Active users can view published courses" ON public.courses;
 CREATE POLICY "Active users can view published courses" ON public.courses FOR SELECT USING (published = true AND public.is_account_active(auth.uid()));
+DROP POLICY IF EXISTS "Admins can manage all courses" ON public.courses;
 CREATE POLICY "Admins can manage all courses" ON public.courses FOR ALL USING (public.is_admin(auth.uid()));
+DROP POLICY IF EXISTS "Active users can view published channels" ON public.channels;
 CREATE POLICY "Active users can view published channels" ON public.channels FOR SELECT USING (published = true AND public.is_account_active(auth.uid()));
+DROP POLICY IF EXISTS "Admins can manage all channels" ON public.channels;
 CREATE POLICY "Admins can manage all channels" ON public.channels FOR ALL USING (public.is_admin(auth.uid()));
 
 -- Enrollments & Channel Access
+DROP POLICY IF EXISTS "Users can view own course enrollments" ON public.course_enrollments;
 CREATE POLICY "Users can view own course enrollments" ON public.course_enrollments FOR SELECT USING (auth.uid() = user_id AND status = 'enrolled');
+DROP POLICY IF EXISTS "Admins can manage all course enrollments" ON public.course_enrollments;
 CREATE POLICY "Admins can manage all course enrollments" ON public.course_enrollments FOR ALL USING (public.is_admin(auth.uid()));
+DROP POLICY IF EXISTS "Users can view own channel access" ON public.channel_access;
 CREATE POLICY "Users can view own channel access" ON public.channel_access FOR SELECT USING (auth.uid() = user_id AND status = 'granted');
+DROP POLICY IF EXISTS "Admins can manage all channel access" ON public.channel_access;
 CREATE POLICY "Admins can manage all channel access" ON public.channel_access FOR ALL USING (public.is_admin(auth.uid()));
 
 -- Company News (Users see only published; Admins manage all)
+DROP POLICY IF EXISTS "Active users view published news" ON public.company_news;
 CREATE POLICY "Active users view published news" ON public.company_news FOR SELECT USING (status = 'published');
+DROP POLICY IF EXISTS "Admins manage all company news" ON public.company_news;
 CREATE POLICY "Admins manage all company news" ON public.company_news FOR ALL USING (public.is_admin(auth.uid()));
 
 -- Company Videos (Users see only published; Admins manage all)
+DROP POLICY IF EXISTS "Active users view published videos" ON public.company_videos;
 CREATE POLICY "Active users view published videos" ON public.company_videos FOR SELECT USING (status = 'published');
+DROP POLICY IF EXISTS "Admins manage all company videos" ON public.company_videos;
 CREATE POLICY "Admins manage all company videos" ON public.company_videos FOR ALL USING (public.is_admin(auth.uid()));
 
 -- Top Performers (Users see only published; Admins manage all)
+DROP POLICY IF EXISTS "Active users view published performers" ON public.top_performers;
 CREATE POLICY "Active users view published performers" ON public.top_performers FOR SELECT USING (status = 'published');
+DROP POLICY IF EXISTS "Admins manage all top performers" ON public.top_performers;
 CREATE POLICY "Admins manage all top performers" ON public.top_performers FOR ALL USING (public.is_admin(auth.uid()));
 
 -- Progress & Audit & Email Logs
+DROP POLICY IF EXISTS "Users view and update own progress" ON public.learning_progress;
 CREATE POLICY "Users view and update own progress" ON public.learning_progress FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Admins view all progress" ON public.learning_progress;
 CREATE POLICY "Admins view all progress" ON public.learning_progress FOR SELECT USING (public.is_admin(auth.uid()));
+DROP POLICY IF EXISTS "Admins view and insert audit logs" ON public.admin_audit_logs;
 CREATE POLICY "Admins view and insert audit logs" ON public.admin_audit_logs FOR ALL USING (public.is_admin(auth.uid()));
+DROP POLICY IF EXISTS "Admins view and insert email logs" ON public.email_logs;
 CREATE POLICY "Admins view and insert email logs" ON public.email_logs FOR ALL USING (public.is_admin(auth.uid()));
 
 -- ====================================================================
@@ -335,11 +357,17 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage RLS: Public read for published media
+DROP POLICY IF EXISTS "Public Read for Profile Pictures" ON storage.objects;
 CREATE POLICY "Public Read for Profile Pictures" ON storage.objects FOR SELECT USING (bucket_id = 'profile-pictures');
+DROP POLICY IF EXISTS "Public Read for Company News Images" ON storage.objects;
 CREATE POLICY "Public Read for Company News Images" ON storage.objects FOR SELECT USING (bucket_id = 'company-news');
+DROP POLICY IF EXISTS "Public Read for Video Thumbnails" ON storage.objects;
 CREATE POLICY "Public Read for Video Thumbnails" ON storage.objects FOR SELECT USING (bucket_id = 'video-thumbnails');
+DROP POLICY IF EXISTS "Public Read for Top Performer Images" ON storage.objects;
 CREATE POLICY "Public Read for Top Performer Images" ON storage.objects FOR SELECT USING (bucket_id = 'top-performers');
 
 -- Storage RLS: Authenticated upload/update
+DROP POLICY IF EXISTS "Authenticated users upload media" ON storage.objects;
 CREATE POLICY "Authenticated users upload media" ON storage.objects FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Admins manage storage objects" ON storage.objects;
 CREATE POLICY "Admins manage storage objects" ON storage.objects FOR ALL USING (public.is_admin(auth.uid()));
