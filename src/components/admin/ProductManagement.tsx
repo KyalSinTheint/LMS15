@@ -34,6 +34,14 @@ import {
   ProductQuizQuestion,
 } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
+import {
+  getProductIconOption,
+  normalizeProductTheme,
+  PRODUCT_ICONS,
+  ProductIcon,
+  ProductIconOption,
+  resolveProductIconKey,
+} from '../../lib/productVisuals';
 import { uploadImageFile } from '../../lib/storageUtils';
 import { ProductKnowledgeRichEditor } from './ProductKnowledgeRichEditor';
 import { getProductRichContent } from '../../lib/productKnowledgeUtils';
@@ -65,6 +73,7 @@ export const ProductManagement: React.FC = () => {
     short_description: string;
     content: string;
     image_url: string;
+    icon_key: string;
     pamphlet_cover_url: string;
     is_published: boolean;
     display_order: number;
@@ -75,6 +84,7 @@ export const ProductManagement: React.FC = () => {
     short_description: '',
     content: '',
     image_url: '',
+    icon_key: '',
     pamphlet_cover_url: '',
     is_published: true,
     display_order: 1,
@@ -156,8 +166,6 @@ export const ProductManagement: React.FC = () => {
     );
   };
 
-  const [isUploading, setIsUploading] = useState<boolean>(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCoverUploading, setIsCoverUploading] = useState<boolean>(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -173,12 +181,10 @@ export const ProductManagement: React.FC = () => {
 
   // Available Themes
   const THEMES: { id: ProductColorTheme; label: string; bg: string }[] = [
-    { id: 'amber', label: 'Amber / Gold', bg: 'bg-amber-500' },
     { id: 'navy', label: 'KBZ Navy', bg: 'bg-[#176B98]' },
     { id: 'emerald', label: 'Emerald Green', bg: 'bg-emerald-600' },
     { id: 'indigo', label: 'Indigo / Violet', bg: 'bg-indigo-600' },
     { id: 'teal', label: 'Deep Teal', bg: 'bg-teal-600' },
-    { id: 'rose', label: 'Rose / Crimson', bg: 'bg-rose-600' },
     { id: 'sky', label: 'Sky Blue', bg: 'bg-sky-600' },
     { id: 'slate', label: 'Slate Gray', bg: 'bg-slate-600' },
   ];
@@ -194,30 +200,6 @@ export const ProductManagement: React.FC = () => {
       Boolean(p.short_description && p.short_description.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchCat && matchSearch;
   });
-
-  // Handle direct device image upload
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      showToast('error', 'Invalid File', 'Please select an image file (PNG, JPG, WebP).');
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      const result = await uploadImageFile(file, 'product-images');
-      if (result.success && result.url) {
-        setProductForm((prev) => ({ ...prev, image_url: result.url! }));
-        showToast('success', 'Image Uploaded', 'Product image stored successfully.');
-      } else {
-        showToast('error', 'Upload Failed', result.error || 'Could not upload the selected image.');
-      }
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   // Pamphlet cover upload (front page of the learner Pamphlet View)
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,10 +230,11 @@ export const ProductManagement: React.FC = () => {
     setProductForm({
       title: '',
       subtitle: '',
-      card_color_theme: 'amber',
+      card_color_theme: 'navy',
       short_description: '',
       content: '',
       image_url: '',
+      icon_key: '',
       pamphlet_cover_url: '',
       is_published: true,
       display_order: products.length + 1,
@@ -266,10 +249,11 @@ export const ProductManagement: React.FC = () => {
     setProductForm({
       title: product.title,
       subtitle: product.subtitle || '',
-      card_color_theme: product.card_color_theme || 'navy',
+      card_color_theme: normalizeProductTheme(product.card_color_theme),
       short_description: product.short_description || '',
       content: richContent,
       image_url: product.image_url || '',
+      icon_key: product.icon_key || '',
       pamphlet_cover_url: product.pamphlet_cover_url || '',
       is_published: product.is_published ?? (product.status === 'published'),
       display_order: product.display_order ?? 1,
@@ -302,6 +286,9 @@ export const ProductManagement: React.FC = () => {
       description: cleanContent,
       content: cleanContent,
       image_url: productForm.image_url,
+      // Icon: '' = automatic (inferred from the product name). Only sent when chosen
+      // or being reset, so saving works before the icon migration is applied.
+      ...(productForm.icon_key || editingProduct?.icon_key ? { icon_key: productForm.icon_key || null } : {}),
       // Only send the cover field when a cover is set or being removed, so saving
       // still works on databases where the pamphlet migration hasn't run yet.
       ...(productForm.pamphlet_cover_url || editingProduct?.pamphlet_cover_url
@@ -627,17 +614,9 @@ export const ProductManagement: React.FC = () => {
                         <tr key={product.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
-                              {product.image_url ? (
-                                <img
-                                  src={product.image_url}
-                                  alt=""
-                                  className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-200 shadow-2xs"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 text-slate-400 border border-slate-200">
-                                  <Package className="w-6 h-6" />
-                                </div>
-                              )}
+                              <div className="w-12 h-12 rounded-xl bg-[#176B98]/10 flex items-center justify-center shrink-0 text-[#176B98] border border-[#176B98]/20">
+                                <ProductIcon product={product} className="w-6 h-6" />
+                              </div>
                               <div className="min-w-0 max-w-sm">
                                 <span className="font-extrabold text-slate-900 block truncate text-xs sm:text-sm">
                                   {product.title}
@@ -660,10 +639,10 @@ export const ProductManagement: React.FC = () => {
                           <td className="px-4 py-4">
                             <span
                               className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase text-white shadow-2xs ${
-                                THEMES.find((t) => t.id === product.card_color_theme)?.bg || 'bg-[#176B98]'
+                                THEMES.find((t) => t.id === normalizeProductTheme(product.card_color_theme))?.bg || 'bg-[#176B98]'
                               }`}
                             >
-                              {product.card_color_theme || 'navy'}
+                              {normalizeProductTheme(product.card_color_theme)}
                             </span>
                           </td>
 
@@ -916,55 +895,40 @@ export const ProductManagement: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Direct Image Upload from Device */}
+                {/* Insurance Icon (replaces the product image) */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Product Image (Direct Device Upload)
-                  </label>
-                  <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50">
-                    {productForm.image_url ? (
-                      <div className="w-24 h-24 rounded-xl overflow-hidden border border-slate-200 bg-white shrink-0">
-                        <img src={productForm.image_url} alt="Preview" className="w-full h-full object-cover" />
-                      </div>
-                    ) : (
-                      <div className="w-24 h-24 rounded-xl bg-slate-200 flex items-center justify-center text-slate-400 shrink-0">
-                        <Package className="w-8 h-8" />
-                      </div>
-                    )}
-
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleFileUpload}
-                          accept="image/*"
-                          className="hidden"
-                        />
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Product Icon</label>
+                  <p className="text-[11px] text-slate-500 mb-2">
+                    Shown on the product card and pamphlet cover. "Automatic" picks an icon from the product name.
+                  </p>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-64 overflow-y-auto p-1" role="radiogroup" aria-label="Product icon">
+                    {[{ key: '', label: 'Automatic' }, ...PRODUCT_ICONS].map((opt) => {
+                      const selected = productForm.icon_key === opt.key;
+                      const preview = opt.key
+                        ? opt
+                        : getProductIconOption(resolveProductIconKey({ title: productForm.title, subtitle: productForm.subtitle, category: 'Insurance' }));
+                      const Icon = (preview as ProductIconOption).Icon;
+                      return (
                         <button
+                          key={opt.key || 'auto'}
                           type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isUploading}
-                          className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 shadow-2xs flex items-center gap-2 cursor-pointer"
+                          role="radio"
+                          aria-checked={selected}
+                          title={opt.label}
+                          onClick={() => setProductForm({ ...productForm, icon_key: opt.key })}
+                          className={`flex flex-col items-center justify-center gap-1 p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                            selected
+                              ? 'border-[#176B98] bg-[#176B98]/10 ring-2 ring-[#176B98]/30 text-[#176B98]'
+                              : 'border-slate-200 bg-white hover:border-[#176B98]/50 text-slate-600'
+                          }`}
                         >
-                          <Upload className="w-4 h-4 text-[#176B98]" />
-                          <span>{isUploading ? 'Uploading...' : 'Upload Image from Device'}</span>
+                          <Icon className="w-6 h-6" strokeWidth={1.75} />
+                          <span className="text-[9.5px] font-bold leading-tight line-clamp-2">
+                            {opt.key ? opt.label : 'Automatic'}
+                          </span>
                         </button>
-
-                        {productForm.image_url && (
-                          <button
-                            type="button"
-                            onClick={() => setProductForm({ ...productForm, image_url: '' })}
-                            className="px-3 py-2 rounded-xl bg-red-50 text-red-600 font-bold text-xs hover:bg-red-100 cursor-pointer"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-500">
-                        Select a product banner or 3D visual from your local storage (JPEG, PNG, WebP).
-                      </p>
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1014,7 +978,7 @@ export const ProductManagement: React.FC = () => {
                         )}
                       </div>
                       <p className="text-[11px] text-slate-500">
-                        Portrait image works best (3:4, e.g. 1200 × 1600 px). Without a cover, a branded cover is generated from the product title and image.
+                        Portrait image works best (3:4, e.g. 1200 × 1600 px). Without a cover, a branded cover is generated from the product title and icon.
                       </p>
                     </div>
                   </div>

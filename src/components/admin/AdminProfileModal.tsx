@@ -116,7 +116,13 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ isOpen, on
       const res = await uploadImageFile(file, 'profile-pictures');
       if (res.success && res.url) {
         setAvatarUrl(res.url);
-        setProfileSuccessMsg('Profile picture uploaded to Supabase Storage. Click Save to persist to profile.');
+        // Save straight to the profile so the new photo appears on every device
+        const saved = await updateProfile(currentUser.id, { avatar_url: res.url });
+        if (saved.success) {
+          setProfileSuccessMsg('Profile picture updated. It now shows on all your devices.');
+        } else {
+          setUploadError(saved.message || 'Photo uploaded, but saving it to your profile failed.');
+        }
       } else {
         setUploadError(res.error || 'Failed to upload profile picture.');
       }

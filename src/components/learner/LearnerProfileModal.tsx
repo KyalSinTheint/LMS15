@@ -121,10 +121,13 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
       const res = await uploadImageFile(file, 'profile-pictures');
       if (res.success && res.url) {
         setAvatarUrl(res.url);
-        setProfileFeedback({
-          type: 'success',
-          text: 'Profile photo uploaded to Supabase Storage. Click "Save Profile Changes" below to persist.',
-        });
+        // Save straight to the profile so the new photo appears on every device
+        const saved = await updateProfile(currentUser.id, { avatar_url: res.url });
+        setProfileFeedback(
+          saved.success
+            ? { type: 'success', text: 'Profile photo updated. It now shows on all your devices.' }
+            : { type: 'error', text: saved.message || 'Photo uploaded, but saving it to your profile failed.' }
+        );
       } else {
         setUploadError(res.error || 'Failed to upload image.');
       }

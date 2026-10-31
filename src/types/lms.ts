@@ -526,6 +526,8 @@ export interface ProductKnowledgeItem {
   content?: string; // Flexible complete Product Knowledge rich-text content
   image_url?: string;
   image_path?: string;
+  /** Insurance icon chosen by an administrator (see src/lib/productVisuals.tsx); null = automatic */
+  icon_key?: string | null;
   /** Front cover of the learner Pamphlet View (uploaded by an administrator) */
   pamphlet_cover_url?: string | null;
   card_color_theme?: ProductColorTheme;
