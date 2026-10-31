@@ -302,7 +302,11 @@ export const ProductManagement: React.FC = () => {
       description: cleanContent,
       content: cleanContent,
       image_url: productForm.image_url,
-      pamphlet_cover_url: productForm.pamphlet_cover_url || null,
+      // Only send the cover field when a cover is set or being removed, so saving
+      // still works on databases where the pamphlet migration hasn't run yet.
+      ...(productForm.pamphlet_cover_url || editingProduct?.pamphlet_cover_url
+        ? { pamphlet_cover_url: productForm.pamphlet_cover_url || null }
+        : {}),
       is_published: productForm.is_published,
       status: (productForm.is_published ? 'published' : 'draft') as 'published' | 'draft',
       display_order: Number(productForm.display_order) || 1,

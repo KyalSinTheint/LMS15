@@ -41,16 +41,9 @@ interface ProductPamphletViewerProps {
   keyboardEnabled?: boolean;
 }
 
-const THEMES: Record<string, { from: string; to: string; accent: string }> = {
-  navy: { from: '#0b2f4f', to: '#176B98', accent: '#7dd3fc' },
-  emerald: { from: '#065f46', to: '#059669', accent: '#a7f3d0' },
-  amber: { from: '#92400e', to: '#d97706', accent: '#fde68a' },
-  indigo: { from: '#312e81', to: '#4f46e5', accent: '#c7d2fe' },
-  slate: { from: '#1e293b', to: '#475569', accent: '#cbd5e1' },
-  teal: { from: '#134e4a', to: '#0d9488', accent: '#99f6e4' },
-  rose: { from: '#881337', to: '#e11d48', accent: '#fecdd3' },
-  sky: { from: '#075985', to: '#0284c7', accent: '#bae6fd' },
-};
+// KBZ brand blue (see --kbz-navy-dark / --kbz-brand-blue in index.css):
+// every pamphlet uses the brand palette, whatever the product card colour.
+const BRAND_THEME = { from: '#0F3E57', to: '#176B98', accent: '#a5e0f2' };
 
 const FLIP_MS = 750;
 const PAPER = '#fdfbf6';
@@ -70,7 +63,7 @@ export const ProductPamphletViewer: React.FC<ProductPamphletViewerProps> = ({
   onTakeQuiz,
   keyboardEnabled = true,
 }) => {
-  const theme = THEMES[product.card_color_theme || 'navy'] || THEMES.navy;
+  const theme = BRAND_THEME;
 
   // ---- Pages -------------------------------------------------------
   const { pages: contentPages, sections } = useMemo(() => buildPamphletPages(content), [content]);
