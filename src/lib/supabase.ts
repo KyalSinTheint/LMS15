@@ -1,19 +1,41 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// ---------------------------------------------------------------------
+// Supabase connection settings
+//
+// Read from VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY at build time. If those
+// are missing or malformed (e.g. not set for the Vercel environment, wrapped
+// in quotes), fall back to this project's public values below.
+//
+// Both fallback values are PUBLIC by design: the project URL and the
+// publishable key ship in every browser bundle and access is enforced by
+// Row Level Security. Never put a secret / service_role key here.
+// ---------------------------------------------------------------------
+const DEFAULT_SUPABASE_URL = 'https://zednjokmaubhlwvhhtzb.supabase.co';
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-NTkMHrRHgGCTP8YwcXWIg_ABwP0RHr';
 
-export const isSupabaseConfigured = (): boolean => {
-  return (
-    typeof supabaseUrl === 'string' &&
-    supabaseUrl.trim().length > 0 &&
-    !supabaseUrl.includes('your-project') &&
-    typeof supabaseAnonKey === 'string' &&
-    supabaseAnonKey.trim().length > 0 &&
-    !supabaseAnonKey.includes('your-anon-key')
+const clean = (value: unknown): string =>
+  typeof value === 'string' ? value.trim().replace(/^["']|["']$/g, '').trim() : '';
+
+const isValidUrl = (url: string): boolean => /^https:\/\/[a-z0-9-]+\.supabase\.(co|in)\/?$/i.test(url);
+
+// Publishable keys (sb_publishable_...) or legacy anon JWTs (eyJ...). Secret keys are rejected.
+const isBrowserSafeKey = (key: string): boolean =>
+  key.startsWith('sb_publishable_') || (key.startsWith('eyJ') && key.split('.').length === 3);
+
+const envUrl = clean(import.meta.env.VITE_SUPABASE_URL);
+const envKey = clean(import.meta.env.VITE_SUPABASE_ANON_KEY);
+
+if (envKey.startsWith('sb_secret_')) {
+  console.error(
+    '[KBZLife LMS] VITE_SUPABASE_ANON_KEY contains a SECRET key. It is exposed to every browser - rotate it in Supabase now and use the publishable key instead.'
   );
-};
+}
+
+const supabaseUrl = (isValidUrl(envUrl) ? envUrl : DEFAULT_SUPABASE_URL).replace(/\/$/, '');
+const supabaseAnonKey = isBrowserSafeKey(envKey) ? envKey : DEFAULT_SUPABASE_PUBLISHABLE_KEY;
+
+export const isSupabaseConfigured = (): boolean => isValidUrl(supabaseUrl) && isBrowserSafeKey(supabaseAnonKey);
 
 // Singleton client instance
 let supabaseInstance: SupabaseClient | null = null;
