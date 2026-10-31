@@ -1,52 +1,58 @@
 /**
- * Default profile avatars.
+ * Default profile avatars: friendly animal characters.
  *
- * Users without an uploaded photo get a cartoon character generated locally
- * (DiceBear "Avataaars" by Pablo Stanley, free for personal and commercial use).
- * The character is derived from the user's id, so each person keeps the same
- * avatar everywhere and no personal data is sent to any external service.
+ * Users without an uploaded photo get an animal (Microsoft Fluent Emoji,
+ * MIT license) on a soft coloured circle. The animal and colour are chosen
+ * from the user's id, so each person keeps the same avatar everywhere, and
+ * everything is generated locally (no external requests, no personal data
+ * leaves the browser).
  */
-import { createAvatar } from '@dicebear/core';
-import { avataaars } from '@dicebear/collection';
+import { ANIMAL_AVATAR_ICONS } from './animalAvatarIcons';
 
-// Soft brand-friendly backgrounds (hex without '#', as DiceBear expects)
-const BACKGROUND_COLORS = ['b6e3f4', 'c0aede', 'd1d4f9', 'ffd5dc', 'ffdfbf', 'c7f0db', 'fde68a'];
+const ANIMALS = Object.keys(ANIMAL_AVATAR_ICONS);
+
+// Soft brand-friendly backgrounds
+const BACKGROUND_COLORS = ['#b6e3f4', '#c0aede', '#d1d4f9', '#ffd5dc', '#ffdfbf', '#c7f0db', '#fde68a', '#e0f2fe'];
 
 // Older builds stored stock photos of real people as the "default" avatar.
-// Treat those as "no photo" so they are replaced by the cartoon default.
+// Treat those as "no photo" so they are replaced by the animal default.
 const LEGACY_STOCK_AVATARS = ['photo-1534528741775-53994a69daeb', 'photo-1507003211169-0a1dd7228f2d', 'photo-1535713875002-d1d0cf377fde'];
+
+/** Small, stable string hash: FNV-1a with a murmur3 finaliser for an even spread. */
+function hash(input: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return h >>> 0;
+}
 
 const cache = new Map<string, string>();
 
-/** Cartoon avatar (data URI) for a stable seed such as a user id or email. */
+/** Animal avatar (SVG data URI) for a stable seed such as a user id or email. */
 export function getDefaultAvatar(seed: string): string {
   const key = seed || 'kbzlife-user';
   const cached = cache.get(key);
   if (cached) return cached;
 
-  const uri = createAvatar(avataaars, {
-    seed: key,
-    backgroundColor: BACKGROUND_COLORS,
-    backgroundType: ['solid'],
-    // Keep it friendly and workplace-appropriate: natural skin and hair tones,
-    // professional clothing, plain glasses, no novelty hats or sunglasses.
-    skinColor: ['614335', 'd08b5b', 'ae5d29', 'edb98a', 'ffdbb4'],
-    hairColor: ['2c1b18', '4a312c', '724133', 'a55728', 'b58143', 'd6b370', 'e8e1e1'],
-    facialHairColor: ['2c1b18', '4a312c', '724133', 'a55728'],
-    top: [
-      'hijab', 'turban', 'bob', 'bun', 'curly', 'curvy', 'dreads', 'fro', 'longButNotTooLong',
-      'miaWallace', 'straight01', 'straight02', 'straightAndStrand', 'dreads01', 'frizzle', 'shaggy',
-      'shortCurly', 'shortFlat', 'shortRound', 'shortWaved', 'sides', 'theCaesar', 'theCaesarAndSidePart', 'bigHair',
-    ],
-    clothing: ['blazerAndShirt', 'blazerAndSweater', 'collarAndSweater', 'shirtCrewNeck', 'shirtScoopNeck', 'shirtVNeck'],
-    clothesColor: ['262e33', '25557c', '5199e4', '3c4f5c', '929598', 'e6e6e6', '65c9ff'],
-    accessories: ['prescription01', 'prescription02', 'round'],
-    accessoriesProbability: 25,
-    mouth: ['smile', 'default', 'twinkle'],
-    eyes: ['default', 'happy', 'wink', 'squint'],
-    eyebrows: ['default', 'defaultNatural', 'raisedExcited', 'raisedExcitedNatural'],
-    facialHairProbability: 15,
-  }).toDataUri();
+  const h = hash(key);
+  const animal = ANIMALS[h % ANIMALS.length];
+  // Use different bits for the colour so animal and colour vary independently
+  const background = BACKGROUND_COLORS[Math.floor(h / ANIMALS.length) % BACKGROUND_COLORS.length];
+
+  // 64x64 canvas; the 32x32 artwork is scaled to 44px and centred
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">` +
+    `<rect width="64" height="64" fill="${background}"/>` +
+    `<g transform="translate(10 10) scale(1.375)">${ANIMAL_AVATAR_ICONS[animal]}</g>` +
+    `</svg>`;
+  const uri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 
   cache.set(key, uri);
   return uri;
@@ -57,7 +63,7 @@ const isUsablePhoto = (url?: string | null): url is string =>
 
 /**
  * The picture to show for a user: their uploaded photo if they have one,
- * otherwise their personal cartoon avatar.
+ * otherwise their personal animal avatar.
  */
 export function getUserAvatar(user?: {
   id?: string | null;
@@ -69,7 +75,7 @@ export function getUserAvatar(user?: {
   return getDefaultAvatar(user?.id || user?.email || user?.full_name || '');
 }
 
-/** <img onError> handler: swap a broken photo for the cartoon default. */
+/** <img onError> handler: swap a broken photo for the animal default. */
 export function avatarFallbackOnError(seed: string) {
   return (event: { currentTarget: HTMLImageElement }) => {
     const fallback = getDefaultAvatar(seed);
