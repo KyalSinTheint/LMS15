@@ -299,13 +299,11 @@ export const ProductManagement: React.FC = () => {
       display_order: Number(productForm.display_order) || 1,
     };
 
-    if (editingProductId) {
-      await updateProduct(editingProductId, payload);
-    } else {
-      await createProduct(payload);
-    }
-
-    setIsProductModalOpen(false);
+    // Keep the editor open if saving fails, so nothing (e.g. an uploaded cover) is lost
+    const saved = editingProductId
+      ? await updateProduct(editingProductId, payload)
+      : Boolean(await createProduct(payload));
+    if (saved) setIsProductModalOpen(false);
   };
 
   // Delete Product
