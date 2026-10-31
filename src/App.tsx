@@ -48,12 +48,32 @@ import { LoginPage } from './components/auth/LoginPage';
 import { RegisterPage } from './components/auth/RegisterPage';
 import { PendingApprovalPage } from './components/auth/PendingApprovalPage';
 import { AccountRestrictedPage } from './components/auth/AccountRestrictedPage';
+import { AccountApprovedPage } from './components/auth/ApprovalFlowScreens';
 import { SupabaseSetupRequired, AuthLoadingScreen, ResetPasswordPage } from './components/auth/AuthStatusScreens';
 import { isSupabaseConfigured } from './lib/supabase';
 
 function AppContent() {
   const { currentUser, isAuthenticated, isAuthReady, isPasswordRecovery, signOut, refreshData } = useLms();
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  // Sign-up → pending → approved flow
+  const [sawPendingThisSession, setSawPendingThisSession] = useState(false);
+  const [loginPrefill, setLoginPrefill] = useState<{
+    identifier: string;
+    notice?: { tone: 'success' | 'info'; title: string; message: string };
+  } | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated && currentUser.account_status === 'pending') {
+      setSawPendingThisSession(true);
+    } else if (!isAuthenticated) {
+      setSawPendingThisSession(false);
+    }
+  }, [isAuthenticated, currentUser.account_status]);
+
+  // The login-page notice only applies to the next sign-in
+  useEffect(() => {
+    if (isAuthenticated) setLoginPrefill(null);
+  }, [isAuthenticated]);
   const [activeTab, setActiveTab] = useState<NavTabId>('our-company');
   const [activeSubpage, setActiveSubpage] = useState<OurCompanySubpage>('overview');
   const [activeLdSubpage, setActiveLdSubpage] = useState<LdSubpage>('overview');
@@ -134,14 +154,26 @@ function AppContent() {
             setAuthView('login');
             window.location.hash = 'login';
           }}
-          onRegistrationSuccess={() => {
+          onRegistrationSuccess={(email) => {
+            setLoginPrefill({
+              identifier: email,
+              notice: {
+                tone: 'info',
+                title: 'Registration submitted',
+                message: 'Sign in any time to see your approval status.',
+              },
+            });
             setAuthView('login');
+            window.location.hash = 'login';
           }}
         />
       );
     }
     return (
       <LoginPage
+        key={loginPrefill?.identifier || 'login'}
+        initialIdentifier={loginPrefill?.identifier}
+        notice={loginPrefill?.notice}
         onNavigateToRegister={() => {
           setAuthView('register');
           window.location.hash = 'register';
@@ -165,6 +197,32 @@ function AppContent() {
           await refreshData();
         }}
         onLogout={signOut}
+      />
+    );
+  }
+
+  // 2b. Just approved while waiting on the pending page → celebrate, then ask to sign in again
+  if (
+    sawPendingThisSession &&
+    (currentUser.account_status === 'approved' || currentUser.account_status === 'active')
+  ) {
+    return (
+      <AccountApprovedPage
+        fullName={currentUser.full_name}
+        email={currentUser.email}
+        onSignInAgain={() => {
+          setLoginPrefill({
+            identifier: currentUser.email,
+            notice: {
+              tone: 'success',
+              title: 'Your account is approved',
+              message: 'Sign in with your password to start learning.',
+            },
+          });
+          setSawPendingThisSession(false);
+          setAuthView('login');
+          signOut();
+        }}
       />
     );
   }

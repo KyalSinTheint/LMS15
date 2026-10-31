@@ -99,7 +99,7 @@ interface LmsContextType {
   isPasswordRecovery: boolean;
   completePasswordRecovery: (newPassword: string) => Promise<{ success: boolean; message: string }>;
   loginWithCredentials: (identifier: string, password: string) => Promise<{ success: boolean; message: string; mustChangePassword?: boolean; account_status?: AccountStatus; role?: UserRole }>;
-  registerUser: (data: { full_name: string; username: string; email: string; password: string; department?: string; employee_id?: string }) => Promise<{ success: boolean; user?: Profile; message: string }>;
+  registerUser: (data: { full_name: string; username: string; email: string; password: string; department?: string; employee_id?: string }) => Promise<{ success: boolean; user?: Profile; message: string; needsEmailConfirmation?: boolean }>;
   checkUserApprovalStatus: (userId?: string) => Promise<AccountStatus>;
   approveUser: (userId: string) => Promise<boolean>;
   rejectUser: (userId: string, reason: string) => Promise<boolean>;
@@ -740,15 +740,21 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setIsLoading(true);
     try {
-      const { data: me, error: meError } = await client.from('profiles').select('*').eq('id', uid).maybeSingle();
+      const { data: existingMe, error: meError } = await client.from('profiles').select('*').eq('id', uid).maybeSingle();
       if (meError) throw meError;
+      let me = existingMe;
+      if (!me) {
+        // Self-heal accounts created before the sign-up trigger existed
+        const { data: created } = await client.rpc('ensure_my_profile');
+        me = created && (created as Profile).id ? created : null;
+      }
       if (authUserIdRef.current !== uid) return; // signed out meanwhile
       setMyProfile((me as Profile) || null);
       if (!me) {
         showToast(
           'error',
           'Profile Missing',
-          'No profile row exists for this account. Make sure the database migrations (auth trigger) have been applied.'
+          'No profile row exists for this account. Make sure every file in supabase/migrations (including 20261101_backfill_profiles.sql) has been applied.'
         );
         return;
       }
@@ -1021,12 +1027,19 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return { success: false, message: signInError?.message || 'Invalid username or password.' };
       }
 
-      const { data: profile, error: profileError } = await client
+      const { data: existingProfile, error: profileError } = await client
         .from('profiles')
         .select('*')
         .eq('id', signIn.user.id)
         .maybeSingle();
       if (profileError) throw profileError;
+      // Accounts created before the sign-up trigger existed have no profile yet: create it.
+      let profile = existingProfile;
+      if (!profile) {
+        const { data: created, error: ensureError } = await client.rpc('ensure_my_profile');
+        if (ensureError) console.warn('[KBZLife LMS] ensure_my_profile failed:', ensureError.message);
+        profile = created && (created as Profile).id ? created : null;
+      }
       if (!profile) {
         await client.auth.signOut();
         return { success: false, message: 'No profile exists for this account. Please contact the LMS Administrator.' };
@@ -1052,7 +1065,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     password: string;
     department?: string;
     employee_id?: string;
-  }): Promise<{ success: boolean; user?: Profile; message: string }> => {
+  }): Promise<{ success: boolean; user?: Profile; message: string; needsEmailConfirmation?: boolean }> => {
     try {
       const client = db();
       const username = data.username.trim().toLowerCase();
@@ -1084,15 +1097,16 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
 
       if (!signUp.session) {
-        const message =
-          'Registration received! Please confirm your email address, then sign in. Your account will be reviewed by an administrator.';
-        showToast('info', 'Check Your Email', message);
-        return { success: true, message };
+        return {
+          success: true,
+          needsEmailConfirmation: true,
+          message: 'Registration received! Please confirm your email address. Your account will then be reviewed by an administrator.',
+        };
       }
 
-      showToast('info', 'Registration Received', 'Your account is pending administrator review.');
       return {
         success: true,
+        needsEmailConfirmation: false,
         message: 'Registration submitted successfully! Your account is pending administrator review.',
       };
     } catch (err) {

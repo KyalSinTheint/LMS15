@@ -16,10 +16,12 @@ import {
   IdCard,
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
+import { RegistrationSubmittedPage } from './ApprovalFlowScreens';
 
 interface RegisterPageProps {
   onNavigateToLogin: () => void;
-  onRegistrationSuccess: () => void;
+  /** Called with the registered email when the user continues to sign in. */
+  onRegistrationSuccess: (email: string) => void;
 }
 
 export const RegisterPage: React.FC<RegisterPageProps> = ({
@@ -40,6 +42,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Set after a successful sign-up that did not sign the user in (e.g. email confirmation required)
+  const [submitted, setSubmitted] = useState<{ email: string; needsEmailConfirmation: boolean } | null>(null);
 
   const departmentsList = [
     'Alliance Agency Network',
@@ -103,7 +107,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
       });
 
       if (result.success) {
-        onRegistrationSuccess();
+        // With a session the app switches to the live "pending approval" page by itself;
+        // otherwise show the submitted / pending screen here.
+        setSubmitted({
+          email: email.trim().toLowerCase(),
+          needsEmailConfirmation: result.needsEmailConfirmation !== false,
+        });
       } else {
         setErrorMessage(result.message);
       }
@@ -114,6 +123,16 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
       setIsLoading(false);
     }
   };
+
+  if (submitted) {
+    return (
+      <RegistrationSubmittedPage
+        email={submitted.email}
+        needsEmailConfirmation={submitted.needsEmailConfirmation}
+        onGoToSignIn={() => onRegistrationSuccess(submitted.email)}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F3F8FB] bg-light-blue-pattern flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 font-sans antialiased selection:bg-[#176B98] selection:text-white">
