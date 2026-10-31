@@ -84,7 +84,7 @@ interface LmsContextType {
   isSupabaseLive: boolean;
   toasts: ToastMessage[];
   dismissToast: (id: string) => void;
-  showToast: (type: ToastMessage['type'], title: string, message?: string) => void;
+  showToast: (type: ToastMessage['type'], title: string, message?: string, durationMs?: number) => void;
 
   // Theme support
   theme: 'light' | 'dark';
@@ -564,11 +564,14 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const toggleTheme = useCallback(() => setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark')), []);
   const setTheme = useCallback((t: 'light' | 'dark') => setThemeState(t), []);
 
-  const showToast = useCallback((type: ToastMessage['type'], title: string, message?: string) => {
-    const id = 'toast_' + Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, type, title, message }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4500);
-  }, []);
+  const showToast = useCallback(
+    (type: ToastMessage['type'], title: string, message?: string, durationMs: number = 4500) => {
+      const id = 'toast_' + Math.random().toString(36).substring(2, 9);
+      setToasts((prev) => [...prev, { id, type, title, message }]);
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), durationMs);
+    },
+    []
+  );
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -2385,13 +2388,77 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // -------------------------------------------------------------
   // PRODUCT KNOWLEDGE HUB
   // -------------------------------------------------------------
+  // Columns added by later migrations. If the database doesn't have them yet,
+  // the product is still saved without them and the admin is told which SQL to run.
+  const OPTIONAL_PRODUCT_COLUMNS: Record<string, { label: string; sql: string }> = {
+    pamphlet_cover_url: {
+      label: 'pamphlet cover',
+      sql: 'alter table public.product_knowledge_items add column if not exists pamphlet_cover_url text;',
+    },
+    icon_key: {
+      label: 'product icon',
+      sql: 'alter table public.product_knowledge_items add column if not exists icon_key text;',
+    },
+  };
+
+  const saveProductRow = async (
+    row: Record<string, any>,
+    errorTitle: string,
+    id?: string
+  ): Promise<ProductKnowledgeItem | null> => {
+    const attempt = (r: Record<string, any>) =>
+      id
+        ? db().from('product_knowledge_items').update(cleanRow(r)).eq('id', id).select().maybeSingle()
+        : db().from('product_knowledge_items').insert(cleanRow(r)).select().single();
+
+    try {
+      let current = { ...row };
+      if (id) {
+        delete current.id;
+        delete current.created_at;
+      }
+      const skipped: string[] = [];
+      let { data, error } = await attempt(current);
+
+      // e.g. PGRST204: Could not find the 'pamphlet_cover_url' column of 'product_knowledge_items' in the schema cache
+      while (error) {
+        const message = `${error.message || ''} ${(error as { details?: string }).details || ''}`;
+        const missing = Object.keys(OPTIONAL_PRODUCT_COLUMNS).find(
+          (col) => col in current && !skipped.includes(col) && message.includes(col)
+        );
+        if (!missing) break;
+        skipped.push(missing);
+        const { [missing]: _dropped, ...rest } = current;
+        current = rest;
+        ({ data, error } = await attempt(current));
+      }
+
+      if (error) throw error;
+      if (!data) throw new Error('Record not found, or you do not have permission to change it.');
+
+      if (skipped.length > 0) {
+        const labels = skipped.map((c) => OPTIONAL_PRODUCT_COLUMNS[c].label).join(' and ');
+        const sql = skipped.map((c) => OPTIONAL_PRODUCT_COLUMNS[c].sql).join(' ');
+        showToast(
+          'warning',
+          `Product saved, but the ${labels} was not`,
+          `Your database is missing a column. Run this once in the Supabase SQL Editor, then open the product and set the ${labels} again: ${sql}`,
+          20000
+        );
+      }
+      return data as ProductKnowledgeItem;
+    } catch (err) {
+      reportError(errorTitle, err);
+      return null;
+    }
+  };
+
   const createProduct = async (
     productData: Omit<ProductKnowledgeItem, 'id' | 'created_at' | 'updated_at'>
   ): Promise<ProductKnowledgeItem | null> => {
     if (!requireAdmin('create products')) return null;
     const isPub = productData.is_published ?? productData.status === 'published';
-    const created = await dbInsert<ProductKnowledgeItem>(
-      'product_knowledge_items',
+    const created = await saveProductRow(
       {
         ...productData,
         is_published: isPub,
@@ -2414,7 +2481,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (updates.is_published !== undefined) clean.status = updates.is_published ? 'published' : 'draft';
     else if (updates.status !== undefined) clean.is_published = updates.status === 'published';
 
-    const updated = await dbUpdate<ProductKnowledgeItem>('product_knowledge_items', id, clean, 'Product Not Updated');
+    const updated = await saveProductRow(clean, 'Product Not Updated', id);
     if (!updated) return false;
     setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
     await logAuditAction('product_updated', 'product', id, `Updated product details: ${updated.title}`);
