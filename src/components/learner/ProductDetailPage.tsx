@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
-  Award,
   CheckCircle2,
-  ChevronRight,
 } from 'lucide-react';
 import { ProductKnowledgeItem, ProductQuizAttempt } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
@@ -170,22 +168,12 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           )}
         </div>
 
-        {/* Action CTA */}
-        <div className="flex flex-wrap items-center gap-3 shrink-0 z-10">
-          {latestAttempt && (
-            <span className="text-xs text-white/80 font-medium">
-              Last scored {latestAttempt.percentage}% ({latestAttempt.passed ? 'Passed' : 'Needs retry'})
-            </span>
-          )}
-          <button
-            onClick={() => setIsQuizModalOpen(true)}
-            className="px-5 py-2.5 rounded-xl bg-white text-[#176B98] hover:bg-slate-100 font-black text-xs sm:text-sm tracking-wide transition-all transform active:scale-95 shadow-md flex items-center gap-2 cursor-pointer"
-          >
-            <Award className="w-4 h-4 text-[#176B98]" />
-            <span>Take Product Quiz</span>
-            <ChevronRight className="w-4 h-4 text-[#176B98]" />
-          </button>
-        </div>
+        {/* Last quiz result (the quiz itself is on the pamphlet's last page) */}
+        {latestAttempt && (
+          <span className="shrink-0 z-10 text-xs text-white/85 font-semibold">
+            Last scored {latestAttempt.percentage}% ({latestAttempt.passed ? 'Passed' : 'Needs retry'})
+          </span>
+        )}
 
         {/* Decorative background shape */}
         <div className="absolute -right-10 -bottom-16 w-64 h-64 rounded-full bg-white/5 pointer-events-none blur-2xl" />
