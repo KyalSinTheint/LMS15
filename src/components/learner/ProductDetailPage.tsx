@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
-  Award,
   CheckCircle2,
-  ChevronRight,
 } from 'lucide-react';
 import { ProductKnowledgeItem, ProductQuizAttempt } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
@@ -149,67 +147,36 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         )}
       </div>
 
-      {/* Hero Banner Header */}
+      {/* Hero Banner Header (compact) */}
       <div
-        className={`${theme.bg} rounded-3xl p-6 sm:p-10 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6`}
+        className={`${theme.bg} rounded-2xl px-5 py-4 sm:px-7 sm:py-5 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4`}
       >
-        <div className="space-y-3 max-w-2xl z-10">
-          <div className="flex items-center gap-2">
+        <div className="space-y-1.5 min-w-0 z-10">
+          <div className="flex flex-wrap items-center gap-2">
             <span
-              className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${theme.badge}`}
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${theme.badge}`}
             >
               {product.category || 'Insurance'}
             </span>
-            <span className="text-white/80 text-xs font-semibold">
-              KBZLife Official Portfolio
-            </span>
+            <span className="text-white/80 text-[11px] font-semibold">KBZLife Official Portfolio</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-            {product.title}
-          </h1>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-tight">{product.title}</h1>
 
           {product.subtitle && (
-            <p className="text-sm sm:text-base text-white/90 leading-relaxed font-medium">
-              {product.subtitle}
-            </p>
+            <p className="text-xs sm:text-sm text-white/90 leading-snug font-medium">{product.subtitle}</p>
           )}
-
-          {/* Action CTA */}
-          <div className="pt-3 flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setIsQuizModalOpen(true)}
-              className="px-6 py-3 rounded-2xl bg-white text-[#176B98] hover:bg-slate-100 font-black text-xs sm:text-sm tracking-wide transition-all transform active:scale-95 shadow-md flex items-center gap-2 cursor-pointer"
-            >
-              <Award className="w-4 h-4 text-[#176B98]" />
-              <span>Take Product Quiz</span>
-              <ChevronRight className="w-4 h-4 text-[#176B98]" />
-            </button>
-            {latestAttempt && (
-              <span className="text-xs text-white/80 font-medium">
-                Last scored {latestAttempt.percentage}% ({latestAttempt.passed ? 'Passed' : 'Needs retry'})
-              </span>
-            )}
-          </div>
         </div>
 
-        {/* Product Image Box */}
-        {product.image_url && (
-          <div className="relative shrink-0 w-full sm:w-72 h-48 sm:h-56 rounded-2xl overflow-hidden bg-white/10 border border-white/20 shadow-lg flex items-center justify-center p-2 z-10">
-            <img
-              src={product.image_url}
-              alt={product.title}
-              className="w-full h-full object-cover rounded-xl"
-              onError={(e) => {
-                // If custom image fails to load, gracefully fall back
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
-          </div>
+        {/* Last quiz result (the quiz itself is on the pamphlet's last page) */}
+        {latestAttempt && (
+          <span className="shrink-0 z-10 text-xs text-white/85 font-semibold">
+            Last scored {latestAttempt.percentage}% ({latestAttempt.passed ? 'Passed' : 'Needs retry'})
+          </span>
         )}
 
         {/* Decorative background shape */}
-        <div className="absolute -right-10 -bottom-10 w-80 h-80 rounded-full bg-white/5 pointer-events-none blur-2xl" />
+        <div className="absolute -right-10 -bottom-16 w-64 h-64 rounded-full bg-white/5 pointer-events-none blur-2xl" />
       </div>
 
       {/* Pamphlet View: cover → knowledge pages → quiz page */}

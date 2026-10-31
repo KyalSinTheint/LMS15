@@ -12,8 +12,11 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
   className = '',
   paper = false,
 }) => {
-  // In paper mode, drop dark-mode colour classes so printed pages stay light.
-  const c = (cls: string) => (paper ? cls.replace(/\s*dark:\S+/g, '') : cls);
+  // In paper mode, drop dark-mode colours and print body text in black.
+  const c = (cls: string) =>
+    paper
+      ? cls.replace(/\s*dark:\S+/g, '').replace(/\btext-slate-(?:600|700|800|900)\b/g, 'text-black')
+      : cls;
 
   if (!content || !content.trim()) {
     return null;
