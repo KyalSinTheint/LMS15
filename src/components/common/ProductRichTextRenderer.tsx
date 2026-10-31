@@ -3,12 +3,18 @@ import React from 'react';
 interface ProductRichTextRendererProps {
   content: string;
   className?: string;
+  /** Always render light-on-paper colours (ignores dark mode), e.g. inside the Pamphlet View. */
+  paper?: boolean;
 }
 
 export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = ({
   content,
   className = '',
+  paper = false,
 }) => {
+  // In paper mode, drop dark-mode colour classes so printed pages stay light.
+  const c = (cls: string) => (paper ? cls.replace(/\s*dark:\S+/g, '') : cls);
+
   if (!content || !content.trim()) {
     return null;
   }
@@ -20,7 +26,7 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
     return boldParts.map((part, idx) => {
       if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
         return (
-          <strong key={idx} className="font-extrabold text-slate-900 dark:text-white">
+          <strong key={idx} className={c("font-extrabold text-slate-900 dark:text-white")}>
             {part.slice(2, -2)}
           </strong>
         );
@@ -32,7 +38,7 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
           return (
             <code
               key={`${idx}-${cIdx}`}
-              className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[#176B98] dark:text-[#38bdf8] font-mono text-xs"
+              className={c("px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[#176B98] dark:text-[#38bdf8] font-mono text-xs")}
             >
               {cPart.slice(1, -1)}
             </code>
@@ -48,7 +54,7 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
             iPart.length >= 2
           ) {
             return (
-              <em key={`${idx}-${cIdx}-${iIdx}`} className="italic text-slate-800 dark:text-slate-200">
+              <em key={`${idx}-${cIdx}-${iIdx}`} className={c("italic text-slate-800 dark:text-slate-200")}>
                 {iPart.slice(1, -1)}
               </em>
             );
@@ -74,7 +80,7 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
         blocks.push(
           <p
             key={`p-${blockKey++}`}
-            className="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed font-normal my-3 whitespace-pre-line break-words"
+            className={c("text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed font-normal my-3 whitespace-pre-line break-words")}
           >
             {renderInlineFormatted(text)}
           </p>
@@ -88,24 +94,24 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
     if (currentList) {
       if (currentList.type === 'ul') {
         blocks.push(
-          <ul key={`ul-${blockKey++}`} className="space-y-2.5 my-4 pl-1">
+          <ul key={`ul-${blockKey++}`} className={c("space-y-2.5 my-4 pl-1")}>
             {currentList.items.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
-                <span className="w-2 h-2 rounded-full bg-[#176B98] dark:bg-[#38bdf8] mt-2 shrink-0 ring-4 ring-sky-100 dark:ring-sky-950/60" />
-                <span className="flex-1 whitespace-pre-line break-words">{renderInlineFormatted(item)}</span>
+              <li key={idx} className={c("flex items-start gap-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed")}>
+                <span className={c("w-2 h-2 rounded-full bg-[#176B98] dark:bg-[#38bdf8] mt-2 shrink-0 ring-4 ring-sky-100 dark:ring-sky-950/60")} />
+                <span className={c("flex-1 whitespace-pre-line break-words")}>{renderInlineFormatted(item)}</span>
               </li>
             ))}
           </ul>
         );
       } else {
         blocks.push(
-          <ol key={`ol-${blockKey++}`} className="space-y-2.5 my-4 pl-1">
+          <ol key={`ol-${blockKey++}`} className={c("space-y-2.5 my-4 pl-1")}>
             {currentList.items.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
-                <span className="w-5 h-5 rounded-lg bg-[#176B98]/10 dark:bg-[#176B98]/30 text-[#176B98] dark:text-[#38bdf8] text-[11px] font-black flex items-center justify-center shrink-0 mt-0.5 border border-[#176B98]/20 dark:border-[#38bdf8]/30">
+              <li key={idx} className={c("flex items-start gap-3 text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed")}>
+                <span className={c("w-5 h-5 rounded-lg bg-[#176B98]/10 dark:bg-[#176B98]/30 text-[#176B98] dark:text-[#38bdf8] text-[11px] font-black flex items-center justify-center shrink-0 mt-0.5 border border-[#176B98]/20 dark:border-[#38bdf8]/30")}>
                   {idx + 1}
                 </span>
-                <span className="flex-1 whitespace-pre-line break-words">{renderInlineFormatted(item)}</span>
+                <span className={c("flex-1 whitespace-pre-line break-words")}>{renderInlineFormatted(item)}</span>
               </li>
             ))}
           </ol>
@@ -131,7 +137,7 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
       flushParagraph();
       flushList();
       blocks.push(
-        <hr key={`hr-${blockKey++}`} className="my-6 border-slate-200 dark:border-slate-800" />
+        <hr key={`hr-${blockKey++}`} className={c("my-6 border-slate-200 dark:border-slate-800")} />
       );
       continue;
     }
@@ -145,9 +151,9 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
         blocks.push(
           <h3
             key={`h3-${blockKey++}`}
-            className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-5 mb-2 tracking-tight flex items-center gap-2"
+            className={c("text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-5 mb-2 tracking-tight flex items-center gap-2")}
           >
-            <span className="w-1.5 h-4 rounded-full bg-[#176B98] dark:bg-[#38bdf8]" />
+            <span className={c("w-1.5 h-4 rounded-full bg-[#176B98] dark:bg-[#38bdf8]")} />
             <span>{renderInlineFormatted(trimmed.slice(4))}</span>
           </h3>
         );
@@ -155,7 +161,7 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
         blocks.push(
           <h2
             key={`h2-${blockKey++}`}
-            className="text-base sm:text-lg font-black text-[#176B98] dark:text-[#38bdf8] mt-6 mb-3 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-2"
+            className={c("text-base sm:text-lg font-black text-[#176B98] dark:text-[#38bdf8] mt-6 mb-3 tracking-tight border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-2")}
           >
             <span>{renderInlineFormatted(trimmed.slice(3))}</span>
           </h2>
@@ -164,7 +170,7 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
         blocks.push(
           <h1
             key={`h1-${blockKey++}`}
-            className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-6 mb-3 tracking-tight border-b-2 border-[#176B98]/20 dark:border-[#38bdf8]/30 pb-2.5"
+            className={c("text-lg sm:text-2xl font-black text-slate-900 dark:text-white mt-6 mb-3 tracking-tight border-b-2 border-[#176B98]/20 dark:border-[#38bdf8]/30 pb-2.5")}
           >
             {renderInlineFormatted(trimmed.slice(2))}
           </h1>
@@ -181,7 +187,7 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
       blocks.push(
         <blockquote
           key={`quote-${blockKey++}`}
-          className="p-4 my-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border-l-4 border-[#176B98] dark:border-[#38bdf8] text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-medium italic shadow-2xs"
+          className={c("p-4 my-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/30 border-l-4 border-[#176B98] dark:border-[#38bdf8] text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-medium italic shadow-2xs")}
         >
           {renderInlineFormatted(quoteText)}
         </blockquote>
@@ -221,5 +227,5 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
   flushParagraph();
   flushList();
 
-  return <div className={`product-rich-text space-y-1 ${className}`}>{blocks}</div>;
+  return <div className={c(`product-rich-text space-y-1 ${className}`)}>{blocks}</div>;
 };

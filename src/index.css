@@ -592,3 +592,16 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   background: #25A9D2;
 }
 
+
+/* Product Knowledge Pamphlet: thin, paper-toned scrollbar for long pages */
+.pamphlet-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 113, 108, 0.35) transparent;
+}
+.pamphlet-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.pamphlet-scroll::-webkit-scrollbar-thumb {
+  background: rgba(120, 113, 108, 0.35);
+  border-radius: 9999px;
+}
