@@ -17,6 +17,7 @@ import {
 import { useLms } from '../../context/LmsContext';
 import { Channel } from '../../types/lms';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 
 export const ChannelManagement: React.FC = () => {
   const {
@@ -517,10 +518,8 @@ export const ChannelManagement: React.FC = () => {
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <img
-                            src={
-                              user?.avatar_url ||
-                              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80'
-                            }
+                            src={getUserAvatar(user)}
+                            onError={avatarFallbackOnError(user?.id || '')}
                             alt={user?.full_name || 'User'}
                             className="w-8 h-8 rounded-full object-cover shrink-0"
                           />

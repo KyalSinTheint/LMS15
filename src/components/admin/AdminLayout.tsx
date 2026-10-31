@@ -33,6 +33,7 @@ import { ProductManagement } from './ProductManagement';
 import { CompanyBulletinManagement } from './CompanyBulletinManagement';
 import { Newspaper, Film, Award, Key, User, Lock, Settings as SettingsIcon, Package, Bell, Sun, Moon } from 'lucide-react';
 import { AdminLoginModal } from './AdminLoginModal';
+import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 
 export type AdminTabId =
   | 'dashboard'
@@ -213,10 +214,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
                   className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
                 >
                   <img
-                    src={
-                      currentUser.avatar_url ||
-                      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80'
-                    }
+                    src={getUserAvatar(currentUser)}
+                    onError={avatarFallbackOnError(currentUser.id || '')}
                     alt={currentUser.full_name}
                     className="w-8 h-8 rounded-full object-cover border border-white/30"
                   />
@@ -230,10 +229,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
                   <div className="absolute right-0 mt-3 w-72 bg-white dark:bg-[#10243C] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#1E426D] py-2 z-50 text-slate-800 dark:text-slate-100 text-xs">
                     <div className="px-4 py-3 border-b border-slate-100 dark:border-[#1E426D] flex items-center gap-3">
                       <img
-                        src={
-                          currentUser.avatar_url ||
-                          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80'
-                        }
+                        src={getUserAvatar(currentUser)}
+                        onError={avatarFallbackOnError(currentUser.id || '')}
                         alt={currentUser.full_name}
                         className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
                       />

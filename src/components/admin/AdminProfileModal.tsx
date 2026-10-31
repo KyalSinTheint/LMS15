@@ -16,6 +16,7 @@ import {
 import { useLms } from '../../context/LmsContext';
 import { uploadImageFile, validateImageFile } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 
 interface AdminProfileModalProps {
   isOpen: boolean;
@@ -206,11 +207,8 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ isOpen, on
             <div className="flex items-center gap-3">
               <div className="relative">
                 <img
-                  src={
-                    avatarUrl ||
-                    currentUser.avatar_url ||
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80'
-                  }
+                  src={getUserAvatar({ ...currentUser, avatar_url: avatarUrl || currentUser.avatar_url })}
+                  onError={avatarFallbackOnError(currentUser.id)}
                   alt={fullName}
                   className="w-14 h-14 rounded-2xl object-cover border-2 border-white/40 shadow-sm"
                 />
@@ -297,10 +295,8 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ isOpen, on
                 </label>
                 <div className="flex items-center gap-3">
                   <img
-                    src={
-                      avatarUrl ||
-                      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80'
-                    }
+                    src={getUserAvatar({ ...currentUser, avatar_url: avatarUrl })}
+                    onError={avatarFallbackOnError(currentUser.id)}
                     alt="Preview"
                     className="w-12 h-12 rounded-xl object-cover border border-slate-300 dark:border-slate-600 shadow-2xs"
                   />

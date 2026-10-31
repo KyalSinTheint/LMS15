@@ -22,6 +22,7 @@ import {
 import { useLms } from '../../context/LmsContext';
 import { Profile, AccountStatus, UserRole, CourseEnrollment, ChannelAccess } from '../../types/lms';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 
 export const UserManagement: React.FC = () => {
   const {
@@ -271,10 +272,8 @@ export const UserManagement: React.FC = () => {
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <img
-                            src={
-                              user.avatar_url ||
-                              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80'
-                            }
+                            src={getUserAvatar(user)}
+                            onError={avatarFallbackOnError(user.id || '')}
                             alt={user.full_name}
                             className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
                           />
@@ -433,10 +432,8 @@ export const UserManagement: React.FC = () => {
             <div className="bg-[#176B98] dark:bg-[#135A80] text-white p-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <img
-                  src={
-                    selectedUser.avatar_url ||
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80'
-                  }
+                  src={getUserAvatar(selectedUser)}
+                  onError={avatarFallbackOnError(selectedUser.id || '')}
                   alt={selectedUser.full_name}
                   className="w-12 h-12 rounded-full object-cover border-2 border-white/20"
                 />
