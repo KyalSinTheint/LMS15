@@ -99,7 +99,7 @@ interface LmsContextType {
   isPasswordRecovery: boolean;
   completePasswordRecovery: (newPassword: string) => Promise<{ success: boolean; message: string }>;
   loginWithCredentials: (identifier: string, password: string) => Promise<{ success: boolean; message: string; mustChangePassword?: boolean; account_status?: AccountStatus; role?: UserRole }>;
-  registerUser: (data: { full_name: string; username: string; email: string; password: string; department?: string; employee_id?: string }) => Promise<{ success: boolean; user?: Profile; message: string }>;
+  registerUser: (data: { full_name: string; username: string; email: string; password: string; department?: string; employee_id?: string }) => Promise<{ success: boolean; user?: Profile; message: string; needsEmailConfirmation?: boolean }>;
   checkUserApprovalStatus: (userId?: string) => Promise<AccountStatus>;
   approveUser: (userId: string) => Promise<boolean>;
   rejectUser: (userId: string, reason: string) => Promise<boolean>;
@@ -1065,7 +1065,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     password: string;
     department?: string;
     employee_id?: string;
-  }): Promise<{ success: boolean; user?: Profile; message: string }> => {
+  }): Promise<{ success: boolean; user?: Profile; message: string; needsEmailConfirmation?: boolean }> => {
     try {
       const client = db();
       const username = data.username.trim().toLowerCase();
@@ -1097,15 +1097,16 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
 
       if (!signUp.session) {
-        const message =
-          'Registration received! Please confirm your email address, then sign in. Your account will be reviewed by an administrator.';
-        showToast('info', 'Check Your Email', message);
-        return { success: true, message };
+        return {
+          success: true,
+          needsEmailConfirmation: true,
+          message: 'Registration received! Please confirm your email address. Your account will then be reviewed by an administrator.',
+        };
       }
 
-      showToast('info', 'Registration Received', 'Your account is pending administrator review.');
       return {
         success: true,
+        needsEmailConfirmation: false,
         message: 'Registration submitted successfully! Your account is pending administrator review.',
       };
     } catch (err) {

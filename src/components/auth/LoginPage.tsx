@@ -17,6 +17,10 @@ import { UserRole, AccountStatus } from '../../types/lms';
 
 interface LoginPageProps {
   onNavigateToRegister: () => void;
+  /** Pre-fills the username/email field (e.g. after registration or approval). */
+  initialIdentifier?: string;
+  /** Optional banner shown above the form. */
+  notice?: { tone: 'success' | 'info'; title: string; message: string } | null;
   onNavigateToForgotPassword?: () => void;
   onLoginSuccess?: (role?: UserRole, status?: AccountStatus) => void;
 }
@@ -24,9 +28,11 @@ interface LoginPageProps {
 export const LoginPage: React.FC<LoginPageProps> = ({
   onNavigateToRegister,
   onLoginSuccess,
+  initialIdentifier,
+  notice,
 }) => {
   const { loginWithCredentials, requestPasswordReset } = useLms();
-  const [identifier, setIdentifier] = useState('');
+  const [identifier, setIdentifier] = useState(initialIdentifier || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -121,6 +127,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
         {/* Form Container */}
         <div className="p-6 sm:p-7 space-y-5">
+          {/* Notice Banner (e.g. account approved) */}
+          {notice && !errorMessage && (
+            <div
+              role="status"
+              className={`p-3.5 rounded-xl text-xs flex items-start gap-2.5 border ${
+                notice.tone === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                  : 'bg-sky-50 border-sky-200 text-sky-900'
+              }`}
+            >
+              <ShieldCheck className={`w-4 h-4 shrink-0 mt-0.5 ${notice.tone === 'success' ? 'text-emerald-600' : 'text-sky-700'}`} />
+              <div className="leading-relaxed">
+                <p className="font-bold">{notice.title}</p>
+                <p className="mt-0.5">{notice.message}</p>
+              </div>
+            </div>
+          )}
+
           {/* Error Banner */}
           {errorMessage && (
             <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5 animate-fadeIn">
