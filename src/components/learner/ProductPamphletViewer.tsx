@@ -366,7 +366,7 @@ export const ProductPamphletViewer: React.FC<ProductPamphletViewerProps> = ({
               <div className="mt-2 h-1 w-12 rounded-full" style={{ background: theme.to }} />
             </div>
           )}
-          <ProductRichTextRenderer paper content={def.page.body} className="text-stone-800 text-[13.5px]" />
+          <ProductRichTextRenderer paper content={def.page.body} className="text-black text-[13.5px]" />
         </div>
         {pageFooter(def.number, side)}
       </div>
