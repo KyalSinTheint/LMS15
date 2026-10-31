@@ -19,7 +19,7 @@ Supabase. Nothing is kept in browser `localStorage` except the light/dark theme 
 1. Install dependencies: `npm install`
 2. Copy `.env.example` to `.env` and fill in:
    - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`: Supabase → Project Settings → API
-   - `SUPABASE_SERVICE_ROLE_KEY`: server only. Needed to invite users, persist email logs and
+   - `SUPABASE_SECRET_KEY` (secret / service_role key): server only. Needed to invite users, persist email logs and
      upload large files through the server. Never expose it to the browser.
    - `GEMINI_API_KEY`: AI quiz generation from PDFs (optional)
    - `RESEND_API_KEY` or `SMTP_*`: custom emails (optional)

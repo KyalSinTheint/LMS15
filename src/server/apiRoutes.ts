@@ -415,8 +415,8 @@ function sendJson(res: ServerResponse, statusCode: number, data: any) {
 // ---------------------------------------------------------------------
 function supabaseEnv() {
   const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+  const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const configured = Boolean(url && anonKey && !url.includes('your-project'));
   return { url, anonKey, serviceKey, configured };
 }
@@ -524,7 +524,7 @@ export async function handleApiRequest(
       if (!service) {
         return sendJson(res, 501, {
           success: false,
-          message: 'Inviting users requires SUPABASE_SERVICE_ROLE_KEY in the server environment.',
+          message: 'Inviting users requires SUPABASE_SECRET_KEY (service role key) in the server environment.',
         });
       }
 
@@ -625,7 +625,7 @@ export async function handleApiRequest(
 
       // Check if Supabase Storage is live and configured
       const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+      const supabaseKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
       if (supabaseUrl && supabaseKey && !supabaseUrl.includes('your-project')) {
         try {
@@ -739,7 +739,7 @@ export async function handleApiRequest(
 
         // Also check if Supabase storage is active and try mirroring
         const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+        const supabaseKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
         if (supabaseUrl && supabaseKey && !supabaseUrl.includes('your-project')) {
           try {
             const supabase = createClient(supabaseUrl, supabaseKey);
@@ -1119,7 +1119,7 @@ export async function handleApiRequest(
         }
 
         // Support private Supabase Storage buckets if configured
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+        const supabaseKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
         if (supabaseKey && targetUrl.includes('.supabase.co/storage/')) {
           fetchHeaders['apikey'] = supabaseKey;
           fetchHeaders['authorization'] = `Bearer ${supabaseKey}`;
