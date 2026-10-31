@@ -48,9 +48,11 @@ import { LoginPage } from './components/auth/LoginPage';
 import { RegisterPage } from './components/auth/RegisterPage';
 import { PendingApprovalPage } from './components/auth/PendingApprovalPage';
 import { AccountRestrictedPage } from './components/auth/AccountRestrictedPage';
+import { SupabaseSetupRequired, AuthLoadingScreen, ResetPasswordPage } from './components/auth/AuthStatusScreens';
+import { isSupabaseConfigured } from './lib/supabase';
 
 function AppContent() {
-  const { currentUser, isAuthenticated, signOut, refreshData } = useLms();
+  const { currentUser, isAuthenticated, isAuthReady, isPasswordRecovery, signOut, refreshData } = useLms();
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
   const [activeTab, setActiveTab] = useState<NavTabId>('our-company');
   const [activeSubpage, setActiveSubpage] = useState<OurCompanySubpage>('overview');
@@ -108,6 +110,20 @@ function AppContent() {
     : isPlaceholderMode
     ? defaultCompanyContent
     : samplePreviewCompanyContent;
+
+  // 0. Supabase is required: no local fallback storage
+  if (!isSupabaseConfigured()) {
+    return <SupabaseSetupRequired />;
+  }
+
+  if (!isAuthReady) {
+    return <AuthLoadingScreen />;
+  }
+
+  // Arrived via a password-reset email link
+  if (isPasswordRecovery) {
+    return <ResetPasswordPage />;
+  }
 
   // 1. Unauthenticated visitors MUST NOT access protected Admin or User Panel
   if (!isAuthenticated) {

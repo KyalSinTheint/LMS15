@@ -208,7 +208,7 @@ export const AdminSettingsView: React.FC = () => {
                     isSupabaseLive ? 'bg-emerald-600 animate-pulse' : 'bg-amber-600'
                   }`}
                 />
-                <span>{isSupabaseLive ? 'Connected & Live' : 'Local Fallback / Standby'}</span>
+                <span>{isSupabaseLive ? 'Connected & Live' : 'Connection issue'}</span>
               </span>
 
               <button

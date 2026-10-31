@@ -7,11 +7,8 @@ import {
   AlertCircle,
   ArrowRight,
   ShieldCheck,
-  CheckCircle2,
   Sparkles,
   KeyRound,
-  ShieldAlert,
-  Clock,
   ExternalLink,
   BookOpen,
 } from 'lucide-react';
@@ -67,12 +64,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleQuickLogin = (idVal: string, pwVal: string) => {
-    setIdentifier(idVal);
-    setPassword(pwVal);
-    setErrorMessage(null);
   };
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
@@ -241,62 +232,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </button>
           </div>
 
-          {/* Quick Persona Switcher for Reviewers / Evaluators */}
-          <div className="pt-3 border-t border-slate-100 space-y-2">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-              <span>Quick Test Accounts</span>
-              <span className="text-[10px] text-[#176B98] font-semibold lowercase">click to autofill</span>
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin', 'admin123')}
-                className="p-2 rounded-xl bg-slate-50 hover:bg-[#F3F8FB] text-slate-800 border border-slate-200 text-left transition-colors cursor-pointer group"
-              >
-                <div className="font-bold flex items-center gap-1 group-hover:text-[#176B98]">
-                  <ShieldCheck className="w-3 h-3 text-[#176B98]" />
-                  <span>Admin</span>
-                </div>
-                <div className="text-[10px] text-slate-500 font-mono mt-0.5">admin / admin123</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('daw.thida@kbzlife.com', 'password123')}
-                className="p-2 rounded-xl bg-slate-50 hover:bg-[#F3F8FB] text-slate-800 border border-slate-200 text-left transition-colors cursor-pointer group"
-              >
-                <div className="font-bold flex items-center gap-1 group-hover:text-[#176B98]">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                  <span>Approved User</span>
-                </div>
-                <div className="text-[10px] text-slate-500 font-mono mt-0.5">daw.thida@kbzlife...</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('phyo.wai@kbzlife.com', 'password123')}
-                className="p-2 rounded-xl bg-slate-50 hover:bg-[#F3F8FB] text-slate-800 border border-slate-200 text-left transition-colors cursor-pointer group"
-              >
-                <div className="font-bold flex items-center gap-1 group-hover:text-[#176B98]">
-                  <Clock className="w-3 h-3 text-amber-600" />
-                  <span>Pending User</span>
-                </div>
-                <div className="text-[10px] text-slate-500 font-mono mt-0.5">phyo.wai@kbzlife...</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('susp.user@kbzlife.com', 'password123')}
-                className="p-2 rounded-xl bg-slate-50 hover:bg-[#F3F8FB] text-slate-800 border border-slate-200 text-left transition-colors cursor-pointer group"
-              >
-                <div className="font-bold flex items-center gap-1 group-hover:text-red-700">
-                  <ShieldAlert className="w-3 h-3 text-red-600" />
-                  <span>Suspended User</span>
-                </div>
-                <div className="text-[10px] text-slate-500 font-mono mt-0.5">susp.user@kbzlife...</div>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 

@@ -31,8 +31,8 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   const { loginWithCredentials, changePassword, requestPasswordReset } = useLms();
 
   const [mode, setMode] = useState<'login' | 'forgot' | 'first-change'>('login');
-  const [identifier, setIdentifier] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Forgot password email
-  const [resetEmail, setResetEmail] = useState('admin@kbzlife.com');
+  const [resetEmail, setResetEmail] = useState('');
 
   if (!isOpen) return null;
 
@@ -165,26 +165,6 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
           {/* MODE 1: LOGIN FORM */}
           {mode === 'login' && (
             <form onSubmit={handleLogin} className="space-y-4">
-              {/* Quick Fill Helper for Tester */}
-              <div className="p-3 rounded-xl bg-[#F3F8FB] border border-slate-200 flex items-center justify-between text-xs">
-                <div>
-                  <span className="font-bold text-[#176B98]">Initial Development Credentials:</span>
-                  <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                    User: <code>admin</code> · Pass: <code>admin123</code>
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIdentifier('admin');
-                    setPassword('admin123');
-                  }}
-                  className="px-2.5 py-1 rounded-md bg-[#176B98] text-white text-[10px] font-bold hover:bg-[#12567a] transition-colors cursor-pointer"
-                >
-                  Quick Fill
-                </button>
-              </div>
-
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Username or Email

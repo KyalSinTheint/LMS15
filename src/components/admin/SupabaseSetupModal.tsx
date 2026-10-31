@@ -21,19 +21,15 @@ export const SupabaseSetupModal: React.FC<SupabaseSetupModalProps> = ({ isOpen, 
   const config = getSupabaseConfig();
 
   const handleCopySql = () => {
-    const sqlUrl = '/supabase/migrations/20261021_init_kbzlife_lms.sql';
-    fetch(sqlUrl)
-      .then((res) => res.text())
-      .then((text) => {
-        navigator.clipboard.writeText(text);
+    navigator.clipboard
+      .writeText(
+        '-- Run each file in supabase/migrations (in filename order) in the Supabase SQL editor,\n-- then optionally supabase/seed.sql for demo content.'
+      )
+      .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2500);
       })
-      .catch(() => {
-        navigator.clipboard.writeText('-- Run supabase/migrations/20261021_init_kbzlife_lms.sql in your Supabase SQL editor');
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
-      });
+      .catch(() => {});
   };
 
   const handleTestConnection = async () => {
@@ -88,12 +84,12 @@ export const SupabaseSetupModal: React.FC<SupabaseSetupModalProps> = ({ isOpen, 
               <h3 className="font-bold text-sm">
                 {isSupabaseLive
                   ? 'Connected to Live Supabase Project'
-                  : 'Operating in High-Fidelity Reactive Storage Mode'}
+                  : 'Some Supabase data could not be loaded'}
               </h3>
               <p className="text-xs mt-1 leading-relaxed opacity-90">
                 {isSupabaseLive
                   ? 'All changes are actively synchronized with your Supabase PostgreSQL database with Row Level Security (RLS) enforcement.'
-                  : 'Currently operating with the built-in local database engine. All administrator updates (user status, course assignments, channel access, and audit logs) are persisted and immediately reflected across the User Panel.'}
+                  : 'The app is connected to Supabase, but at least one table failed to load. This usually means a migration in supabase/migrations has not been applied yet. Check the browser console for the table name.'}
               </p>
             </div>
           </div>
@@ -128,11 +124,11 @@ export const SupabaseSetupModal: React.FC<SupabaseSetupModalProps> = ({ isOpen, 
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00529B] hover:bg-[#003366] text-white text-xs font-medium cursor-pointer transition-colors"
               >
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied SQL!' : 'Copy Migration SQL'}</span>
+                <span>{copied ? 'Copied!' : 'Copy Setup Steps'}</span>
               </button>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              The migration file <code className="bg-slate-100 px-1.5 py-0.5 rounded text-[#00529B]">supabase/migrations/20261021_init_kbzlife_lms.sql</code> configures the 7 normalized tables (<code className="text-slate-800">profiles, courses, channels, course_enrollments, channel_access, learning_progress, admin_audit_logs</code>), secure RLS policies, trigger procedures, and initial KBZLife content.
+              Run every file in <code className="bg-slate-100 px-1.5 py-0.5 rounded text-[#00529B]">supabase/migrations</code> in filename order in the Supabase SQL editor (tables, RLS policies, auth triggers, quiz and progress functions), then optionally <code className="bg-slate-100 px-1.5 py-0.5 rounded text-[#00529B]">supabase/seed.sql</code> for demo content. See the README for details.
             </p>
           </div>
 

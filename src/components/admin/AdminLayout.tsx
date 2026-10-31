@@ -295,7 +295,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
                 Action Required
               </span>
               <span className="font-medium text-slate-950">
-                You are currently signed in with the default temporary administrator password (<code>admin123</code>). Please establish your permanent credentials.
+                Your account was created with a temporary password. Please set your permanent password now.
               </span>
             </div>
             <button
