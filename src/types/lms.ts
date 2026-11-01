@@ -19,6 +19,19 @@ export interface Profile {
   last_sign_in_at?: string;
 }
 
+/** LMS-wide settings (Admin → Settings), stored in public.app_settings */
+export interface AppSettings {
+  allow_self_registration: boolean;
+  require_admin_approval: boolean;
+  /** e.g. ['kbzlife.com']; empty = any email domain */
+  allowed_email_domains: string[];
+  email_password_reset_enabled: boolean;
+  support_email: string;
+  support_phone?: string | null;
+  updated_at?: string | null;
+  updated_by_name?: string | null;
+}
+
 /** A sign-in page request for an admin to issue a temporary password. */
 export interface PasswordResetRequest {
   id: string;
@@ -261,6 +274,7 @@ export type AuditAction =
   | 'user_invited'
   | 'password_changed'
   | 'password_reset_triggered'
+  | 'settings_updated'
   | 'course_assigned'
   | 'course_revoked'
   | 'channel_granted'

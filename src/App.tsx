@@ -53,7 +53,7 @@ import { SupabaseSetupRequired, AuthLoadingScreen, ResetPasswordPage, TemporaryP
 import { isSupabaseConfigured } from './lib/supabase';
 
 function AppContent() {
-  const { currentUser, isAuthenticated, isAuthReady, isPasswordRecovery, signOut, refreshData } = useLms();
+  const { currentUser, isAuthenticated, isAuthReady, isPasswordRecovery, signOut, refreshData, appSettings } = useLms();
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
   // Sign-up → pending → approved flow
   const [sawPendingThisSession, setSawPendingThisSession] = useState(false);
@@ -164,7 +164,7 @@ function AppContent() {
 
   // 1. Unauthenticated visitors MUST NOT access protected Admin or User Panel
   if (!isAuthenticated) {
-    if (authView === 'register' || window.location.hash === '#register') {
+    if (appSettings.allow_self_registration && (authView === 'register' || window.location.hash === '#register')) {
       return (
         <RegisterPage
           onNavigateToLogin={() => {
