@@ -450,7 +450,11 @@ const errorMessage = (err: unknown): string => {
   if (typeof err === 'string') return err;
   if (err instanceof Error) return err.message;
   const anyErr = err as { message?: string; details?: string };
-  return anyErr.message || anyErr.details || JSON.stringify(err);
+  const msg = anyErr.message || anyErr.details || JSON.stringify(err);
+  if (/'video_parts' column/.test(msg)) {
+    return `${msg}. This video was uploaded in parts, which needs a new database column: run supabase/migrations/20261104_video_parts.sql once in the Supabase SQL Editor, then save again.`;
+  }
+  return msg;
 };
 
 // Foreign-key columns: an empty string from a form select must be stored as NULL.

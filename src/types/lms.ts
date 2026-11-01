@@ -383,6 +383,18 @@ export interface LdTeamMember {
   updated_at: string;
 }
 
+/**
+ * One part of a long video that was split on upload (Supabase Free allows
+ * 50 MB per file). Parts play back-to-back as one video.
+ */
+export interface VideoPart {
+  url: string;
+  path?: string;
+  size: number; // bytes
+  start: number; // seconds from the beginning of the whole video
+  duration: number; // seconds
+}
+
 // License Training Lesson (Video or PDF with direct device upload support up to 1GB)
 export type LicenseContentType = 'video' | 'pdf';
 export type LessonContentType = LicenseContentType;
@@ -402,6 +414,7 @@ export interface LicenseTrainingLesson {
   file_size_formatted?: string;
   duration?: string; // e.g. "18:45"
   video_duration?: string;
+  video_parts?: VideoPart[] | null;
   thumbnail_url?: string;
   thumbnail_path?: string;
   category?: string;
@@ -447,6 +460,7 @@ export interface SkillDevelopmentResource {
   file_size_formatted?: string;
   duration?: string;
   video_duration?: string;
+  video_parts?: VideoPart[] | null;
   thumbnail_url?: string;
   thumbnail_path?: string;
   instructor_name?: string;

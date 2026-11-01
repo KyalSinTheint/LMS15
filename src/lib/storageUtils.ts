@@ -5,6 +5,7 @@
 
 import * as tus from 'tus-js-client';
 import { getSupabaseClient, getSupabaseConfig, isSupabaseStorageUrl } from './supabase';
+import type { VideoPart } from '../types/lms';
 
 /** Authorization header carrying the signed-in user's Supabase access token. */
 async function authHeader(): Promise<Record<string, string>> {
@@ -444,6 +445,121 @@ export async function uploadLargeFileChunked(
   }
 
   return { success: false, error: 'Upload completed but server did not return a valid URL.' };
+}
+
+/** 75 → "1:15", 3725 → "1:02:05" */
+export function formatVideoClock(totalSeconds: number): string {
+  const t = Math.max(0, Math.floor(totalSeconds));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = String(t % 60).padStart(2, '0');
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+}
+
+/** Reads a local video's length in seconds; 0 when the browser cannot tell. */
+function probeVideoDuration(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    const url = URL.createObjectURL(file);
+    const done = (value: number) => {
+      URL.revokeObjectURL(url);
+      resolve(Number.isFinite(value) && value > 0 ? value : 0);
+    };
+    video.preload = 'metadata';
+    video.onloadedmetadata = () => done(video.duration);
+    video.onerror = () => done(0);
+    video.src = url;
+  });
+}
+
+export interface VideoUploadResult extends UploadResult {
+  /** Set when the video was larger than the storage limit and was uploaded in parts. */
+  parts?: VideoPart[];
+  /** Whole-video length in seconds, when known. */
+  durationSeconds?: number;
+}
+
+/**
+ * Uploads a lesson video. Videos over ~48 MB are split into parts under the
+ * 50 MB Supabase per-file limit (in the browser, without re-encoding) and each
+ * part is uploaded; learners see them play back-to-back as one video.
+ */
+export async function uploadVideoWithAutoSplit(
+  file: File,
+  bucket: string,
+  onStatus: (percent: number, message: string) => void,
+  signal?: AbortSignal
+): Promise<VideoUploadResult> {
+  const upload = (f: File, onProgress: (pct: number, loaded: number, total: number) => void) =>
+    uploadLargeFileChunked(f, bucket, onProgress, signal);
+
+  const { needsVideoSplit, splitVideoIntoParts } = await import('./videoSplitter');
+  if (!getSupabaseClient() || !needsVideoSplit(file)) {
+    const result = await upload(file, (pct, loaded, total) =>
+      onStatus(pct, `Uploading: ${formatBytes(loaded)} / ${formatBytes(total)} (${pct}%)`)
+    );
+    return { ...result, parts: [] };
+  }
+
+  const knownDuration = await probeVideoDuration(file);
+  let pieces;
+  try {
+    pieces = await splitVideoIntoParts(file, {
+      knownDuration,
+      signal,
+      // Splitting is the first 30% of the progress bar, uploading the remaining 70%
+      onProgress: (p) => {
+        const base = p.stage === 'loading' ? 0 : p.stage === 'splitting' ? 2 : 25;
+        const span = p.stage === 'loading' ? 2 : p.stage === 'splitting' ? 23 : 5;
+        onStatus(Math.round(base + (p.percent / 100) * span), p.message);
+      },
+    });
+  } catch (err) {
+    if ((err as Error)?.name === 'AbortError') return { success: false, error: 'Upload was cancelled by user.' };
+    return { success: false, error: (err as Error)?.message || 'The video could not be split into parts.' };
+  }
+
+  const totalBytes = pieces.reduce((sum, p) => sum + p.file.size, 0);
+  const parts: VideoPart[] = [];
+  let doneBytes = 0;
+  for (let i = 0; i < pieces.length; i++) {
+    const piece = pieces[i];
+    const result = await upload(piece.file, (_pct, loaded) => {
+      const sent = doneBytes + loaded;
+      const pct = Math.round(30 + (sent / Math.max(1, totalBytes)) * 70);
+      onStatus(
+        Math.min(100, pct),
+        `Uploading part ${i + 1} of ${pieces.length}: ${formatBytes(sent)} / ${formatBytes(totalBytes)}`
+      );
+    });
+    if (!result.success || !result.url) {
+      return {
+        success: false,
+        error: `Part ${i + 1} of ${pieces.length} could not be uploaded. ${result.error || ''}`.trim(),
+      };
+    }
+    doneBytes += piece.file.size;
+    parts.push({
+      url: result.url,
+      path: result.path,
+      size: piece.file.size,
+      start: piece.start,
+      duration: piece.duration,
+    });
+  }
+
+  const durationSeconds = parts.reduce((sum, p) => sum + p.duration, 0) || knownDuration;
+  return {
+    success: true,
+    url: parts[0].url,
+    path: parts[0].path,
+    storage_path: parts[0].path,
+    fileName: file.name,
+    size: file.size,
+    formattedSize: formatBytes(file.size),
+    parts,
+    durationSeconds,
+  };
 }
 
 /**
