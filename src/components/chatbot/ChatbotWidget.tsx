@@ -20,6 +20,8 @@ interface Message {
   source?: string;
   productId?: string;
   related?: KnowledgeItem[];
+  /** Playful line shown before the answer */
+  intro?: string;
   /** Offer to send this question to the L&D team */
   askable?: string;
   tone?: 'info' | 'team';
@@ -30,31 +32,97 @@ const MARGIN = 12;
 const POS_KEY = 'kbz_assistant_pos';
 const CHAT_KEY = 'kbz_assistant_chat';
 
+/**
+ * Professor Panda's voice: a playful, cheeky trainer, never rude.
+ * Facts always come word-for-word from the approved knowledge; only the
+ * friendly lines around them are playful. Several variants keep it fresh.
+ */
 const T = {
   en: {
-    greeting: "Hello! I'm Sensei, your KBZ Life learning assistant. Ask me about our products, policies or procedures — in English or Myanmar.",
-    notFound: "Sorry, I couldn't find this in our approved materials. Would you like to send the question to the L&D team?",
-    send: 'Send to L&D team',
-    sent: "Sent! The L&D team will answer you here. You'll see a notice on my icon when they reply.",
-    related: 'Related',
+    greeting:
+      "Psst! Professor Panda here 🐼 — your slightly cheeky KBZ Life trainer. Ask me anything about our products, policies or procedures. There are no silly questions… well, almost none 😄",
+    intros: [
+      'Ooh, good one! I knew this before my morning bamboo 🎋',
+      'Easy peasy! Write this down — there might be a pop quiz later 😉',
+      'Look what I found in my secret study notes 📚',
+      'Teacher’s pet alert! Here you go 🐼✨',
+      'Aha, I was hoping someone would ask that! 🤓',
+      'Hold my bamboo… here’s the answer 🎋',
+    ],
+    notFound: [
+      "Hmm… you've stumped the Professor! 🐼💦 That's not in my notes yet. Shall I pass it to the L&D team?",
+      "Even pandas don't know everything (shocking, I know 😅). Want me to send this to the L&D team?",
+      'Ooh, a tricky one! My notes are silent on this 🤐 Shall I ask the L&D team for you?',
+    ],
+    send: 'Ask the L&D team for me',
+    sent: [
+      "Done! I've slipped your question to the L&D team 📨 I'll wave at you from my icon when they answer 👋",
+      'Sent! The L&D team has your question 📨 Keep studying while you wait — I’m watching 👀😄',
+    ],
+    hello: [
+      'Hello hello! 🐼 Ready to learn something? Ask me about any product, policy or procedure.',
+      'Hey there, superstar! 🌟 What shall we learn today?',
+    ],
+    thanks: [
+      "You're welcome! Now go protect some families 💪🐼",
+      'Anytime! Professor Panda is always on duty (except during nap time 😴)',
+    ],
+    who: [
+      "I'm Professor Panda 🐼🎓 — KBZ Life's learning buddy. I answer from our approved training materials, so you can trust me… mostly my jokes, not so much 😄",
+    ],
+    related: 'Curious? Try these too:',
     source: 'Source',
     openProduct: 'Open in Product Knowledge Hub',
     placeholder: 'Ask a question…',
-    teamAnswer: 'The L&D team answered your question',
+    teamAnswer: 'Ding ding! 🔔 The L&D team answered',
     disclaimer: 'For learning reference. The policy document is always final.',
   },
   my: {
-    greeting: 'မင်္ဂလာပါ။ ကျွန်တော်က KBZ Life ရဲ့ သင်ယူမှုအကူ Sensei ပါ။ Product၊ မူဝါဒ၊ လုပ်ထုံးလုပ်နည်းများအကြောင်း မြန်မာ သို့မဟုတ် English ဖြင့် မေးနိုင်ပါတယ်။',
-    notFound: 'တောင်းပန်ပါတယ်၊ အတည်ပြုထားသော စာရွက်စာတမ်းများထဲတွင် ဤအဖြေကို မတွေ့ပါ။ L&D အဖွဲ့သို့ မေးခွန်းပို့လိုပါသလား?',
-    send: 'L&D အဖွဲ့သို့ ပို့မည်',
-    sent: 'ပို့ပြီးပါပြီ။ L&D အဖွဲ့မှ ဤနေရာတွင် ပြန်ဖြေပေးပါမည်။',
-    related: 'ဆက်စပ်',
+    greeting:
+      'ဟိုင်း! Professor Panda ပါ 🐼 — KBZ Life ရဲ့ နည်းနည်းဆော့တတ်တဲ့ trainer လေးပေါ့။ Product၊ မူဝါဒ၊ လုပ်ထုံးလုပ်နည်း ဘာမဆို မေးပါ။ မေးခွန်းညံ့တယ်ဆိုတာ မရှိပါဘူး… သိပ်တော့ မရှိပါဘူး 😄',
+    intros: [
+      'အိုး… မေးခွန်းကောင်းလေးပဲ! ဝါးမစားခင်ကတည်းက သိထားတာ 🎋',
+      'လွယ်လွယ်လေးပါ! မှတ်ထားနော်၊ နောက်မှ quiz စစ်မှာ 😉',
+      'Professor ရဲ့ လျှို့ဝှက်မှတ်စုထဲမှာ တွေ့တယ် 📚',
+      'ဒီမှာ အဖြေပါ 🐼✨ စာကျက်ကြတာပေါ့!',
+      'အာ… ဒါကို တစ်ယောက်ယောက် မေးမယ်လို့ စောင့်နေတာ 🤓',
+    ],
+    notFound: [
+      'ဟင်… Professor ကိုတောင် ခေါင်းကုတ်သွားစေတယ်နော် 🐼💦 ကျွန်တော့်မှတ်စုထဲ မရှိသေးဘူး။ L&D အဖွဲ့ကို မေးပေးရမလား?',
+      'Panda တွေလည်း အကုန်မသိဘူးလေ 😅 ဒီမေးခွန်းကို L&D အဖွဲ့ဆီ ပို့ပေးရမလား?',
+    ],
+    send: 'L&D အဖွဲ့ကို မေးပေးပါ',
+    sent: [
+      'ပို့ပြီးပြီ 📨 L&D အဖွဲ့ ဖြေတာနဲ့ icon ကနေ လက်ပြပြီး အသိပေးမယ်နော် 👋',
+      'L&D အဖွဲ့ဆီ ရောက်သွားပြီ 📨 စောင့်နေတုန်း စာဆက်ကျက်ထားနော် — ကြည့်နေတယ် 👀😄',
+    ],
+    hello: ['မင်္ဂလာပါ! 🐼 ဒီနေ့ ဘာသင်ကြမလဲ? Product၊ မူဝါဒ ဘာမဆို မေးပါ။', 'ဟိုင်း စူပါစတား! 🌟 ဘာမေးချင်လဲ?'],
+    thanks: ['ရပါတယ်! ကဲ… သွားပြီး မိသားစုတွေကို ကာကွယ်ပေးလိုက်တော့ 💪🐼', 'အမြဲကူညီမယ်! (အိပ်ချိန်မှာတော့ မဟုတ်ဘူးနော် 😴)'],
+    who: ['ကျွန်တော်က Professor Panda ပါ 🐼🎓 — KBZ Life ရဲ့ သင်ယူမှု သူငယ်ချင်းလေး။ အတည်ပြုထားတဲ့ သင်ခန်းစာတွေထဲကနေပဲ ဖြေတာမို့ ယုံလို့ရတယ် (ဟာသတွေကလွဲရင်ပေါ့ 😄)'],
+    related: 'ဒါတွေလည်း စိတ်ဝင်စားမလား:',
     source: 'ရင်းမြစ်',
     openProduct: 'Product Knowledge Hub တွင် ဖွင့်ရန်',
     placeholder: 'မေးခွန်း ရိုက်ထည့်ပါ…',
-    teamAnswer: 'L&D အဖွဲ့မှ သင့်မေးခွန်းကို ဖြေထားပါသည်',
+    teamAnswer: 'တင်တင်တန်! 🔔 L&D အဖွဲ့က ဖြေထားပြီ',
     disclaimer: 'သင်ယူရန်အတွက်သာ ဖြစ်ပြီး policy စာတမ်းကို အတည်ယူပါ။',
   },
+};
+
+// Random line, never the same one twice in a row
+let lastLine = '';
+const pick = (options: string[]) => {
+  const pool = options.length > 1 ? options.filter((o) => o !== lastLine) : options;
+  lastLine = pool[Math.floor(Math.random() * pool.length)];
+  return lastLine;
+};
+
+/** Small talk that should get a friendly reply instead of a knowledge search. */
+const smallTalk = (q: string): 'hello' | 'thanks' | 'who' | null => {
+  const t = q.trim().toLowerCase().replace(/[!?.။,]+/g, '');
+  if (/^(hi|hello|hey|hii+|yo|good (morning|afternoon|evening)|mingalaba|မင်္ဂလာပါ?|ဟိုင်း|ဟယ်လို)( (there|professor|panda))?$/.test(t)) return 'hello';
+  if (/^(thanks?|thank you( so much)?|thx|ty|cheers|ကျေးဇူး(တင်ပါတယ်|ပဲ|ပါ)?|ကျေးဇူးတင်တယ်)$/.test(t)) return 'thanks';
+  if (/^(who are you|what are you|your name|ဘယ်သူလဲ|နာမည်ဘယ်လိုခေါ်လဲ|မင်းဘယ်သူလဲ)$/.test(t)) return 'who';
+  return null;
 };
 
 const uid = () => Math.random().toString(36).slice(2);
@@ -214,9 +282,10 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
     return [...faqs, ...productQs].slice(0, 4);
   }, [entries, publishedProducts, lang]);
 
-  const answerFromItem = (item: KnowledgeItem): Message => ({
+  const answerFromItem = (item: KnowledgeItem, l: 'en' | 'my' = lang): Message => ({
     id: uid(),
     role: 'bot',
+    intro: pick(T[l].intros),
     title: item.question?.split('\n')[0] || item.title || undefined,
     text: trimAnswer(item.content),
     source: item.source,
@@ -230,19 +299,24 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
     setLang(l);
     setInput('');
     const userMsg: Message = { id: uid(), role: 'user', text: question };
+    const chat = smallTalk(question);
+    if (chat) {
+      setMessages((prev) => [...prev, userMsg, { id: uid(), role: 'bot', text: pick(T[l][chat]) }]);
+      return;
+    }
     const hits = index.search(question, 4);
     const min = minAnswerScore(question);
     let reply: Message;
     if (hits.length && hits[0].score >= min) {
       reply = {
-        ...answerFromItem(hits[0].item),
+        ...answerFromItem(hits[0].item, l),
         related: hits
           .slice(1)
           .filter((h) => h.score >= min * 0.8)
           .map((h) => h.item),
       };
     } else {
-      reply = { id: uid(), role: 'bot', text: T[l].notFound, askable: question, tone: 'info' };
+      reply = { id: uid(), role: 'bot', text: pick(T[l].notFound), askable: question, tone: 'info' };
     }
     setMessages((prev) => [...prev, userMsg, reply]);
   };
@@ -253,7 +327,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
       await askTeam(currentUser.id, currentUser.full_name, msg.askable);
       setMessages((prev) => [
         ...prev.map((m) => (m.id === msg.id ? { ...m, askable: undefined } : m)),
-        { id: uid(), role: 'bot', text: T[isMyanmar(msg.askable!) ? 'my' : 'en'].sent, tone: 'info' },
+        { id: uid(), role: 'bot', text: pick(T[isMyanmar(msg.askable!) ? 'my' : 'en'].sent), tone: 'info' },
       ]);
     } catch (err) {
       showToast('error', 'Not sent', (err as Error).message);
@@ -286,7 +360,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
       {open && (
         <div
           role="dialog"
-          aria-label="KBZ Life Assistant"
+          aria-label="Professor Panda — KBZ Life Assistant"
           style={panelStyle}
           className="fixed z-[60] inset-0 sm:inset-auto sm:w-[380px] bg-white sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
         >
@@ -294,7 +368,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
           <div className="bg-gradient-to-r from-[#003366] to-[#176B98] text-white px-4 py-3 flex items-center gap-3 shrink-0">
             <MentorMascot className="w-10 h-10 shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="font-extrabold text-sm leading-tight">Sensei · KBZ Life Assistant</p>
+              <p className="font-extrabold text-sm leading-tight">Professor Panda 🐼</p>
               <p className="text-[11px] text-sky-100/90 truncate">မြန်မာ / English · {t.disclaimer}</p>
             </div>
             <button
@@ -341,6 +415,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
                 </div>
               ) : (
                 <BotBubble key={m.id} tone={m.tone}>
+                  {m.intro && <p className="text-[12px] italic text-[#176B98] mb-1.5">{m.intro}</p>}
                   {m.title && <p className="font-bold text-slate-900 mb-1">{m.title}</p>}
                   <p className="whitespace-pre-wrap break-words">{m.text}</p>
                   {m.source && (
@@ -443,9 +518,9 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
             setOpen((o) => !o);
           }
         }}
-        aria-label={open ? 'Close the KBZ Life Assistant' : 'Open the KBZ Life Assistant (drag to move)'}
+        aria-label={open ? 'Close Professor Panda, the KBZ Life Assistant' : 'Open Professor Panda, the KBZ Life Assistant (drag to move)'}
         aria-expanded={open}
-        title="Sensei · KBZ Life Assistant (drag to move)"
+        title="Professor Panda · KBZ Life Assistant (drag to move)"
         style={{ left: pos.x, top: pos.y, width: BUTTON, height: BUTTON, touchAction: 'none' }}
         className={`fixed z-[61] rounded-full shadow-xl select-none ${
           dragging ? 'cursor-grabbing scale-105' : 'cursor-pointer hover:scale-105 transition-transform'
