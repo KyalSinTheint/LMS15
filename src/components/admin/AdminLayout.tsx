@@ -7,7 +7,6 @@ import {
   ShieldCheck,
   Clock,
   ArrowLeft,
-  Database,
   ShieldAlert,
   ChevronRight,
   LogOut,
@@ -180,21 +179,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
                 ) : (
                   <Moon className="w-4 h-4 text-sky-200" />
                 )}
-              </button>
-
-              {/* Database status button */}
-              <button
-                onClick={() => setIsSupabaseModalOpen(true)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border ${
-                  isSupabaseLive
-                    ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900/60'
-                    : 'bg-amber-950/60 text-amber-300 border-amber-500/40 hover:bg-amber-900/60'
-                }`}
-              >
-                <Database className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">
-                  {isSupabaseLive ? 'Supabase Live' : 'Supabase Config'}
-                </span>
               </button>
 
               {/* Refresh data */}

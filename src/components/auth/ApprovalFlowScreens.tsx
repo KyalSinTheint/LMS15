@@ -1,17 +1,27 @@
 import React from 'react';
-import { ArrowRight, Check, Clock, LogIn, Mail, MailCheck, PartyPopper, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Check, Clock, LogIn, MailCheck, ShieldCheck } from 'lucide-react';
 
 // ---------------------------------------------------------------------
 // Shared building blocks for the sign-up → admin review → approved flow
 // ---------------------------------------------------------------------
 
-export const AuthBrandHeader: React.FC<{ subtitle: string }> = ({ subtitle }) => (
+const KBZ_LOGO_SRC = '/assets/aistudio/KBZ_Logo_28e9d8fb.png';
+
+/** The KBZ LIFE logo (same artwork as the nav bar) on a white tile, for card headers. */
+export const KbzLogoBadge: React.FC = () => (
+  <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center shrink-0 shadow-lg p-1.5">
+    <img src={KBZ_LOGO_SRC} alt="KBZ LIFE Insurance" className="w-full h-full object-contain" draggable={false} />
+  </div>
+);
+
+/** Same brand lockup as the portal nav bar. */
+export const AuthBrandHeader: React.FC<{ subtitle?: string }> = () => (
   <div className="w-full max-w-lg text-center mb-6">
     <div className="inline-flex items-center gap-3 bg-white px-4 py-2.5 rounded-2xl shadow-xs border border-slate-200/80">
-      <img src="/assets/aistudio/KBZ_Logo_28e9d8fb.png" alt="KBZ LIFE Insurance" className="h-10 w-auto object-contain" />
+      <img src={KBZ_LOGO_SRC} alt="KBZ LIFE Insurance" className="h-11 w-auto object-contain" />
       <div className="text-left border-l border-slate-200 pl-3">
         <h1 className="text-base font-extrabold text-[#176B98] tracking-tight leading-none">KBZ LIFE Insurance</h1>
-        <p className="text-[10px] text-[#737373] font-semibold uppercase tracking-wider mt-0.5">{subtitle}</p>
+        <p className="text-[10px] text-[#737373] font-semibold uppercase tracking-wider mt-0.5">Employee Learning Portal</p>
       </div>
     </div>
   </div>
@@ -116,9 +126,7 @@ export const RegistrationSubmittedPage: React.FC<{
     <AuthPageShell subtitle="Employee Learning Portal · Registration">
       <div className="bg-gradient-to-r from-[#003366] to-[#176B98] text-white p-7">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-            {needsEmailConfirmation ? <Mail className="w-7 h-7" /> : <Clock className="w-7 h-7" />}
-          </div>
+          <KbzLogoBadge />
           <div>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-400/20 text-amber-200 border border-amber-300/30">
               Status: Pending approval
@@ -178,9 +186,7 @@ export const AccountApprovedPage: React.FC<{
     <AuthPageShell subtitle="Employee Learning Portal · Account Approved">
       <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-7" role="status" aria-live="polite">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-white text-emerald-600 flex items-center justify-center shrink-0 shadow-lg">
-            <PartyPopper className="w-7 h-7" />
-          </div>
+          <KbzLogoBadge />
           <div>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white border border-white/30">
               Status: Approved

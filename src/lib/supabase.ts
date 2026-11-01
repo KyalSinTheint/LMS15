@@ -104,3 +104,19 @@ export const testSupabaseConnection = async (): Promise<{
     };
   }
 };
+
+/**
+ * True for public files in this project's Supabase Storage. Those can be
+ * loaded directly by the browser (Supabase sends CORS headers), so they do
+ * not need the Node server's /api proxy routes, which don't exist on Vercel.
+ */
+export const isSupabaseStorageUrl = (fileUrl?: string | null): boolean => {
+  if (!fileUrl) return false;
+  try {
+    const u = new URL(fileUrl);
+    const projectHost = supabaseUrl ? new URL(supabaseUrl).host : '';
+    return (u.host === projectHost || u.host.endsWith('.supabase.co')) && u.pathname.includes('/storage/v1/');
+  } catch {
+    return false;
+  }
+};

@@ -433,15 +433,6 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
 
           {/* Zone 3: Primary Action & Profile Switcher & Theme Switcher */}
           <div className="hidden lg:flex items-center gap-2.5 shrink-0">
-            {/* Top Performers Link */}
-            <button
-              onClick={() => handleSubpageClick('top-performers')}
-              className="px-3 py-2 text-xs font-semibold text-[#176B98] dark:text-[#38bdf8] bg-[#F3F8FB] dark:bg-slate-800 border border-[#176B98]/20 dark:border-slate-700 rounded-lg hover:bg-[#176B98] hover:text-white dark:hover:bg-[#176B98] dark:hover:text-white transition-all whitespace-nowrap shadow-2xs cursor-pointer flex items-center gap-1.5"
-            >
-              <Award className="w-3.5 h-3.5 text-[#176B98] dark:text-[#38bdf8]" />
-              <span>Top Performers</span>
-            </button>
-
             {/* Dark / Light Mode Toggle (Desktop) */}
             <button
               type="button"

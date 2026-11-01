@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { LicenseTrainingLesson, LessonProgressInfo } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
+import { isSupabaseStorageUrl } from '../../lib/supabase';
 import { ViewerWatermark } from '../common/ViewerWatermark';
 import {
   X,
@@ -38,7 +39,10 @@ export const LicenseVideoPlayerModal: React.FC<LicenseVideoPlayerModalProps> = (
   const [seekWarning, setSeekWarning] = useState<string | null>(null);
 
   // Direct fallback & error state
-  const [useDirectFallback, setUseDirectFallback] = useState<boolean>(false);
+  // Supabase Storage videos stream directly (range requests supported); other URLs try the server proxy first
+  const [useDirectFallback, setUseDirectFallback] = useState<boolean>(() =>
+    isSupabaseStorageUrl(lesson.file_url)
+  );
   const [playbackError, setPlaybackError] = useState<{ title: string; message: string } | null>(null);
 
   const videoSource = (lesson.file_url || '').trim();

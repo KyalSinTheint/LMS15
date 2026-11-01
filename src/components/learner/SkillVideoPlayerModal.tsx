@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { SkillDevelopmentResource, LessonProgressInfo } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
+import { isSupabaseStorageUrl } from '../../lib/supabase';
 import { ViewerWatermark } from '../common/ViewerWatermark';
 import { extractYouTubeId } from '../../lib/videoUtils';
 import {
@@ -40,7 +41,10 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
   const [seekWarning, setSeekWarning] = useState<string | null>(null);
 
   // Direct fallback & error state
-  const [useDirectFallback, setUseDirectFallback] = useState<boolean>(false);
+  // Supabase Storage videos stream directly (range requests supported); other URLs try the server proxy first
+  const [useDirectFallback, setUseDirectFallback] = useState<boolean>(() =>
+    isSupabaseStorageUrl((resource.file_url || resource.content_url || '').trim())
+  );
   const [playbackError, setPlaybackError] = useState<{ title: string; message: string } | null>(null);
 
   const videoSource = (resource.file_url || resource.content_url || '').trim();
