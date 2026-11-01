@@ -70,6 +70,14 @@ const T = {
     who: [
       "I'm Professor Panda 🐼🎓 — KBZ Life's learning buddy. I answer from our approved training materials, so you can trust me… mostly my jokes, not so much 😄",
     ],
+    trap: [
+      "Nice try! 😏 Professor Panda doesn't do crystal-ball promises 🔮 Every case depends on the policy terms, the documents and the official review.",
+      'Ooh, a trick question! 🕵️ I can’t promise a yes or no on that — the policy terms and the official review decide, not this panda 🐼',
+      "Careful, that's a trap question 😄 Nobody can guarantee that in advance — it depends on the policy terms and the case.",
+    ],
+    trapHelp: 'Here’s what our materials say, so you can explain it properly:',
+    trapNoInfo: 'For a definite answer on a real case, please check the policy document or ask the L&D team.',
+    verify: 'Always double-check the facts — don’t trust the Panda blindly! 🐼',
     related: 'Curious? Try these too:',
     source: 'Source',
     openProduct: 'Open in Product Knowledge Hub',
@@ -99,6 +107,13 @@ const T = {
     hello: ['မင်္ဂလာပါ! 🐼 ဒီနေ့ ဘာသင်ကြမလဲ? Product၊ မူဝါဒ ဘာမဆို မေးပါ။', 'ဟိုင်း စူပါစတား! 🌟 ဘာမေးချင်လဲ?'],
     thanks: ['ရပါတယ်! ကဲ… သွားပြီး မိသားစုတွေကို ကာကွယ်ပေးလိုက်တော့ 💪🐼', 'အမြဲကူညီမယ်! (အိပ်ချိန်မှာတော့ မဟုတ်ဘူးနော် 😴)'],
     who: ['ကျွန်တော်က Professor Panda ပါ 🐼🎓 — KBZ Life ရဲ့ သင်ယူမှု သူငယ်ချင်းလေး။ အတည်ပြုထားတဲ့ သင်ခန်းစာတွေထဲကနေပဲ ဖြေတာမို့ ယုံလို့ရတယ် (ဟာသတွေကလွဲရင်ပေါ့ 😄)'],
+    trap: [
+      'ကြိုးစားတာ ကောင်းပါတယ် 😏 ဒါပေမဲ့ Professor Panda က ဗေဒင်ဆရာ မဟုတ်ဘူးနော် 🔮 Case တိုင်းဟာ policy စည်းကမ်းချက်၊ စာရွက်စာတမ်းနဲ့ တရားဝင် စိစစ်မှုအပေါ် မူတည်ပါတယ်။',
+      'အိုး… ထောင်ချောက်မေးခွန်းလေးပဲ 🕵️ ဟုတ်/မဟုတ် အသေအချာ ကတိမပေးနိုင်ဘူး — policy စည်းကမ်းချက်နဲ့ တရားဝင် စိစစ်မှုက ဆုံးဖြတ်တာပါ၊ ဒီ panda လေးက မဟုတ်ဘူး 🐼',
+    ],
+    trapHelp: 'ကောင်းကောင်း ရှင်းပြနိုင်အောင် သင်ခန်းစာထဲမှာ ဒီလို ရေးထားပါတယ်:',
+    trapNoInfo: 'တကယ့် case အတွက် အတိအကျ သိချင်ရင် policy စာတမ်းကို ကြည့်ပါ သို့မဟုတ် L&D အဖွဲ့ကို မေးပါ။',
+    verify: 'အချက်အလက်တွေကို အမြဲ ပြန်စစ်ဆေးပါ — Panda ကိုလည်း အကုန်မယုံပါနဲ့ 🐼',
     related: 'ဒါတွေလည်း စိတ်ဝင်စားမလား:',
     source: 'ရင်းမြစ်',
     openProduct: 'Product Knowledge Hub တွင် ဖွင့်ရန်',
@@ -117,6 +132,23 @@ const pick = (options: string[]) => {
 };
 
 /** Small talk that should get a friendly reply instead of a knowledge search. */
+/**
+ * "Gotcha" questions that ask for a promise or a certain yes/no about an
+ * outcome (guarantees, definite approval, 100%, always/never). The panda
+ * never promises: it deflects playfully and points to the facts instead.
+ */
+const TRAP_PATTERNS = [
+  // "guaranteed" alone is a normal product word ("guaranteed sum assured"), so only promise-seeking phrasing counts
+  /\b((can|could|do|will) you (guarantee|promise)|is it guaranteed (that|to)|guarantee (me|that)|promise (me|that))\b/i,
+  /\b(for sure|definitely|certainly|absolutely|surely|no matter what|100 percent)\b/i,
+  /\b(will|would|can)\s+(my|the|our|his|her|their)\s+(claim|policy|application|payout|refund)\s+(definitely|surely|always|ever|be approved|get approved|be rejected|never)\b/i,
+  /\b(will|would)\s+(i|we|they|he|she|the customer)\s+(definitely|surely|always|never)\b/i,
+  /\b(yes or no|just say yes|answer yes|only yes)\b/i,
+  /\b(always|never)\s+(approved|rejected|paid|covered)\b/i,
+  /(သေချာပေါက်|အသေအချာ|ကတိပေး|ကတိ\s*ရ|အာမခံ(ပေး)?နိုင်(လား|မလား)|၁၀၀\s*%|100\s*%|ဟုတ်\s*(သလား)?\s*\/?\s*မဟုတ်|ဘယ်တော့မှ|လုံးဝ\s*(ရ|မရ))/,
+];
+const isTrapQuestion = (q: string) => TRAP_PATTERNS.some((re) => re.test(q));
+
 const smallTalk = (q: string): 'hello' | 'thanks' | 'who' | null => {
   const t = q.trim().toLowerCase().replace(/[!?.။,]+/g, '');
   if (/^(hi|hello|hey|hii+|yo|good (morning|afternoon|evening)|mingalaba|မင်္ဂလာပါ?|ဟိုင်း|ဟယ်လို)( (there|professor|panda))?$/.test(t)) return 'hello';
@@ -307,6 +339,15 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
     const hits = index.search(question, 4);
     const min = minAnswerScore(question);
     let reply: Message;
+    if (isTrapQuestion(question)) {
+      // No promises: deflect, then share the relevant facts if we have them
+      const best = hits.length && hits[0].score >= min * 0.8 ? hits[0].item : null;
+      reply = best
+        ? { ...answerFromItem(best, l), intro: `${pick(T[l].trap)} ${T[l].trapHelp}`, tone: 'info' }
+        : { id: uid(), role: 'bot', text: `${pick(T[l].trap)}\n\n${T[l].trapNoInfo}`, askable: question, tone: 'info' };
+      setMessages((prev) => [...prev, userMsg, reply]);
+      return;
+    }
     if (hits.length && hits[0].score >= min) {
       reply = {
         ...answerFromItem(hits[0].item, l),
@@ -383,6 +424,19 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
             <button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="p-1.5 rounded-lg hover:bg-white/15 cursor-pointer">
               <X className="w-5 h-5" />
             </button>
+          </div>
+
+          {/* Always-visible reminder */}
+          <div
+            role="note"
+            className="shrink-0 px-3.5 py-2 bg-amber-50 border-b border-amber-200 text-[11px] leading-snug text-amber-900 flex items-start gap-2"
+          >
+            <span aria-hidden="true">⚠️</span>
+            <span>
+              <strong>{T.my.verify}</strong>
+              <br />
+              <span className="text-amber-800">{T.en.verify}</span>
+            </span>
           </div>
 
           {/* Messages */}
