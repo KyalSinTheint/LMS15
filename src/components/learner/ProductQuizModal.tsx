@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ProductKnowledgeItem, ProductQuiz, ProductQuizQuestion } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface ProductQuizModalProps {
   isOpen: boolean;
@@ -145,7 +146,7 @@ export const ProductQuizModal: React.FC<ProductQuizModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 text-left transition-opacity"
-      onClick={onClose}
+      {...closeOnBackdrop(onClose)}
       role="dialog"
       aria-modal="true"
     >

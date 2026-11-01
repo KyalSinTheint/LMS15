@@ -12,6 +12,7 @@ import {
 import { useLms } from '../../context/LmsContext';
 import { Course } from '../../types/lms';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface CoursePlayerModalProps {
   course: Course;
@@ -36,7 +37,10 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
 
   if (isSuspended || (!enrollment && currentUser.role !== 'admin')) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+        {...closeOnBackdrop(onClose)}
+      >
         <div className="bg-white rounded-2xl max-w-md w-full p-6 text-center space-y-4">
           <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mx-auto">
             <AlertCircle className="w-6 h-6" />
@@ -95,7 +99,10 @@ export const CoursePlayerModal: React.FC<CoursePlayerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+      {...closeOnBackdrop(onClose)}
+    >
       <div className="bg-white rounded-3xl max-w-3xl w-full border border-slate-200 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="bg-[#003366] text-white p-6 flex items-center justify-between">

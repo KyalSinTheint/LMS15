@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -33,6 +33,7 @@ import { CompanyBulletinManagement } from './CompanyBulletinManagement';
 import { Newspaper, Film, Award, Key, User, Lock, Settings as SettingsIcon, Package, Bell, Sun, Moon } from 'lucide-react';
 import { AdminLoginModal } from './AdminLoginModal';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
+import { useClickOutside } from '../../lib/closeOnOutside';
 
 export type AdminTabId =
   | 'dashboard'
@@ -60,6 +61,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  useClickOutside(userMenuRef, userDropdownOpen, () => setUserDropdownOpen(false));
 
   // Security Check: If current user is not admin, show Access Denied
   if (currentUser.role !== 'admin') {
@@ -192,7 +195,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
               </button>
 
               {/* User Switcher Dropdown */}
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"

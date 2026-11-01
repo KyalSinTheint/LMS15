@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import { PdfThumbnail } from '../common/PdfThumbnail';
 import { PdfQuizGeneratorModal, GeneratedQuestionItem } from './PdfQuizGeneratorModal';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 export const LICENSE_CATEGORIES = [
   'Regulatory Accreditation',
@@ -1668,9 +1669,9 @@ export const LicenseTrainingManagement: React.FC = () => {
       {isLessonModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
-          onClick={() => {
+          {...closeOnBackdrop(() => {
             if (!isUploading) setIsLessonModalOpen(false);
-          }}
+          })}
         >
           <div
             className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 my-auto text-left"
@@ -1955,7 +1956,7 @@ export const LicenseTrainingManagement: React.FC = () => {
       {isChapterModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-          onClick={() => setIsChapterModalOpen(false)}
+          {...closeOnBackdrop(() => setIsChapterModalOpen(false))}
         >
           <div
             className="bg-white rounded-3xl max-w-lg w-full p-6 text-left shadow-2xl border border-slate-200 space-y-4"
@@ -2107,7 +2108,7 @@ export const LicenseTrainingManagement: React.FC = () => {
       {questionModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-          onClick={() => setQuestionModalOpen(false)}
+          {...closeOnBackdrop(() => setQuestionModalOpen(false))}
         >
           <div
             className="bg-white rounded-3xl max-w-lg w-full p-6 text-left shadow-2xl border border-slate-200 space-y-4"
@@ -2242,7 +2243,7 @@ export const LicenseTrainingManagement: React.FC = () => {
       {previewLesson && (previewLesson.lesson_type || previewLesson.content_type) !== 'pdf' && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-sm"
-          onClick={() => setPreviewLesson(null)}
+          {...closeOnBackdrop(() => setPreviewLesson(null))}
         >
           <div
             className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 text-left"
@@ -2357,7 +2358,7 @@ export const LicenseTrainingManagement: React.FC = () => {
       {deleteLessonConfirmId && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-          onClick={() => setDeleteLessonConfirmId(null)}
+          {...closeOnBackdrop(() => setDeleteLessonConfirmId(null))}
         >
           <div
             className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-200"
@@ -2398,7 +2399,7 @@ export const LicenseTrainingManagement: React.FC = () => {
       {deleteChapterConfirmId && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-          onClick={() => setDeleteChapterConfirmId(null)}
+          {...closeOnBackdrop(() => setDeleteChapterConfirmId(null))}
         >
           <div
             className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-200"

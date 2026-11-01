@@ -18,6 +18,7 @@ import {
 import { useLms } from '../../context/LmsContext';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { formatBytes } from '../../lib/storageUtils';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 export interface GeneratedQuestionItem {
   question_text: string;
@@ -196,9 +197,9 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm overflow-y-auto text-left"
-      onClick={() => {
+      {...closeOnBackdrop(() => {
         if (!isGenerating) onClose();
-      }}
+      })}
     >
       <div
         className="bg-white dark:bg-[#10243C] rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 dark:border-[#1E426D] my-auto animate-in fade-in zoom-in-95 duration-200"

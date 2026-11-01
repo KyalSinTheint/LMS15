@@ -30,6 +30,7 @@ import {
 } from '../../types/lms';
 import { uploadLargeFileChunked, formatBytes } from '../../lib/storageUtils';
 import { PdfViewerModal } from '../common/PdfViewerModal';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 const AVAILABLE_SAMPLE_PDFS = [
   {
@@ -511,7 +512,10 @@ export const CompanyBulletinManagement: React.FC = () => {
           CREATE / EDIT ANNOUNCEMENT MODAL
           ===================================================================== */}
       {isEditorOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+          {...closeOnBackdrop(() => setIsEditorOpen(false))}
+        >
           <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8">
             <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -797,7 +801,10 @@ export const CompanyBulletinManagement: React.FC = () => {
           DELETE CONFIRMATION MODAL
           ===================================================================== */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          {...closeOnBackdrop(() => setDeleteConfirmId(null))}
+        >
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-xl border border-red-200">
             <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto">
               <Trash2 className="w-6 h-6" />

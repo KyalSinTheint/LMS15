@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface ExternalLinkModalProps {
   resource: SkillDevelopmentResource;
@@ -32,7 +33,7 @@ export const ExternalLinkModal: React.FC<ExternalLinkModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
-      onClick={onClose}
+      {...closeOnBackdrop(onClose)}
     >
       <div
         className="bg-white rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl border border-slate-200 my-auto animate-in fade-in zoom-in-95 duration-200 text-left"

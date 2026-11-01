@@ -18,6 +18,7 @@ import { useLms } from '../../context/LmsContext';
 import { uploadImageFile, validateImageFile } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface LearnerProfileModalProps {
   isOpen: boolean;
@@ -231,7 +232,7 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
   return createPortal(
     <div
       className="fixed inset-0 z-[9999] overflow-y-auto flex items-start justify-center p-4 sm:p-6 pt-10 sm:pt-14 md:pt-16 pb-6 sm:pb-10 bg-slate-950/75 backdrop-blur-xs text-left font-sans transition-opacity"
-      onClick={onClose}
+      {...closeOnBackdrop(onClose)}
       role="dialog"
       aria-modal="true"
       aria-labelledby="learner-profile-title"

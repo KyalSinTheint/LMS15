@@ -20,6 +20,7 @@ import { useLms } from '../../context/LmsContext';
 import { TopPerformerEntry } from '../../types/lms';
 import { uploadImageFile, validateImageFile } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 export const TopPerformersManagement: React.FC = () => {
   const { topPerformers, createTopPerformer, updateTopPerformer, deleteTopPerformer } = useLms();
@@ -332,7 +333,10 @@ export const TopPerformersManagement: React.FC = () => {
 
       {/* CREATE / EDIT PERFORMER MODAL */}
       {performerModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setPerformerModal((prev) => ({ ...prev, isOpen: false })))}
+        >
           <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-base text-slate-900">
               {performerModal.isEditing ? 'Edit Top Performer' : 'Recognize New Top Performer'}
@@ -551,7 +555,10 @@ export const TopPerformersManagement: React.FC = () => {
 
       {/* DELETE CONFIRMATION MODAL */}
       {deleteConfirm.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setDeleteConfirm({ isOpen: false, id: '', name: '' }))}
+        >
           <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-4">
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-xl bg-red-100 text-red-600 shrink-0">

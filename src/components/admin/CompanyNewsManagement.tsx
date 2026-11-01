@@ -22,6 +22,7 @@ import { useLms } from '../../context/LmsContext';
 import { CompanyNewsArticle } from '../../types/lms';
 import { uploadImageFile, validateImageFile } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 export const CompanyNewsManagement: React.FC = () => {
   const { companyNews, createNews, updateNews, deleteNews } = useLms();
@@ -356,7 +357,10 @@ export const CompanyNewsManagement: React.FC = () => {
 
       {/* CREATE / EDIT ARTICLE MODAL WITH DIRECT IMAGE UPLOAD */}
       {newsModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setNewsModal((prev) => ({ ...prev, isOpen: false })))}
+        >
           <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-2.5">
@@ -608,7 +612,10 @@ export const CompanyNewsManagement: React.FC = () => {
 
       {/* DELETE CONFIRMATION MODAL */}
       {deleteConfirm.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setDeleteConfirm({ isOpen: false, id: '', title: '' }))}
+        >
           <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-4 text-left">
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-xl bg-red-100 text-red-600 shrink-0">

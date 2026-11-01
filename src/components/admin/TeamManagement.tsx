@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { validateImageFile } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 export const TeamManagement: React.FC = () => {
   const {
@@ -693,9 +694,9 @@ export const TeamManagement: React.FC = () => {
       {isModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs overscroll-contain"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsModalOpen(false);
-          }}
+          {...closeOnBackdrop(() => {
+            setIsModalOpen(false);
+          })}
           role="dialog"
           aria-modal="true"
         >
@@ -907,7 +908,7 @@ export const TeamManagement: React.FC = () => {
       {memberToDelete && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs overscroll-contain"
-          onClick={() => setMemberToDelete(null)}
+          {...closeOnBackdrop(() => setMemberToDelete(null))}
           role="dialog"
           aria-modal="true"
         >

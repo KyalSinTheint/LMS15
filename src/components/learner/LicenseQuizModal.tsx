@@ -18,6 +18,7 @@ import {
 import { LicenseChapter, LicenseQuiz, LicenseQuizQuestion } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface LicenseQuizModalProps {
   isOpen: boolean;
@@ -146,6 +147,7 @@ export const LicenseQuizModal: React.FC<LicenseQuizModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 text-left"
+      {...closeOnBackdrop(onClose)}
       role="dialog"
       aria-modal="true"
       aria-label={`Assessment: ${chapter.title}`}

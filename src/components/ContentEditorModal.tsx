@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Check, Copy, RefreshCw, Sparkles, FileText, Download } from 'lucide-react';
 import { CompanyContentData } from '../data/companyContent';
 import { useBodyScrollLock } from '../lib/useBodyScrollLock';
+import { closeOnBackdrop } from '../lib/closeOnOutside';
 
 interface ContentEditorModalProps {
   isOpen: boolean;
@@ -37,7 +38,10 @@ export const ContentEditorModal: React.FC<ContentEditorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+      {...closeOnBackdrop(onClose)}
+    >
       <div className="bg-white dark:bg-[#10243C] rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-[#1E426D]">
         {/* Modal Header */}
         <div className="p-6 bg-[#003366] dark:bg-[#0E2035] text-white flex items-center justify-between border-b border-transparent dark:border-[#1E426D]">

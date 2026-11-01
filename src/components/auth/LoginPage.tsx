@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
 import { UserRole, AccountStatus } from '../../types/lms';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface LoginPageProps {
   onNavigateToRegister: () => void;
@@ -257,7 +258,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
       {/* Forgot Password Modal */}
       {isForgotModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn"
+          {...closeOnBackdrop(() => setIsForgotModalOpen(false))}
+        >
           <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 text-left space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-[#F3F8FB] text-[#176B98] flex items-center justify-center border border-[#176B98]/20">
