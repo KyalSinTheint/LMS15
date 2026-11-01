@@ -19,6 +19,11 @@ import {
 import { useLms } from '../../context/LmsContext';
 import { TopPerformerEntry } from '../../types/lms';
 import { uploadImageFile, validateImageFile } from '../../lib/storageUtils';
+import { MONTH_NAMES, performerMonth, yearFromPeriod } from '../../lib/performerMonth';
+
+const THIS_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = [THIS_YEAR - 2, THIS_YEAR - 1, THIS_YEAR, THIS_YEAR + 1];
+const periodLabel = (month: number, year: number) => `${MONTH_NAMES[month - 1]} ${year}`;
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
@@ -47,6 +52,7 @@ export const TopPerformersManagement: React.FC = () => {
     image_url: string;
     recognition_period: string;
     month_index: number;
+    year: number;
     status: 'draft' | 'published';
   }>({
     isOpen: false,
@@ -58,8 +64,9 @@ export const TopPerformersManagement: React.FC = () => {
     achievement_title: '',
     achievement_description: '',
     image_url: '',
-    recognition_period: 'October 2026',
-    month_index: 10,
+    recognition_period: periodLabel(new Date().getMonth() + 1, THIS_YEAR),
+    month_index: new Date().getMonth() + 1,
+    year: THIS_YEAR,
     status: 'published',
   });
 
@@ -96,8 +103,10 @@ export const TopPerformersManagement: React.FC = () => {
         'Achieved outstanding client satisfaction scores while protecting over 80 families in regional outreach initiatives.',
       image_url:
         'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80',
-      recognition_period: 'October 2026',
-      month_index: 10,
+      // Default to the current month; the admin picks the month and year below
+      recognition_period: periodLabel(new Date().getMonth() + 1, THIS_YEAR),
+      month_index: new Date().getMonth() + 1,
+      year: THIS_YEAR,
       status: 'published',
     });
   };
@@ -117,7 +126,8 @@ export const TopPerformersManagement: React.FC = () => {
       achievement_description: tp.achievement_description,
       image_url: tp.image_url,
       recognition_period: tp.recognition_period,
-      month_index: tp.month_index,
+      month_index: performerMonth(tp),
+      year: yearFromPeriod(tp.recognition_period) || THIS_YEAR,
       status: tp.status,
     });
   };
@@ -163,7 +173,8 @@ export const TopPerformersManagement: React.FC = () => {
         achievement_title: performerModal.achievement_title,
         achievement_description: performerModal.achievement_description,
         image_url: performerModal.image_url,
-        recognition_period: performerModal.recognition_period,
+        // Month and period text always saved together, from the dropdowns
+        recognition_period: periodLabel(Number(performerModal.month_index), performerModal.year),
         month_index: Number(performerModal.month_index),
         status: performerModal.status,
       });
@@ -176,7 +187,8 @@ export const TopPerformersManagement: React.FC = () => {
         achievement_title: performerModal.achievement_title,
         achievement_description: performerModal.achievement_description,
         image_url: performerModal.image_url,
-        recognition_period: performerModal.recognition_period,
+        // Month and period text always saved together, from the dropdowns
+        recognition_period: periodLabel(Number(performerModal.month_index), performerModal.year),
         month_index: Number(performerModal.month_index),
         status: performerModal.status,
       });
@@ -392,14 +404,33 @@ export const TopPerformersManagement: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Recognition Period</label>
-                <input
-                  type="text"
-                  value={performerModal.recognition_period}
-                  onChange={(e) => setPerformerModal((prev) => ({ ...prev, recognition_period: e.target.value }))}
-                  placeholder="e.g. October 2026"
-                  className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 focus:ring-2 focus:ring-[#176B98] focus:outline-none"
-                />
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Recognition Month</label>
+                <div className="grid grid-cols-[1fr_auto] gap-2">
+                  <select
+                    value={performerModal.month_index}
+                    onChange={(e) => setPerformerModal((prev) => ({ ...prev, month_index: Number(e.target.value) }))}
+                    aria-label="Recognition month"
+                    className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 focus:ring-2 focus:ring-[#176B98] focus:outline-none font-semibold"
+                  >
+                    {MONTH_NAMES.map((m, i) => (
+                      <option key={m} value={i + 1}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={performerModal.year}
+                    onChange={(e) => setPerformerModal((prev) => ({ ...prev, year: Number(e.target.value) }))}
+                    aria-label="Recognition year"
+                    className="text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 focus:ring-2 focus:ring-[#176B98] focus:outline-none font-semibold"
+                  >
+                    {Array.from(new Set([...YEAR_OPTIONS, performerModal.year])).sort().map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
