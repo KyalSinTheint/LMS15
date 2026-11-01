@@ -1,4 +1,86 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X, ZoomIn } from 'lucide-react';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
+
+/** A line that is only an image: ![caption](url) or ![caption](url "title") */
+export const IMAGE_LINE = /^!\[([^\]]*)\]\(\s*<?([^\s)>]+)>?(?:\s+"[^"]*")?\s*\)$/;
+
+/** Markdown escapes written by the visual editor (e.g. \* or \#) are shown as plain characters. */
+const unescapeMarkdown = (text: string) => text.replace(/\\([\\`*_{}\[\]()#+\-.!>|~])/g, '$1');
+
+const isSafeImageUrl = (url: string) => /^(https?:\/\/|\/)/i.test(url);
+
+/** Full-screen view of a content image; closes on outside click or Escape. */
+const ImageLightbox: React.FC<{ src: string; caption: string; onClose: () => void }> = ({ src, caption, onClose }) => {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[10000] bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={caption || 'Image'}
+      {...closeOnBackdrop(onClose)}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer"
+        aria-label="Close image"
+      >
+        <X className="w-5 h-5" />
+      </button>
+      <img src={src} alt={caption} className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" />
+      {caption && <p className="mt-3 text-sm text-white/90 text-center max-w-2xl">{caption}</p>}
+    </div>,
+    document.body
+  );
+};
+
+/** An image inside product content: fits its column, tap/click to enlarge. */
+const ContentImage: React.FC<{ src: string; caption: string; paper: boolean }> = ({ src, caption, paper }) => {
+  const [open, setOpen] = useState(false);
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div className="my-4 p-4 rounded-xl border border-dashed border-slate-300 text-center text-xs text-slate-500">
+        Image could not be loaded{caption ? `: ${caption}` : ''}
+      </div>
+    );
+  }
+  return (
+    <figure className="my-4">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="group relative block w-full rounded-xl overflow-hidden border border-slate-200 bg-white cursor-zoom-in"
+        aria-label={caption ? `Enlarge image: ${caption}` : 'Enlarge image'}
+      >
+        <img
+          src={src}
+          alt={caption}
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className={`w-full object-contain ${paper ? 'max-h-[300px]' : 'max-h-[460px]'} bg-white`}
+          draggable={false}
+        />
+        <span className="absolute top-2 right-2 w-8 h-8 rounded-full bg-slate-900/60 text-white flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity">
+          <ZoomIn className="w-4 h-4" />
+        </span>
+      </button>
+      {caption && (
+        <figcaption className={`mt-1.5 text-center text-xs italic ${paper ? 'text-stone-600' : 'text-slate-500 dark:text-slate-400'}`}>
+          {caption}
+        </figcaption>
+      )}
+      {open && <ImageLightbox src={src} caption={caption} onClose={() => setOpen(false)} />}
+    </figure>
+  );
+};
 
 interface ProductRichTextRendererProps {
   content: string;
@@ -30,7 +112,7 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
       if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
         return (
           <strong key={idx} className={c("font-extrabold text-slate-900 dark:text-white")}>
-            {part.slice(2, -2)}
+            {unescapeMarkdown(part.slice(2, -2))}
           </strong>
         );
       }
@@ -58,11 +140,11 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
           ) {
             return (
               <em key={`${idx}-${cIdx}-${iIdx}`} className={c("italic text-slate-800 dark:text-slate-200")}>
-                {iPart.slice(1, -1)}
+                {unescapeMarkdown(iPart.slice(1, -1))}
               </em>
             );
           }
-          return iPart;
+          return unescapeMarkdown(iPart);
         });
       });
     });
@@ -126,7 +208,20 @@ export const ProductRichTextRenderer: React.FC<ProductRichTextRendererProps> = (
 
   for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i];
-    const trimmed = rawLine.trim();
+    // A trailing backslash is a line break written by the visual editor
+    const trimmed = rawLine.trim().replace(/\\$/, '').trimEnd();
+
+    // Image on its own line
+    const image = trimmed.match(IMAGE_LINE);
+    if (image) {
+      flushParagraph();
+      flushList();
+      const [, caption, url] = image;
+      if (isSafeImageUrl(url)) {
+        blocks.push(<ContentImage key={`img-${blockKey++}`} src={url} caption={unescapeMarkdown(caption).trim()} paper={paper} />);
+      }
+      continue;
+    }
 
     // Empty line separates paragraphs and ends lists
     if (!trimmed) {

@@ -4,6 +4,8 @@
  *
  * - Every "# " / "## " heading starts a new section on a new page.
  * - Long sections continue on the following page(s) ("continued").
+ * - Images (![caption](url) on their own line) count as a large block and
+ *   are never split, so a page holds an image plus a little text.
  * - Pages are packed by an approximate text budget; each page body also
  *   scrolls as a safety net, so nothing is ever cut off.
  */
@@ -26,11 +28,20 @@ export interface PamphletSection {
 }
 
 const HEADING = /^#{1,2}\s+(.+)$/;
+/** An image on its own line (same rule as ProductRichTextRenderer) */
+const IMAGE_ONLY = /^!\[[^\]]*\]\([^)]*\)\s*$/;
+/** About how much text an image displaces on a pamphlet page */
+const IMAGE_COST = 560;
 const LIST_LINE = /^([-*•✦▪–]|\d+[.)])\s+/;
 
 /** Rough "visual weight" of a markdown block, in characters. */
 function blockCost(block: string): number {
   const lines = block.split('\n');
+  const images = lines.filter((l) => IMAGE_ONLY.test(l.trim())).length;
+  if (images > 0) {
+    const text = lines.filter((l) => !IMAGE_ONLY.test(l.trim())).join('\n');
+    return images * IMAGE_COST + (text.trim() ? blockCost(text) : 0);
+  }
   const isList = lines.every((l) => LIST_LINE.test(l.trim()) || !l.trim());
   if (isList) return lines.reduce((sum, l) => sum + l.length + 45, 30);
   if (/^###\s/.test(block)) return block.length + 70;
@@ -40,6 +51,25 @@ function blockCost(block: string): number {
 /** Breaks a block that is too big for one page into smaller pieces. */
 function splitOversizedBlock(block: string, budget: number): string[] {
   if (blockCost(block) <= budget) return [block];
+  // Keep every image on its own, never split it
+  if (block.split('\n').some((l) => IMAGE_ONLY.test(l.trim()))) {
+    const pieces: string[] = [];
+    let text: string[] = [];
+    const flushText = () => {
+      if (text.join('').trim()) pieces.push(...splitOversizedBlock(text.join('\n'), budget));
+      text = [];
+    };
+    for (const line of block.split('\n')) {
+      if (IMAGE_ONLY.test(line.trim())) {
+        flushText();
+        pieces.push(line.trim());
+      } else {
+        text.push(line);
+      }
+    }
+    flushText();
+    return pieces;
+  }
   const lines = block.split('\n');
 
   // Lists (or multi-line blocks): split between lines
