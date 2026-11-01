@@ -1308,14 +1308,14 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
       const { data, error } = await db().from('app_settings').update(cleanRow(row)).eq('id', 'global').select(APP_SETTINGS_COLUMNS).maybeSingle();
       if (error) throw error;
-      if (!data) throw new Error('Settings could not be saved. Run supabase/migrations/20261106_app_settings.sql in the Supabase SQL Editor.');
+      if (!data) throw new Error('Settings could not be saved right now. Please ask the system developer to finish the settings setup.');
       setAppSettings({ ...DEFAULT_APP_SETTINGS, ...(data as Partial<AppSettings>) });
       await logAuditAction('settings_updated', 'system', 'global', 'Updated LMS settings.');
       showToast('success', 'Settings Saved', 'The new settings are in effect for everyone.');
       return true;
     } catch (err) {
       const message = /app_settings|schema cache|42P01|PGRST/i.test(errorMessage(err))
-        ? 'Settings need a one-time database update: run supabase/migrations/20261106_app_settings.sql in the Supabase SQL Editor.'
+        ? 'Settings could not be saved right now. Please ask the system developer to finish the settings setup.'
         : errorMessage(err);
       showToast('error', 'Settings Not Saved', message);
       return false;

@@ -140,11 +140,8 @@ export const PasswordResetRequestsPanel: React.FC = () => {
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
           <div>
-            <p className="font-bold">One-time database update needed</p>
-            <p className="mt-1 leading-relaxed">
-              Run <code className="font-mono bg-white/70 px-1 rounded">supabase/migrations/20261105_admin_password_reset.sql</code>{' '}
-              in Supabase → SQL Editor, then press Refresh.
-            </p>
+            <p className="font-bold">Password reset requests are not available yet</p>
+            <p className="mt-1 leading-relaxed">Please ask the system developer to finish the setup, then press Refresh.</p>
           </div>
         </div>
       )}
