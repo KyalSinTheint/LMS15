@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, Suspense, lazy } from 'react';
 import {
   BookOpen,
   Package,
@@ -43,7 +43,10 @@ import {
   resolveProductIconKey,
 } from '../../lib/productVisuals';
 import { uploadImageFile } from '../../lib/storageUtils';
-import { ProductKnowledgeRichEditor } from './ProductKnowledgeRichEditor';
+// The visual editor is only needed by admins: load it on demand
+const ProductKnowledgeRichEditor = lazy(() =>
+  import('./ProductKnowledgeRichEditor').then((m) => ({ default: m.ProductKnowledgeRichEditor }))
+);
 import { getProductRichContent } from '../../lib/productKnowledgeUtils';
 import { PdfQuizGeneratorModal, GeneratedQuestionItem } from './PdfQuizGeneratorModal';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
@@ -1005,16 +1008,23 @@ export const ProductManagement: React.FC = () => {
                     <span>Product Knowledge & Curriculum Content *</span>
                   </label>
                   <span className="text-[11px] text-slate-500">
-                    Enter all headings, policy rules, benefits, eligibility, and features in one place
+                    Paste or type the content, and add pictures anywhere between paragraphs
                   </span>
                 </div>
 
-                <ProductKnowledgeRichEditor
-                  value={productForm.content}
-                  onChange={(content) => setProductForm({ ...productForm, content })}
-                  placeholder="Enter complete product knowledge, policy terms, key benefits, eligibility criteria, and underwriting rules here using headings, bullet points, and lists..."
-                  minHeight="340px"
-                />
+                <Suspense
+                  fallback={
+                    <div className="h-[340px] rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-500">
+                      Loading editor…
+                    </div>
+                  }
+                >
+                  <ProductKnowledgeRichEditor
+                    value={productForm.content}
+                    onChange={(content) => setProductForm((prev) => ({ ...prev, content }))}
+                    minHeight="340px"
+                  />
+                </Suspense>
               </div>
 
               {/* Publication Status */}
