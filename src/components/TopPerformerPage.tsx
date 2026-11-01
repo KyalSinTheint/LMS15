@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLms } from '../context/LmsContext';
-import {
-  MonthlyTopPerformerGroup,
-  defaultTopPerformers,
-} from '../data/portalExtensionsData';
+import { MonthlyTopPerformerGroup } from '../data/portalExtensionsData';
+import type { TopPerformerEntry } from '../types/lms';
 import { TopPerformerMonthCard } from './TopPerformerMonthCard';
 import {
   ChevronLeft,
@@ -20,11 +18,37 @@ interface TopPerformerPageProps {
 }
 
 export const TopPerformerPage: React.FC<TopPerformerPageProps> = () => {
-  const { getPublishedTopPerformers, isSupabaseLive } = useLms();
+  const { getPublishedTopPerformers } = useLms();
   const publishedPerformers = getPublishedTopPerformers();
 
+  // Newest entry wins when a month/channel was recognised more than once
+  const entryFor = useMemo(() => {
+    const byKey = new Map<string, TopPerformerEntry>();
+    const time = (p: TopPerformerEntry) => new Date(p.updated_at || p.created_at || 0).getTime();
+    for (const p of publishedPerformers) {
+      const key = `${p.month_index}|${p.channel}`;
+      const current = byKey.get(key);
+      if (!current || time(p) > time(current)) byKey.set(key, p);
+    }
+    return (month: number, channel: string) => byKey.get(`${month}|${channel}`);
+  }, [publishedPerformers]);
+
+  // Open on the four-month set that has the most recent recognition
+  // (falls back to the current month), instead of always January–April.
+  const setForMonth = (month: number) => (month <= 4 ? 0 : month <= 8 ? 1 : 2);
+  const preferredSetIndex = useMemo(() => {
+    const latest = [...publishedPerformers].sort(
+      (a, b) => new Date(b.updated_at || b.created_at || 0).getTime() - new Date(a.updated_at || a.created_at || 0).getTime()
+    )[0];
+    return setForMonth(latest?.month_index || new Date().getMonth() + 1);
+  }, [publishedPerformers]);
+
   // Set index: 0 = Jan-Apr (Set 1), 1 = May-Aug (Set 2), 2 = Sep-Dec (Set 3)
-  const [currentSetIndex, setCurrentSetIndex] = useState<number>(0);
+  const [currentSetIndex, setCurrentSetIndex] = useState<number>(preferredSetIndex);
+  const [userPickedSet, setUserPickedSet] = useState(false);
+  useEffect(() => {
+    if (!userPickedSet) setCurrentSetIndex(preferredSetIndex);
+  }, [preferredSetIndex, userPickedSet]);
   const [viewMode, setViewMode] = useState<'carousel' | 'all-grid'>('carousel');
 
   const monthNames = [
@@ -37,17 +61,10 @@ export const TopPerformerPage: React.FC<TopPerformerPageProps> = () => {
     const quarter = monthIndex <= 3 ? 'Q1' : monthIndex <= 6 ? 'Q2' : monthIndex <= 9 ? 'Q3' : 'Q4';
     const setIndex = monthIndex <= 4 ? 0 : monthIndex <= 8 ? 1 : 2;
 
-    const allianceEntry = publishedPerformers.find(
-      (p) => p.month_index === monthIndex && p.channel === 'Alliance Channel'
-    );
-    const bancassuranceEntry = publishedPerformers.find(
-      (p) => p.month_index === monthIndex && p.channel === 'Bancassurance Channel'
-    );
-    const corporateEntry = publishedPerformers.find(
-      (p) => p.month_index === monthIndex && p.channel === 'Corporate Channel'
-    );
+    const allianceEntry = entryFor(monthIndex, 'Alliance Channel');
+    const bancassuranceEntry = entryFor(monthIndex, 'Bancassurance Channel');
+    const corporateEntry = entryFor(monthIndex, 'Corporate Channel');
 
-    const defaultGroup = defaultTopPerformers[idx];
 
     return {
       monthIndex,
@@ -59,37 +76,37 @@ export const TopPerformerPage: React.FC<TopPerformerPageProps> = () => {
           channel: 'Alliance Channel',
           name: allianceEntry
             ? allianceEntry.employee_name
-            : (isSupabaseLive ? '' : defaultGroup?.performers?.alliance?.name || ''),
+            : '',
           photoUrl: allianceEntry
             ? allianceEntry.image_url
-            : (isSupabaseLive ? null : defaultGroup?.performers?.alliance?.photoUrl || null),
+            : null,
           recognitionNote: allianceEntry
             ? `${allianceEntry.achievement_title} — ${allianceEntry.achievement_description}`
-            : (isSupabaseLive ? '' : defaultGroup?.performers?.alliance?.recognitionNote || ''),
+            : '',
         },
         bancassurance: {
           channel: 'Bancassurance Channel',
           name: bancassuranceEntry
             ? bancassuranceEntry.employee_name
-            : (isSupabaseLive ? '' : defaultGroup?.performers?.bancassurance?.name || ''),
+            : '',
           photoUrl: bancassuranceEntry
             ? bancassuranceEntry.image_url
-            : (isSupabaseLive ? null : defaultGroup?.performers?.bancassurance?.photoUrl || null),
+            : null,
           recognitionNote: bancassuranceEntry
             ? `${bancassuranceEntry.achievement_title} — ${bancassuranceEntry.achievement_description}`
-            : (isSupabaseLive ? '' : defaultGroup?.performers?.bancassurance?.recognitionNote || ''),
+            : '',
         },
         corporate: {
           channel: 'Corporate Channel',
           name: corporateEntry
             ? corporateEntry.employee_name
-            : (isSupabaseLive ? '' : defaultGroup?.performers?.corporate?.name || ''),
+            : '',
           photoUrl: corporateEntry
             ? corporateEntry.image_url
-            : (isSupabaseLive ? null : defaultGroup?.performers?.corporate?.photoUrl || null),
+            : null,
           recognitionNote: corporateEntry
             ? `${corporateEntry.achievement_title} — ${corporateEntry.achievement_description}`
-            : (isSupabaseLive ? '' : defaultGroup?.performers?.corporate?.recognitionNote || ''),
+            : '',
         },
       },
     };
@@ -102,10 +119,12 @@ export const TopPerformerPage: React.FC<TopPerformerPageProps> = () => {
   ];
 
   const handlePrev = () => {
+    setUserPickedSet(true);
     setCurrentSetIndex((prev) => (prev > 0 ? prev - 1 : sets.length - 1));
   };
 
   const handleNext = () => {
+    setUserPickedSet(true);
     setCurrentSetIndex((prev) => (prev < sets.length - 1 ? prev + 1 : 0));
   };
 
@@ -212,7 +231,10 @@ export const TopPerformerPage: React.FC<TopPerformerPageProps> = () => {
                   {sets.map((s, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setCurrentSetIndex(idx)}
+                      onClick={() => {
+                        setUserPickedSet(true);
+                        setCurrentSetIndex(idx);
+                      }}
                       className={`h-2 rounded-full transition-all ${
                         currentSetIndex === idx
                           ? 'w-6 bg-[#176B98]'
