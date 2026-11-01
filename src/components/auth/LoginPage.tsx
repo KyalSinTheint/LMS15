@@ -113,10 +113,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         {/* Card Header */}
         <div className="bg-[#176B98] text-white p-6 sm:p-7 text-left relative overflow-hidden">
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-white/95 text-[10px] font-bold uppercase tracking-wider mb-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-white" />
-              <span>Enterprise Single Sign-On / RBAC</span>
-            </div>
             <h2 className="text-2xl font-black tracking-tight text-white">Sign In to Your Account</h2>
             <p className="text-xs text-white/80 mt-1 leading-relaxed">
               Access your personalized learning curriculum, company updates, and channel modules.

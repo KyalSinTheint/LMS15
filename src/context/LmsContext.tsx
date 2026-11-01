@@ -98,6 +98,8 @@ interface LmsContextType {
   /** true after the user opened a password-reset email link */
   isPasswordRecovery: boolean;
   completePasswordRecovery: (newPassword: string) => Promise<{ success: boolean; message: string }>;
+  /** Leave the reset-password screen (e.g. expired link) and go back to the normal app / sign-in */
+  exitPasswordRecovery: () => void;
   loginWithCredentials: (identifier: string, password: string) => Promise<{ success: boolean; message: string; mustChangePassword?: boolean; account_status?: AccountStatus; role?: UserRole }>;
   registerUser: (data: { full_name: string; username: string; email: string; password: string; department?: string; employee_id?: string }) => Promise<{ success: boolean; user?: Profile; message: string; needsEmailConfirmation?: boolean }>;
   checkUserApprovalStatus: (userId?: string) => Promise<AccountStatus>;
@@ -498,6 +500,15 @@ function toLessonProgress(row: any): LessonProgressInfo {
   };
 }
 
+/** Page that password-reset emails link to (rewritten to index.html by Vercel). */
+export const RESET_PASSWORD_PATH = '/reset-password';
+
+const leaveResetPasswordUrl = () => {
+  if (typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '') === RESET_PASSWORD_PATH) {
+    window.history.replaceState(null, '', '/');
+  }
+};
+
 const LmsContext = createContext<LmsContextType | undefined>(undefined);
 
 export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -537,7 +548,15 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [authChecked, setAuthChecked] = useState<boolean>(!isSupabaseConfigured());
   // undefined = still loading, null = no profile row
   const [myProfile, setMyProfile] = useState<Profile | null | undefined>(undefined);
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(false);
+  // Recovery mode is detected from the URL too, so it works even if the
+  // PASSWORD_RECOVERY auth event fires before the app starts listening.
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.location.pathname.replace(/\/+$/, '') === RESET_PASSWORD_PATH ||
+      /(^|[#&?])type=recovery(&|$)/.test(window.location.hash + window.location.search)
+    );
+  });
   const authUserIdRef = useRef<string | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -1170,7 +1189,8 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   ): Promise<{ success: boolean; message: string; isConfigured?: boolean }> => {
     try {
       const { error } = await db().auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: window.location.origin,
+        // The email link opens the dedicated "Set a new password" page
+        redirectTo: `${window.location.origin}${RESET_PASSWORD_PATH}`,
       });
       if (error) return { success: false, message: error.message, isConfigured: true };
       const message = `If an account exists for ${email}, a password reset link has been sent.`;
@@ -1186,6 +1206,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const { error } = await db().auth.updateUser({ password: newPassword });
       if (error) return { success: false, message: error.message };
       setIsPasswordRecovery(false);
+      leaveResetPasswordUrl();
       showToast('success', 'Password Updated', 'Your new password has been saved.');
       return { success: true, message: 'Password updated.' };
     } catch (err) {
@@ -1193,9 +1214,15 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const exitPasswordRecovery = () => {
+    setIsPasswordRecovery(false);
+    leaveResetPasswordUrl();
+  };
+
   const signOut = () => {
     const client = getSupabaseClient();
     setIsPasswordRecovery(false);
+    leaveResetPasswordUrl();
     if (client) {
       client.auth.signOut().catch((err) => console.warn('[KBZLife LMS] Sign out error:', err));
     }
@@ -2865,6 +2892,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isAuthReady,
         isPasswordRecovery,
         completePasswordRecovery,
+        exitPasswordRecovery,
         loginWithCredentials,
         registerUser,
         checkUserApprovalStatus,
