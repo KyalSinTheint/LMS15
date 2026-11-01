@@ -33,17 +33,17 @@ const POS_KEY = 'kbz_assistant_pos';
 const CHAT_KEY = 'kbz_assistant_chat';
 
 /**
- * Professor Panda's voice: a playful, cheeky trainer — teasing but never rude.
+ * Trainer Panda's voice: a playful, cheeky trainer — teasing but never rude.
  * Facts always come word-for-word from the approved knowledge; only the
  * lines around them are playful. English only for now (Myanmar coming soon).
  */
 const T = {
   greetings: [
-    "Psst! Professor Panda here 🐼🎓 — your slightly cheeky KBZ Life trainer. Ask me anything about our products, policies or procedures. There are no silly questions… well, almost none 😄",
-    "Well, well, well… a curious learner appears! 🐼 I'm Professor Panda. Ask me about products, policies or procedures — I promise to only tease you a little 😏",
-    "Class is in session! 🔔 Professor Panda reporting for duty 🐼🎓 What would you like to learn today?",
-    "Ah, you found my secret study corner 🎋📚 I'm Professor Panda — ask me anything from our training materials!",
-    "Hello, future insurance superstar! 🌟 Professor Panda at your service. Fire away — I've had my bamboo, I'm ready 🎋",
+    "Psst! Trainer Panda here 🐼🎓 — your slightly cheeky KBZ Life trainer. Ask me anything about our products, policies or procedures. There are no silly questions… well, almost none 😄",
+    "Well, well, well… a curious learner appears! 🐼 I'm Trainer Panda. Ask me about products, policies or procedures — I promise to only tease you a little 😏",
+    "Class is in session! 🔔 Trainer Panda reporting for duty 🐼🎓 What would you like to learn today?",
+    "Ah, you found my secret study corner 🎋📚 I'm Trainer Panda — ask me anything from our training materials!",
+    "Hello, future insurance superstar! 🌟 Trainer Panda at your service. Fire away — I've had my bamboo, I'm ready 🎋",
   ],
   intros: [
     'Ooh, good one! I knew this before my morning bamboo 🎋',
@@ -57,18 +57,18 @@ const T = {
     'I could answer this in my sleep — and I nap a LOT 😴',
     'Drumroll please… 🥁',
     'You again? I like your style 😎 Here you go:',
-    'Ding ding ding! Professor Panda has the answer 🔔',
+    'Ding ding ding! Trainer Panda has the answer 🔔',
     'This one’s on the exam, I just know it 👀',
     'Pandas never forget… or was that elephants? Anyway: 🐘🐼',
     'Ooh, a smart question! Someone’s been studying 📖',
   ],
   notFound: [
-    "Hmm… you've stumped the Professor! 🐼💦 That's not in my notes yet. Shall I pass it to the L&D team?",
+    "Hmm… you've stumped the Trainer! 🐼💦 That's not in my notes yet. Shall I pass it to the L&D team?",
     "Even pandas don't know everything (shocking, I know 😅). Want me to send this to the L&D team?",
     'Ooh, a tricky one! My notes are silent on this 🤐 Shall I ask the L&D team for you?',
     "I flipped through all my bamboo-stained notes… nothing! 🎋📚 Let me ask the L&D team?",
     "You found a gap in my brain! 🧠🕳️ Congratulations, I think? Want the L&D team to fill it in?",
-    "Plot twist: the Professor doesn't know 😱 Shall I forward this to the real experts in L&D?",
+    "Plot twist: the Trainer doesn't know 😱 Shall I forward this to the real experts in L&D?",
     "That's above my pay grade (I'm paid in bamboo) 🎋 Shall I ask the L&D team?",
   ],
   send: 'Ask the L&D team for me',
@@ -82,20 +82,20 @@ const T = {
     'Hello hello! 🐼 Ready to learn something? Ask me about any product, policy or procedure.',
     'Hey there, superstar! 🌟 What shall we learn today?',
     'Oh hi! You caught me mid-snack 🎋 What can I help you with?',
-    "Yo! 👋 Professor Panda in the house. Got a question? I've got (most of) the answers 😏",
+    "Yo! 👋 Trainer Panda in the house. Got a question? I've got (most of) the answers 😏",
     'Mingalaba! 🙏 (That’s about all the Myanmar I know right now 😅) What would you like to learn?',
   ],
   thanks: [
     "You're welcome! Now go protect some families 💪🐼",
-    'Anytime! Professor Panda is always on duty (except during nap time 😴)',
+    'Anytime! Trainer Panda is always on duty (except during nap time 😴)',
     'My pleasure! That’ll be one bamboo shoot, please 🎋😄',
     "Aww, stop it, you'll make me blush 🐼☺️",
     'Happy to help! Remember: double-check the facts — even with me 😉',
     'No problem! Go forth and be awesome 🌟',
   ],
   who: [
-    "I'm Professor Panda 🐼🎓 — KBZ Life's learning buddy. I answer from our approved training materials, so you can trust my facts… my jokes, not so much 😄",
-    "Professor Panda, at your service! 🐼 Part teacher, part bamboo enthusiast, 100% here to help you learn.",
+    "I'm Trainer Panda 🐼🎓 — KBZ Life's learning buddy. I answer from our approved training materials, so you can trust my facts… my jokes, not so much 😄",
+    "Trainer Panda, at your service! 🐼 Part teacher, part bamboo enthusiast, 100% here to help you learn.",
   ],
   howAreYou: [
     "Fantastic! Just finished my bamboo and ready to teach 🎋💪 How about you — what are we learning?",
@@ -110,7 +110,7 @@ const T = {
   ],
   bye: [
     'Bye bye! 👋 Don’t forget your homework 😉🐼',
-    'See you later, superstar! Go make the Professor proud 🌟',
+    'See you later, superstar! Go make the Trainer proud 🌟',
     'Class dismissed! 🔔 Come back anytime 🐼',
   ],
   cheeky: [
@@ -119,16 +119,16 @@ const T = {
     "Rude! …just kidding 😄 Let's try again — ask me about our products, policies or procedures.",
   ],
   laugh: ['Hehe 😄 Glad I amuse you. Now… back to studying! 📚', 'LOL 😂 Okay okay, focus! What’s your question?'],
-  love: ["Aww 🥰 The Professor loves enthusiastic learners too! Now, let's learn something 📚"],
+  love: ["Aww 🥰 The Trainer loves enthusiastic learners too! Now, let's learn something 📚"],
   help: [
     "Here's how I work 🐼: ask me in English about our products, policies, claims or procedures. I'll find the answer in our approved materials. If I don't know, I'll pass your question to the L&D team!",
   ],
   myanmar: [
     'Oops! 😅 I’m still taking Myanmar lessons 📖🐼 For now, please ask me in English.\nမြန်မာလို လောလောဆယ် မဖြေနိုင်သေးပါဘူး — English လို မေးပေးပါနော် 🙏',
-    'Ah, my Myanmar isn’t ready yet — the Professor is still studying 📚🐼 Could you ask me in English?\nမြန်မာဘာသာ မကြာခင် ရလာပါမယ်။ လောလောဆယ် English လို မေးပေးပါ 🙏',
+    'Ah, my Myanmar isn’t ready yet — the Trainer is still studying 📚🐼 Could you ask me in English?\nမြန်မာဘာသာ မကြာခင် ရလာပါမယ်။ လောလောဆယ် English လို မေးပေးပါ 🙏',
   ],
   trap: [
-    "Nice try! 😏 Professor Panda doesn't do crystal-ball promises 🔮 Every case depends on the policy terms, the documents and the official review.",
+    "Nice try! 😏 Trainer Panda doesn't do crystal-ball promises 🔮 Every case depends on the policy terms, the documents and the official review.",
     'Ooh, a trick question! 🕵️ I can’t promise a yes or no on that — the policy terms and the official review decide, not this panda 🐼',
     "Careful, that's a trap question 😄 Nobody can guarantee that in advance — it depends on the policy terms and the case.",
     "Hah! You almost got me 😏 Pandas don't make promises about outcomes — the policy and the review do.",
@@ -439,7 +439,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
       {open && (
         <div
           role="dialog"
-          aria-label="Professor Panda — KBZ Life Assistant"
+          aria-label="Trainer Panda — KBZ Life Assistant"
           style={panelStyle}
           className="fixed z-[60] inset-0 sm:inset-auto sm:w-[380px] bg-white sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
         >
@@ -447,7 +447,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
           <div className="bg-gradient-to-r from-[#003366] to-[#176B98] text-white px-4 py-3 flex items-center gap-3 shrink-0">
             <MentorMascot className="w-10 h-10 shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="font-extrabold text-sm leading-tight">Professor Panda 🐼</p>
+              <p className="font-extrabold text-sm leading-tight">Trainer Panda 🐼</p>
               <p className="text-[11px] text-sky-100/90 truncate">{T.disclaimer}</p>
             </div>
             <button
@@ -609,9 +609,9 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
             setOpen((o) => !o);
           }
         }}
-        aria-label={open ? 'Close Professor Panda, the KBZ Life Assistant' : 'Open Professor Panda, the KBZ Life Assistant (drag to move)'}
+        aria-label={open ? 'Close Trainer Panda, the KBZ Life Assistant' : 'Open Trainer Panda, the KBZ Life Assistant (drag to move)'}
         aria-expanded={open}
-        title="Professor Panda · KBZ Life Assistant (drag to move)"
+        title="Trainer Panda · KBZ Life Assistant (drag to move)"
         style={{ left: pos.x, top: pos.y, width: BUTTON, height: BUTTON, touchAction: 'none' }}
         className={`fixed z-[61] rounded-full shadow-xl select-none ${
           dragging ? 'cursor-grabbing scale-105' : 'cursor-pointer hover:scale-105 transition-transform'

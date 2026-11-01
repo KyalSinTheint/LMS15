@@ -1,5 +1,5 @@
 /**
- * "Professor Panda" — the LMS Assistant mascot: an original, cheerful giant
+ * "Trainer Panda" — the LMS Assistant mascot: an original, cheerful giant
  * panda in a graduation cap, drawn in the KBZ Life palette
  * (navy #003366 instead of black, brand blue #176B98, sky #a5e0f2, gold tassel).
  */
@@ -7,7 +7,7 @@ import React from 'react';
 
 export const MentorMascot: React.FC<{ className?: string; title?: string }> = ({
   className,
-  title = 'Professor Panda — KBZ Life Assistant',
+  title = 'Trainer Panda — KBZ Life Assistant',
 }) => (
   <svg viewBox="0 0 100 100" className={className} role="img" aria-label={title}>
     <title>{title}</title>

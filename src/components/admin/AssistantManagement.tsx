@@ -188,7 +188,7 @@ export const AssistantManagement: React.FC = () => {
         <div className="flex items-center gap-3">
           <MentorMascot className="w-12 h-12 shrink-0" />
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Professor Panda · LMS Assistant</h2>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Trainer Panda · LMS Assistant</h2>
             <p className="text-xs text-slate-500">
               Upload policy PDFs and FAQs. Employees ask questions in English from the chat icon in the portal (Myanmar coming later).
             </p>
