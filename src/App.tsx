@@ -43,6 +43,7 @@ import { SkillDevelopmentPage } from './components/learner/SkillDevelopmentPage'
 import { LdOverviewPage } from './components/learner/LdOverviewPage';
 import { LearnerCoursesView } from './components/learner/LearnerCoursesView';
 import { ProductKnowledgeHubPage } from './components/learner/ProductKnowledgeHubPage';
+import { ChatbotWidget } from './components/chatbot/ChatbotWidget';
 import { CompanyBulletinPage } from './components/learner/CompanyBulletinPage';
 import { LoginPage } from './components/auth/LoginPage';
 import { RegisterPage } from './components/auth/RegisterPage';
@@ -75,6 +76,7 @@ function AppContent() {
     if (isAuthenticated) setLoginPrefill(null);
   }, [isAuthenticated]);
   const [activeTab, setActiveTab] = useState<NavTabId>('our-company');
+  const [productOpenRequest, setProductOpenRequest] = useState<{ productId: string; nonce: number } | null>(null);
   const [activeSubpage, setActiveSubpage] = useState<OurCompanySubpage>('overview');
   const [activeLdSubpage, setActiveLdSubpage] = useState<LdSubpage>('overview');
   const [isPlaceholderMode, setIsPlaceholderMode] = useState<boolean>(true);
@@ -420,13 +422,22 @@ function AppContent() {
         ) : activeTab === 'product-knowledge' ? (
           /* TAB 3: PRODUCT KNOWLEDGE HUB */
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <ProductKnowledgeHubPage />
+            <ProductKnowledgeHubPage openRequest={productOpenRequest} />
           </div>
         ) : (
           /* TAB 4: COMPANY BULLETIN */
           <CompanyBulletinPage />
         )}
       </main>
+
+      {/* LMS Assistant: draggable floating chat on every user-panel page */}
+      <ChatbotWidget
+        onOpenProduct={(productId) => {
+          handleSelectTab('product-knowledge', 'overview');
+          setProductOpenRequest({ productId, nonce: Date.now() });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
 
       {/* Shared Footer with Quick Links */}
       <PortalFooter

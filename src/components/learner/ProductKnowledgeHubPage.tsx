@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Search,
   BookOpen,
@@ -18,9 +18,15 @@ import { useLms } from '../../context/LmsContext';
 import { normalizeProductTheme, ProductIcon } from '../../lib/productVisuals';
 import { ProductDetailPage } from './ProductDetailPage';
 
-export const ProductKnowledgeHubPage: React.FC = () => {
+export const ProductKnowledgeHubPage: React.FC<{
+  /** Open this product directly (e.g. from the LMS Assistant); `nonce` re-triggers the same product */
+  openRequest?: { productId: string; nonce: number } | null;
+}> = ({ openRequest }) => {
   const { getPublishedProducts, productQuizAttempts, currentUser } = useLms();
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(openRequest?.productId ?? null);
+  useEffect(() => {
+    if (openRequest?.productId) setSelectedProductId(openRequest.productId);
+  }, [openRequest?.productId, openRequest?.nonce]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 

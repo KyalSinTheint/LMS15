@@ -14,6 +14,7 @@ import {
   Sparkles,
   ExternalLink,
   KeyRound,
+  Bot,
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
 import { AdminDashboard } from './AdminDashboard';
@@ -36,11 +37,13 @@ import { AdminLoginModal } from './AdminLoginModal';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 import { useClickOutside } from '../../lib/closeOnOutside';
 import { PasswordResetRequestsPanel } from './PasswordResetRequestsPanel';
+import { AssistantManagement } from './AssistantManagement';
 
 export type AdminTabId =
   | 'dashboard'
   | 'users'
   | 'password-resets'
+  | 'assistant'
   | 'access'
   | 'bulletin'
   | 'products'
@@ -132,6 +135,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
     { id: 'access', label: 'User Permissions & Access', icon: ShieldCheck },
     { id: 'bulletin', label: 'Company Bulletin', icon: Bell },
     { id: 'products', label: 'Product Knowledge Hub', icon: Package },
+    { id: 'assistant', label: 'LMS Assistant', icon: Bot },
     { id: 'license-training', label: 'License Training', icon: Award },
     { id: 'skill-development', label: 'Skill Development', icon: Sparkles },
     { id: 'news', label: 'Company News', icon: Newspaper },
@@ -346,6 +350,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
         )}
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'password-resets' && <PasswordResetRequestsPanel />}
+        {activeTab === 'assistant' && <AssistantManagement />}
         {activeTab === 'access' && <AccessManagement />}
         {activeTab === 'bulletin' && <CompanyBulletinManagement />}
         {activeTab === 'products' && <ProductManagement />}
