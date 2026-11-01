@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Sparkles,
   ExternalLink,
+  KeyRound,
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
 import { AdminDashboard } from './AdminDashboard';
@@ -34,10 +35,12 @@ import { Newspaper, Film, Award, Key, User, Lock, Settings as SettingsIcon, Pack
 import { AdminLoginModal } from './AdminLoginModal';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 import { useClickOutside } from '../../lib/closeOnOutside';
+import { PasswordResetRequestsPanel } from './PasswordResetRequestsPanel';
 
 export type AdminTabId =
   | 'dashboard'
   | 'users'
+  | 'password-resets'
   | 'access'
   | 'bulletin'
   | 'products'
@@ -55,7 +58,8 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = () => {
-  const { currentUser, isSupabaseLive, refreshData, isLoading, signOut, theme, toggleTheme } = useLms();
+  const { currentUser, isSupabaseLive, refreshData, isLoading, signOut, theme, toggleTheme, passwordResetRequests } = useLms();
+  const pendingResetCount = passwordResetRequests.filter((r) => r.status === 'pending').length;
   const [activeTab, setActiveTab] = useState<AdminTabId>('dashboard');
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -124,6 +128,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
   const ADMIN_TABS: { id: AdminTabId; label: string; icon: React.ElementType }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'users', label: 'User Management & Approvals', icon: Users },
+    { id: 'password-resets', label: 'Password Resets', icon: KeyRound },
     { id: 'access', label: 'User Permissions & Access', icon: ShieldCheck },
     { id: 'bulletin', label: 'Company Bulletin', icon: Bell },
     { id: 'products', label: 'Product Knowledge Hub', icon: Package },
@@ -314,6 +319,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
                 >
                   <Icon className="w-4 h-4" />
                   <span>{tab.label}</span>
+                  {tab.id === 'password-resets' && pendingResetCount > 0 && (
+                    <span
+                      className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center"
+                      aria-label={`${pendingResetCount} pending`}
+                    >
+                      {pendingResetCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -332,6 +345,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
           />
         )}
         {activeTab === 'users' && <UserManagement />}
+        {activeTab === 'password-resets' && <PasswordResetRequestsPanel />}
         {activeTab === 'access' && <AccessManagement />}
         {activeTab === 'bulletin' && <CompanyBulletinManagement />}
         {activeTab === 'products' && <ProductManagement />}

@@ -37,6 +37,7 @@ import {
   ProductQuizAttempt,
   CompanyBulletinItem,
   BulletinCategory,
+  PasswordResetRequest,
 } from '../types/lms';
 import { getSupabaseClient, isSupabaseConfigured, openedFromPasswordResetLink, RESET_PASSWORD_PATH } from '../lib/supabase';
 
@@ -107,6 +108,17 @@ interface LmsContextType {
   rejectUser: (userId: string, reason: string) => Promise<boolean>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
   requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string; isConfigured?: boolean }>;
+  // Admin-approved reset (no email needed)
+  requestAdminPasswordReset: (identifier: string, reason?: string) => Promise<{ success: boolean; message: string }>;
+  passwordResetRequests: PasswordResetRequest[];
+  /** false when the password-reset migration has not been run yet */
+  passwordResetSetupReady: boolean;
+  loadPasswordResetRequests: () => Promise<void>;
+  /** Returns the one-time temporary password to give to the employee */
+  approvePasswordResetRequest: (requestId: string) => Promise<{ success: boolean; tempPassword?: string; message: string }>;
+  rejectPasswordResetRequest: (requestId: string) => Promise<boolean>;
+  /** After signing in with a temporary password: set the new password */
+  completeTemporaryPasswordChange: (newPassword: string) => Promise<{ success: boolean; message: string }>;
   updateAdminProfile: (updates: Partial<Profile>) => Promise<boolean>;
   updateProfile: (userId: string, updates: Partial<Profile>) => Promise<{ success: boolean; message: string; profile?: Profile }>;
   fetchProfile: (userId: string) => Promise<Profile | null>;
@@ -1040,6 +1052,12 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         email = data as string;
       }
 
+      // Temporary passwords older than 24 hours stop working (server-side)
+      await client.rpc('expire_stale_temporary_passwords').then(
+        () => undefined,
+        () => undefined
+      );
+
       const { data: signIn, error: signInError } = await client.auth.signInWithPassword({ email, password });
       if (signInError || !signIn.user) {
         return { success: false, message: signInError?.message || 'Invalid username or password.' };
@@ -1192,6 +1210,137 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const message = `If an account exists for ${email}, a password reset link has been sent.`;
       showToast('success', 'Email Sent', message);
       return { success: true, message, isConfigured: true };
+    } catch (err) {
+      return { success: false, message: errorMessage(err) };
+    }
+  };
+
+  // -------------------------------------------------------------
+  // ADMIN-APPROVED PASSWORD RESET (works without email)
+  // -------------------------------------------------------------
+  const [passwordResetRequests, setPasswordResetRequests] = useState<PasswordResetRequest[]>([]);
+  const [passwordResetSetupReady, setPasswordResetSetupReady] = useState(true);
+  const RESET_REQUEST_COLUMNS =
+    'id, user_id, identifier, reason, status, expires_at, resolved_by, resolved_by_name, resolved_at, completed_at, created_at';
+  const RESET_SETUP_MESSAGE =
+    'Password reset requests need a one-time database update: run supabase/migrations/20261105_admin_password_reset.sql in the Supabase SQL Editor.';
+  const isMissingResetSetup = (err: unknown) =>
+    /password_reset_requests|request_password_reset|admin_approve_password_reset|admin_reject_password_reset|finish_temporary_password_change|PGRST202|42P01|schema cache/i.test(
+      `${(err as { message?: string })?.message || ''} ${(err as { code?: string })?.code || ''}`
+    );
+
+  const loadPasswordResetRequests = useCallback(async () => {
+    const client = getSupabaseClient();
+    if (!client) return;
+    const { data, error } = await client
+      .from('password_reset_requests')
+      .select(RESET_REQUEST_COLUMNS)
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (error) {
+      console.warn('[KBZLife LMS] Could not load password reset requests:', error.message);
+      if (isMissingResetSetup(error)) setPasswordResetSetupReady(false);
+      return;
+    }
+    setPasswordResetSetupReady(true);
+    setPasswordResetRequests((data || []) as PasswordResetRequest[]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Admins: load now and check for new requests every minute
+  useEffect(() => {
+    if (!isAdmin) {
+      setPasswordResetRequests([]);
+      return;
+    }
+    loadPasswordResetRequests();
+    const timer = window.setInterval(loadPasswordResetRequests, 60000);
+    return () => window.clearInterval(timer);
+  }, [isAdmin, authUserId, loadPasswordResetRequests]);
+
+  const requestAdminPasswordReset = async (
+    identifier: string,
+    reason?: string
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      const { error } = await db().rpc('request_password_reset', {
+        p_identifier: identifier.trim(),
+        p_reason: reason?.trim() || null,
+      });
+      if (error) {
+        if (isMissingResetSetup(error)) {
+          return { success: false, message: 'Password reset requests are not set up yet. Please contact the LMS Administrator.' };
+        }
+        throw error;
+      }
+      // Same answer whether or not the account exists
+      return {
+        success: true,
+        message:
+          'Your request has been sent to the LMS Administrator. They will contact you to confirm your identity and give you a temporary password.',
+      };
+    } catch (err) {
+      return { success: false, message: errorMessage(err) };
+    }
+  };
+
+  const approvePasswordResetRequest = async (
+    requestId: string
+  ): Promise<{ success: boolean; tempPassword?: string; message: string }> => {
+    if (!requireAdmin('approve password resets')) return { success: false, message: 'Administrator access required.' };
+    try {
+      const { data, error } = await db().rpc('admin_approve_password_reset', { p_request_id: requestId });
+      if (error) throw error;
+      await loadPasswordResetRequests();
+      const request = passwordResetRequests.find((r) => r.id === requestId);
+      const target = profiles.find((p) => p.id === request?.user_id);
+      if (target) {
+        const updated = { ...target, must_change_password: true };
+        setProfiles((prev) => prev.map((p) => (p.id === target.id ? updated : p)));
+      }
+      return { success: true, tempPassword: String(data || ''), message: 'Temporary password issued.' };
+    } catch (err) {
+      const message = isMissingResetSetup(err) ? RESET_SETUP_MESSAGE : errorMessage(err);
+      showToast('error', 'Reset Not Approved', message);
+      return { success: false, message };
+    }
+  };
+
+  const rejectPasswordResetRequest = async (requestId: string): Promise<boolean> => {
+    if (!requireAdmin('reject password resets')) return false;
+    try {
+      const { error } = await db().rpc('admin_reject_password_reset', { p_request_id: requestId });
+      if (error) throw error;
+      await loadPasswordResetRequests();
+      showToast('info', 'Request Rejected', 'The password was not changed.');
+      return true;
+    } catch (err) {
+      showToast('error', 'Request Not Rejected', isMissingResetSetup(err) ? RESET_SETUP_MESSAGE : errorMessage(err));
+      return false;
+    }
+  };
+
+  const completeTemporaryPasswordChange = async (newPassword: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const client = db();
+      const { error } = await client.auth.updateUser({ password: newPassword });
+      if (error) {
+        return {
+          success: false,
+          message: /different from the old/i.test(error.message)
+            ? 'Please choose a password that is different from the temporary password.'
+            : error.message,
+        };
+      }
+      const { error: finishError } = await client.rpc('finish_temporary_password_change');
+      if (finishError) throw finishError;
+      if (myProfile) {
+        const cleared = { ...myProfile, must_change_password: false, temp_password_expires_at: null };
+        setMyProfile(cleared);
+        setProfiles((prev) => prev.map((p) => (p.id === cleared.id ? cleared : p)));
+      }
+      showToast('success', 'Password Updated', 'Your new password has been saved.');
+      return { success: true, message: 'Password updated.' };
     } catch (err) {
       return { success: false, message: errorMessage(err) };
     }
@@ -2894,6 +3043,13 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         rejectUser,
         changePassword,
         requestPasswordReset,
+        requestAdminPasswordReset,
+        passwordResetRequests,
+        passwordResetSetupReady,
+        loadPasswordResetRequests,
+        approvePasswordResetRequest,
+        rejectPasswordResetRequest,
+        completeTemporaryPasswordChange,
         updateAdminProfile,
         updateProfile,
         fetchProfile,

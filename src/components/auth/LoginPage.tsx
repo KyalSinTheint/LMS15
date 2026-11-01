@@ -32,7 +32,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   initialIdentifier,
   notice,
 }) => {
-  const { loginWithCredentials, requestPasswordReset } = useLms();
+  const { loginWithCredentials, requestPasswordReset, requestAdminPasswordReset } = useLms();
   const [identifier, setIdentifier] = useState(initialIdentifier || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,9 +40,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  // 'admin': ask an administrator for a temporary password (default, no email needed)
+  // 'email': backup — Supabase emails a reset link
+  const [forgotMode, setForgotMode] = useState<'admin' | 'email'>('admin');
   const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotReason, setForgotReason] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotFeedback, setForgotFeedback] = useState<string | null>(null);
+  const [forgotFeedback, setForgotFeedback] = useState<{ ok: boolean; title: string; message: string } | null>(null);
+
+  const closeForgotModal = () => {
+    setIsForgotModalOpen(false);
+    setForgotFeedback(null);
+    setForgotMode('admin');
+    setForgotReason('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,14 +86,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!forgotEmail) return;
+    if (!forgotEmail.trim()) return;
     setForgotLoading(true);
     setForgotFeedback(null);
     try {
-      const res = await requestPasswordReset(forgotEmail.trim());
-      setForgotFeedback(res.message);
+      if (forgotMode === 'admin') {
+        const res = await requestAdminPasswordReset(forgotEmail.trim(), forgotReason);
+        setForgotFeedback(
+          res.success
+            ? { ok: true, title: 'Request sent to the Administrator', message: res.message }
+            : { ok: false, title: 'Request not sent', message: res.message }
+        );
+      } else {
+        const res = await requestPasswordReset(forgotEmail.trim());
+        setForgotFeedback(
+          res.success
+            ? { ok: true, title: 'Check your email', message: `${res.message} If you can't find it, check your Spam folder.` }
+            : {
+                ok: false,
+                title: 'Email could not be sent',
+                message: /rate limit|seconds/i.test(res.message)
+                  ? 'Too many requests. Please wait a minute and try again, or ask the Administrator instead.'
+                  : 'The reset email could not be sent right now. Please ask the Administrator for a temporary password instead.',
+              }
+        );
+      }
     } catch {
-      setForgotFeedback('Failed to request password reset.');
+      setForgotFeedback({ ok: false, title: 'Request not sent', message: 'Please check your connection and try again.' });
     } finally {
       setForgotLoading(false);
     }
@@ -260,7 +290,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       {isForgotModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn"
-          {...closeOnBackdrop(() => setIsForgotModalOpen(false))}
+          {...closeOnBackdrop(closeForgotModal)}
         >
           <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 text-left space-y-4">
             <div className="flex items-center gap-3">
@@ -270,21 +300,40 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               <div>
                 <h3 className="text-base font-bold text-slate-900">Reset Your Password</h3>
                 <p className="text-xs text-slate-500">
-                  Enter your registered work email to receive password recovery instructions.
+                  {forgotMode === 'admin'
+                    ? 'Ask the LMS Administrator for a temporary password.'
+                    : 'We will email you a link to set a new password.'}
                 </p>
               </div>
             </div>
 
             {forgotFeedback ? (
-              <div className="p-3.5 rounded-xl bg-[#F3F8FB] border border-[#176B98]/20 text-xs text-slate-700 space-y-2">
-                <p className="font-bold text-[#176B98]">Request Processed</p>
-                <p>{forgotFeedback}</p>
+              <div
+                className={`p-3.5 rounded-xl border text-xs space-y-2 ${
+                  forgotFeedback.ok
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                    : 'bg-red-50 border-red-200 text-red-800'
+                }`}
+                role={forgotFeedback.ok ? 'status' : 'alert'}
+              >
+                <p className={`font-bold ${forgotFeedback.ok ? 'text-emerald-800' : 'text-red-700'}`}>{forgotFeedback.title}</p>
+                <p className="leading-relaxed">{forgotFeedback.message}</p>
+                {!forgotFeedback.ok && forgotMode === 'email' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotFeedback(null);
+                      setForgotMode('admin');
+                    }}
+                    className="w-full mt-1 py-2 rounded-xl bg-white border border-red-200 text-red-700 hover:bg-red-100 text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    Ask the Administrator instead
+                  </button>
+                )}
                 <button
-                  onClick={() => {
-                    setIsForgotModalOpen(false);
-                    setForgotFeedback(null);
-                  }}
-                  className="w-full mt-2 py-2 rounded-xl bg-[#176B98] hover:bg-[#12567a] text-white text-xs font-bold cursor-pointer transition-colors"
+                  type="button"
+                  onClick={closeForgotModal}
+                  className="w-full mt-1 py-2 rounded-xl bg-[#176B98] hover:bg-[#12567a] text-white text-xs font-bold cursor-pointer transition-colors"
                 >
                   Close
                 </button>
@@ -292,20 +341,49 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             ) : (
               <form onSubmit={handleForgotSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {forgotMode === 'admin' ? 'Email, username or Employee ID' : 'Email Address'}
+                  </label>
                   <input
-                    type="email"
+                    type={forgotMode === 'admin' ? 'text' : 'email'}
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder="e.g. employee@kbzlife.com"
+                    placeholder={forgotMode === 'admin' ? 'e.g. employee@kbzlife.com or EMP-1023' : 'e.g. employee@kbzlife.com'}
                     required
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#176B98]/20 focus:border-[#176B98]"
                   />
                 </div>
-                <div className="flex items-center justify-end gap-2 pt-2">
+
+                {forgotMode === 'admin' && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Note for the Administrator <span className="font-normal text-slate-400">(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={forgotReason}
+                        onChange={(e) => setForgotReason(e.target.value)}
+                        placeholder="e.g. I forgot my password"
+                        maxLength={300}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#176B98]/20 focus:border-[#176B98]"
+                      />
+                    </div>
+                    <div className="p-3 rounded-xl bg-[#F3F8FB] border border-[#176B98]/15 text-[11px] text-slate-600 leading-relaxed space-y-1">
+                      <p className="font-bold text-slate-700">How it works</p>
+                      <ol className="list-decimal pl-4 space-y-0.5">
+                        <li>The Administrator checks that it is really you (by phone or in person).</li>
+                        <li>They give you a temporary password, valid for 24 hours.</li>
+                        <li>Sign in with it and choose your own new password.</li>
+                      </ol>
+                    </div>
+                  </>
+                )}
+
+                <div className="flex items-center justify-end gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => setIsForgotModalOpen(false)}
+                    onClick={closeForgotModal}
                     className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer"
                   >
                     Cancel
@@ -315,9 +393,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     disabled={forgotLoading}
                     className="px-4 py-2 rounded-xl bg-[#176B98] hover:bg-[#12567a] text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
                   >
-                    {forgotLoading ? 'Submitting...' : 'Send Recovery Link'}
+                    {forgotLoading ? 'Sending…' : forgotMode === 'admin' ? 'Send Request' : 'Send Reset Link'}
                   </button>
                 </div>
+
+                <p className="text-center text-[11px] text-slate-500 border-t border-slate-100 pt-3">
+                  {forgotMode === 'admin' ? 'Prefer email? ' : 'No email arrived? '}
+                  <button
+                    type="button"
+                    onClick={() => setForgotMode(forgotMode === 'admin' ? 'email' : 'admin')}
+                    className="font-semibold text-[#176B98] hover:underline cursor-pointer"
+                  >
+                    {forgotMode === 'admin' ? 'Send me a reset link by email' : 'Ask the Administrator instead'}
+                  </button>
+                </p>
               </form>
             )}
           </div>
