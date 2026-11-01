@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useLms } from '../../context/LmsContext';
+import { PdfViewerModal } from '../common/PdfViewerModal';
 import {
   LicenseTrainingLesson,
   LessonContentType,
@@ -33,7 +34,6 @@ import {
   Clock,
   Layers,
   Search,
-  ExternalLink,
   Film,
   Filter,
   Download,
@@ -2181,7 +2181,23 @@ export const LicenseTrainingManagement: React.FC = () => {
       {/* =========================================================================
           ADMIN PREVIEW MODAL
           ========================================================================= */}
-      {previewLesson && (
+      {/* PDF lessons open in the in-app PDF viewer (never a new tab) */}
+      {previewLesson && (previewLesson.lesson_type || previewLesson.content_type) === 'pdf' && (
+        <PdfViewerModal
+          isOpen
+          onClose={() => setPreviewLesson(null)}
+          fileUrl={previewLesson.file_url}
+          title={previewLesson.title}
+          subtitle={`Admin Preview · ${previewLesson.category || 'Curriculum'}`}
+          fileName={previewLesson.file_name}
+          onDownload={() => {
+            const cleanName = (previewLesson.title || 'license_document').replace(/[^a-zA-Z0-9_-]/g, '_');
+            triggerFileDownload(previewLesson.file_url, `${cleanName}.pdf`, 'admin');
+          }}
+        />
+      )}
+
+      {previewLesson && (previewLesson.lesson_type || previewLesson.content_type) !== 'pdf' && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-sm"
           onClick={() => setPreviewLesson(null)}
@@ -2263,15 +2279,6 @@ export const LicenseTrainingManagement: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-1">Official Licensing PDF Document</p>
                 </div>
                 <div className="flex items-center gap-2 pt-2">
-                  <a
-                    href={previewLesson.file_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3.5 py-1.5 rounded-xl bg-[#176B98] hover:bg-[#12567a] text-white text-xs font-bold transition-all flex items-center gap-1.5"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Open in New Tab</span>
-                  </a>
                   <button
                     type="button"
                     onClick={() => {

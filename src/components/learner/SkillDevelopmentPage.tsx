@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useLms } from '../../context/LmsContext';
+import { isSupabaseStorageUrl } from '../../lib/supabase';
 import { SkillDevelopmentResource, SkillCategory } from '../../types/lms';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { formatBytes } from '../../lib/storageUtils';
@@ -39,6 +40,19 @@ export const SkillDevelopmentPage: React.FC = () => {
   const [selectedVideoResource, setSelectedVideoResource] = useState<SkillDevelopmentResource | null>(null);
   const [selectedPdfResource, setSelectedPdfResource] = useState<SkillDevelopmentResource | null>(null);
   const [selectedLinkResource, setSelectedLinkResource] = useState<SkillDevelopmentResource | null>(null);
+
+  // Links that point to a PDF the app can load (Supabase Storage or this site)
+  // open in the in-app PDF viewer instead of another tab / site.
+  const openLinkResource = (resource: SkillDevelopmentResource) => {
+    const url = (resource.external_url || resource.content_url || '').trim();
+    const isPdfLink = /\.pdf($|[?#])/i.test(url);
+    const isLoadableHere = isSupabaseStorageUrl(url) || url.startsWith('/') || url.startsWith(window.location.origin);
+    if (isPdfLink && isLoadableHere) {
+      setSelectedPdfResource({ ...resource, file_url: url });
+    } else {
+      setSelectedLinkResource(resource);
+    }
+  };
   const [isQuizModalOpen, setIsQuizModalOpen] = useState<boolean>(false);
   const [quizCategoryTarget, setQuizCategoryTarget] = useState<{ id?: string; name: string } | null>(null);
 
@@ -418,7 +432,7 @@ export const SkillDevelopmentPage: React.FC = () => {
                   {isLink && (
                     <button
                       type="button"
-                      onClick={() => setSelectedLinkResource(resource)}
+                      onClick={() => openLinkResource(resource)}
                       className="absolute inset-0 flex items-center justify-center cursor-pointer group/btn opacity-85 hover:opacity-100 transition-opacity"
                       aria-label={`Open external resource ${resource.title}`}
                     >
