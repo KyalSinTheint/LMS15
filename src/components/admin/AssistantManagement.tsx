@@ -37,8 +37,7 @@ import {
   setEntryPublished,
 } from '../../lib/chatbotApi';
 import { buildKnowledge, hasBrokenMyanmar, stripBrokenMyanmar } from '../../lib/chatbotKnowledge';
-import { KnowledgeIndex, searchBilingual } from '../../lib/chatbotSearch';
-import { translateMyanmarQuery } from '../../lib/chatbotGlossary';
+import { KnowledgeIndex, minAnswerScore } from '../../lib/chatbotSearch';
 import { MentorMascot } from '../chatbot/MentorMascot';
 import { PdfViewerModal } from '../common/PdfViewerModal';
 
@@ -177,8 +176,7 @@ export const AssistantManagement: React.FC = () => {
       ),
     [entries, products, docTitle]
   );
-  const testResult = testQuery.trim() ? searchBilingual(testIndex, testQuery, translateMyanmarQuery, 3) : null;
-  const testHits = testResult?.hits || [];
+  const testHits = testQuery.trim() ? testIndex.search(testQuery, 3) : [];
 
   const openQuestions = questions.filter((q) => q.status === 'open');
   const faqCount = entries.filter((e) => e.kind === 'faq').length;
@@ -192,7 +190,7 @@ export const AssistantManagement: React.FC = () => {
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Professor Panda · LMS Assistant</h2>
             <p className="text-xs text-slate-500">
-              Upload policy PDFs and FAQs. Employees ask questions in Myanmar or English from the chat icon in the portal.
+              Upload policy PDFs and FAQs. Employees ask questions in English from the chat icon in the portal (Myanmar coming later).
             </p>
           </div>
         </div>
@@ -448,7 +446,7 @@ export const AssistantManagement: React.FC = () => {
                   <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">{stripBrokenMyanmar(e.content)}</p>
                   {hasBrokenMyanmar(e.content) && (
                     <p className="text-[10px] text-amber-700 mt-0.5">
-                      ⚠️ The Myanmar text in this PDF is unreadable (font problem), so it is hidden. Myanmar questions are matched to the English text.
+                      ⚠️ The Myanmar text in this PDF is unreadable (font problem), so it is hidden. The assistant uses the English text.
                     </p>
                   )}
                   <p className="text-[10px] text-slate-400 mt-1">
@@ -496,10 +494,10 @@ export const AssistantManagement: React.FC = () => {
           Try a question
         </h3>
         <p className="text-xs text-slate-500 mb-3">See which answer employees would get (includes Product Knowledge Hub content).</p>
-        <input value={testQuery} onChange={(e) => setTestQuery(e.target.value)} placeholder="e.g. What is the grace period? / ဝင်ရောက်နိုင်သည့် အသက်" className={inputCls} />
+        <input value={testQuery} onChange={(e) => setTestQuery(e.target.value)} placeholder="e.g. What is the grace period?" className={inputCls} />
         {testQuery.trim() && (
           <ul className="mt-3 space-y-2">
-            {testHits.length === 0 || testHits[0].score < (testResult?.min ?? 1) ? (
+            {testHits.length === 0 || testHits[0].score < minAnswerScore(testQuery) ? (
               <li className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
                 No good match — employees would be offered to send this question to the L&D team.
               </li>
@@ -532,9 +530,9 @@ export const AssistantManagement: React.FC = () => {
                 </button>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Question (Myanmar or English)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Question (English)</label>
                 <textarea rows={2} value={faqModal.question} onChange={(e) => setFaqModal({ ...faqModal, question: e.target.value })} className={inputCls} />
-                <p className="text-[11px] text-slate-400 mt-1">Tip: add the same question in both languages, or several ways of asking it, on separate lines.</p>
+                <p className="text-[11px] text-slate-400 mt-1">Tip: add several ways of asking the same question, on separate lines.</p>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Answer</label>

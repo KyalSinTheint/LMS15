@@ -216,28 +216,3 @@ export const isMyanmar = (text: string) => MYANMAR.test(text);
  * Myanmar text shares many character pairs by chance, so it needs more.
  */
 export const minAnswerScore = (query: string) => (isMyanmar(query) ? 0.3 : 0.15);
-
-/**
- * Searches with a Myanmar question also "translated" into English insurance
- * terms (see chatbotGlossary), so it can match English handbook text.
- */
-export function searchBilingual(
-  index: KnowledgeIndex,
-  question: string,
-  translate: (q: string) => string,
-  limit = 4
-): { hits: SearchHit[]; min: number; translated: boolean } {
-  const english = isMyanmar(question) ? translate(question) : '';
-  if (!english) return { hits: index.search(question, limit), min: minAnswerScore(question), translated: false };
-  const direct = index.search(question, limit);
-  const viaEnglish = index.search(english, limit);
-  const mmMin = minAnswerScore(question);
-  // A strong Myanmar match (e.g. a Myanmar FAQ) wins; otherwise prefer the
-  // English text found through the translated insurance terms.
-  if (direct.length && direct[0].score >= 0.6) return { hits: direct, min: mmMin, translated: false };
-  if (viaEnglish.length && viaEnglish[0].score >= 0.15 && viaEnglish[0].item.id !== direct[0]?.item.id) {
-    return { hits: viaEnglish, min: 0.15, translated: true };
-  }
-  if (direct.length && direct[0].score >= mmMin) return { hits: direct, min: mmMin, translated: false };
-  return { hits: viaEnglish, min: 0.15, translated: true };
-}

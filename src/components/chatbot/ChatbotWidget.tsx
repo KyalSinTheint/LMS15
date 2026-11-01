@@ -10,8 +10,7 @@ import { useLms } from '../../context/LmsContext';
 import { MentorMascot } from './MentorMascot';
 import { askTeam, loadMyQuestions, loadPublishedEntries, markAnswersSeen } from '../../lib/chatbotApi';
 import { buildKnowledge } from '../../lib/chatbotKnowledge';
-import { isMyanmar, KnowledgeIndex, KnowledgeItem, searchBilingual } from '../../lib/chatbotSearch';
-import { translateMyanmarQuery } from '../../lib/chatbotGlossary';
+import { isMyanmar, KnowledgeIndex, KnowledgeItem, minAnswerScore } from '../../lib/chatbotSearch';
 
 interface Message {
   id: string;
@@ -23,8 +22,6 @@ interface Message {
   related?: KnowledgeItem[];
   /** Playful line shown before the answer */
   intro?: string;
-  /** Small note under the answer (e.g. answer kept in the handbook's English) */
-  note?: string;
   /** Offer to send this question to the L&D team */
   askable?: string;
   tone?: 'info' | 'team';
@@ -36,96 +33,117 @@ const POS_KEY = 'kbz_assistant_pos';
 const CHAT_KEY = 'kbz_assistant_chat';
 
 /**
- * Professor Panda's voice: a playful, cheeky trainer, never rude.
+ * Professor Panda's voice: a playful, cheeky trainer — teasing but never rude.
  * Facts always come word-for-word from the approved knowledge; only the
- * friendly lines around them are playful. Several variants keep it fresh.
+ * lines around them are playful. English only for now (Myanmar coming soon).
  */
 const T = {
-  en: {
-    greeting:
-      "Psst! Professor Panda here 🐼 — your slightly cheeky KBZ Life trainer. Ask me anything about our products, policies or procedures. There are no silly questions… well, almost none 😄",
-    intros: [
-      'Ooh, good one! I knew this before my morning bamboo 🎋',
-      'Easy peasy! Write this down — there might be a pop quiz later 😉',
-      'Look what I found in my secret study notes 📚',
-      'Teacher’s pet alert! Here you go 🐼✨',
-      'Aha, I was hoping someone would ask that! 🤓',
-      'Hold my bamboo… here’s the answer 🎋',
-    ],
-    notFound: [
-      "Hmm… you've stumped the Professor! 🐼💦 That's not in my notes yet. Shall I pass it to the L&D team?",
-      "Even pandas don't know everything (shocking, I know 😅). Want me to send this to the L&D team?",
-      'Ooh, a tricky one! My notes are silent on this 🤐 Shall I ask the L&D team for you?',
-    ],
-    send: 'Ask the L&D team for me',
-    sent: [
-      "Done! I've slipped your question to the L&D team 📨 I'll wave at you from my icon when they answer 👋",
-      'Sent! The L&D team has your question 📨 Keep studying while you wait — I’m watching 👀😄',
-    ],
-    hello: [
-      'Hello hello! 🐼 Ready to learn something? Ask me about any product, policy or procedure.',
-      'Hey there, superstar! 🌟 What shall we learn today?',
-    ],
-    thanks: [
-      "You're welcome! Now go protect some families 💪🐼",
-      'Anytime! Professor Panda is always on duty (except during nap time 😴)',
-    ],
-    who: [
-      "I'm Professor Panda 🐼🎓 — KBZ Life's learning buddy. I answer from our approved training materials, so you can trust me… mostly my jokes, not so much 😄",
-    ],
-    trap: [
-      "Nice try! 😏 Professor Panda doesn't do crystal-ball promises 🔮 Every case depends on the policy terms, the documents and the official review.",
-      'Ooh, a trick question! 🕵️ I can’t promise a yes or no on that — the policy terms and the official review decide, not this panda 🐼',
-      "Careful, that's a trap question 😄 Nobody can guarantee that in advance — it depends on the policy terms and the case.",
-    ],
-    trapHelp: 'Here’s what our materials say, so you can explain it properly:',
-    trapNoInfo: 'For a definite answer on a real case, please check the policy document or ask the L&D team.',
-    verify: 'Always double-check the facts — don’t trust the Panda blindly! 🐼',
-    englishNote: '',
-    related: 'Curious? Try these too:',
-    source: 'Source',
-    openProduct: 'Open in Product Knowledge Hub',
-    placeholder: 'Ask a question…',
-    teamAnswer: 'Ding ding! 🔔 The L&D team answered',
-    disclaimer: 'For learning reference. The policy document is always final.',
-  },
-  my: {
-    greeting:
-      'ဟိုင်း! Professor Panda ပါ 🐼 — KBZ Life ရဲ့ နည်းနည်းဆော့တတ်တဲ့ trainer လေးပေါ့။ Product၊ မူဝါဒ၊ လုပ်ထုံးလုပ်နည်း ဘာမဆို မေးပါ။ မေးခွန်းညံ့တယ်ဆိုတာ မရှိပါဘူး… သိပ်တော့ မရှိပါဘူး 😄',
-    intros: [
-      'အိုး… မေးခွန်းကောင်းလေးပဲ! ဝါးမစားခင်ကတည်းက သိထားတာ 🎋',
-      'လွယ်လွယ်လေးပါ! မှတ်ထားနော်၊ နောက်မှ quiz စစ်မှာ 😉',
-      'Professor ရဲ့ လျှို့ဝှက်မှတ်စုထဲမှာ တွေ့တယ် 📚',
-      'ဒီမှာ အဖြေပါ 🐼✨ စာကျက်ကြတာပေါ့!',
-      'အာ… ဒါကို တစ်ယောက်ယောက် မေးမယ်လို့ စောင့်နေတာ 🤓',
-    ],
-    notFound: [
-      'ဟင်… Professor ကိုတောင် ခေါင်းကုတ်သွားစေတယ်နော် 🐼💦 ကျွန်တော့်မှတ်စုထဲ မရှိသေးဘူး။ L&D အဖွဲ့ကို မေးပေးရမလား?',
-      'Panda တွေလည်း အကုန်မသိဘူးလေ 😅 ဒီမေးခွန်းကို L&D အဖွဲ့ဆီ ပို့ပေးရမလား?',
-    ],
-    send: 'L&D အဖွဲ့ကို မေးပေးပါ',
-    sent: [
-      'ပို့ပြီးပြီ 📨 L&D အဖွဲ့ ဖြေတာနဲ့ icon ကနေ လက်ပြပြီး အသိပေးမယ်နော် 👋',
-      'L&D အဖွဲ့ဆီ ရောက်သွားပြီ 📨 စောင့်နေတုန်း စာဆက်ကျက်ထားနော် — ကြည့်နေတယ် 👀😄',
-    ],
-    hello: ['မင်္ဂလာပါ! 🐼 ဒီနေ့ ဘာသင်ကြမလဲ? Product၊ မူဝါဒ ဘာမဆို မေးပါ။', 'ဟိုင်း စူပါစတား! 🌟 ဘာမေးချင်လဲ?'],
-    thanks: ['ရပါတယ်! ကဲ… သွားပြီး မိသားစုတွေကို ကာကွယ်ပေးလိုက်တော့ 💪🐼', 'အမြဲကူညီမယ်! (အိပ်ချိန်မှာတော့ မဟုတ်ဘူးနော် 😴)'],
-    who: ['ကျွန်တော်က Professor Panda ပါ 🐼🎓 — KBZ Life ရဲ့ သင်ယူမှု သူငယ်ချင်းလေး။ အတည်ပြုထားတဲ့ သင်ခန်းစာတွေထဲကနေပဲ ဖြေတာမို့ ယုံလို့ရတယ် (ဟာသတွေကလွဲရင်ပေါ့ 😄)'],
-    trap: [
-      'ကြိုးစားတာ ကောင်းပါတယ် 😏 ဒါပေမဲ့ Professor Panda က ဗေဒင်ဆရာ မဟုတ်ဘူးနော် 🔮 Case တိုင်းဟာ policy စည်းကမ်းချက်၊ စာရွက်စာတမ်းနဲ့ တရားဝင် စိစစ်မှုအပေါ် မူတည်ပါတယ်။',
-      'အိုး… ထောင်ချောက်မေးခွန်းလေးပဲ 🕵️ ဟုတ်/မဟုတ် အသေအချာ ကတိမပေးနိုင်ဘူး — policy စည်းကမ်းချက်နဲ့ တရားဝင် စိစစ်မှုက ဆုံးဖြတ်တာပါ၊ ဒီ panda လေးက မဟုတ်ဘူး 🐼',
-    ],
-    trapHelp: 'ကောင်းကောင်း ရှင်းပြနိုင်အောင် သင်ခန်းစာထဲမှာ ဒီလို ရေးထားပါတယ်:',
-    trapNoInfo: 'တကယ့် case အတွက် အတိအကျ သိချင်ရင် policy စာတမ်းကို ကြည့်ပါ သို့မဟုတ် L&D အဖွဲ့ကို မေးပါ။',
-    verify: 'အချက်အလက်တွေကို အမြဲ ပြန်စစ်ဆေးပါ — Panda ကိုလည်း အကုန်မယုံပါနဲ့ 🐼',
-    englishNote: '📘 မူရင်း handbook ရဲ့ English စာအတိုင်း ဖော်ပြထားပါတယ် — ဝေါဟာရ မရှင်းရင် L&D ကို မေးနိုင်ပါတယ်။',
-    related: 'ဒါတွေလည်း စိတ်ဝင်စားမလား:',
-    source: 'ရင်းမြစ်',
-    openProduct: 'Product Knowledge Hub တွင် ဖွင့်ရန်',
-    placeholder: 'မေးခွန်း ရိုက်ထည့်ပါ…',
-    teamAnswer: 'တင်တင်တန်! 🔔 L&D အဖွဲ့က ဖြေထားပြီ',
-    disclaimer: 'သင်ယူရန်အတွက်သာ ဖြစ်ပြီး policy စာတမ်းကို အတည်ယူပါ။',
-  },
+  greetings: [
+    "Psst! Professor Panda here 🐼🎓 — your slightly cheeky KBZ Life trainer. Ask me anything about our products, policies or procedures. There are no silly questions… well, almost none 😄",
+    "Well, well, well… a curious learner appears! 🐼 I'm Professor Panda. Ask me about products, policies or procedures — I promise to only tease you a little 😏",
+    "Class is in session! 🔔 Professor Panda reporting for duty 🐼🎓 What would you like to learn today?",
+    "Ah, you found my secret study corner 🎋📚 I'm Professor Panda — ask me anything from our training materials!",
+    "Hello, future insurance superstar! 🌟 Professor Panda at your service. Fire away — I've had my bamboo, I'm ready 🎋",
+  ],
+  intros: [
+    'Ooh, good one! I knew this before my morning bamboo 🎋',
+    'Easy peasy! Write this down — there might be a pop quiz later 😉',
+    'Look what I found in my secret study notes 📚',
+    'Teacher’s pet alert! Here you go 🐼✨',
+    'Aha, I was hoping someone would ask that! 🤓',
+    'Hold my bamboo… here’s the answer 🎋',
+    'Gold star for curiosity! ⭐ Here’s what our materials say:',
+    'Psst… don’t tell the others I gave you the answer 🤫',
+    'I could answer this in my sleep — and I nap a LOT 😴',
+    'Drumroll please… 🥁',
+    'You again? I like your style 😎 Here you go:',
+    'Ding ding ding! Professor Panda has the answer 🔔',
+    'This one’s on the exam, I just know it 👀',
+    'Pandas never forget… or was that elephants? Anyway: 🐘🐼',
+    'Ooh, a smart question! Someone’s been studying 📖',
+  ],
+  notFound: [
+    "Hmm… you've stumped the Professor! 🐼💦 That's not in my notes yet. Shall I pass it to the L&D team?",
+    "Even pandas don't know everything (shocking, I know 😅). Want me to send this to the L&D team?",
+    'Ooh, a tricky one! My notes are silent on this 🤐 Shall I ask the L&D team for you?',
+    "I flipped through all my bamboo-stained notes… nothing! 🎋📚 Let me ask the L&D team?",
+    "You found a gap in my brain! 🧠🕳️ Congratulations, I think? Want the L&D team to fill it in?",
+    "Plot twist: the Professor doesn't know 😱 Shall I forward this to the real experts in L&D?",
+    "That's above my pay grade (I'm paid in bamboo) 🎋 Shall I ask the L&D team?",
+  ],
+  send: 'Ask the L&D team for me',
+  sent: [
+    "Done! I've slipped your question to the L&D team 📨 I'll wave at you from my icon when they answer 👋",
+    'Sent! The L&D team has your question 📨 Keep studying while you wait — I’m watching 👀😄',
+    "Whoosh! 📨 Your question is flying to the L&D team. Look for a red dot on my icon when they reply 🔴",
+    'Delivered by express panda post 🐼📮 The L&D team will answer you right here.',
+  ],
+  hello: [
+    'Hello hello! 🐼 Ready to learn something? Ask me about any product, policy or procedure.',
+    'Hey there, superstar! 🌟 What shall we learn today?',
+    'Oh hi! You caught me mid-snack 🎋 What can I help you with?',
+    "Yo! 👋 Professor Panda in the house. Got a question? I've got (most of) the answers 😏",
+    'Mingalaba! 🙏 (That’s about all the Myanmar I know right now 😅) What would you like to learn?',
+  ],
+  thanks: [
+    "You're welcome! Now go protect some families 💪🐼",
+    'Anytime! Professor Panda is always on duty (except during nap time 😴)',
+    'My pleasure! That’ll be one bamboo shoot, please 🎋😄',
+    "Aww, stop it, you'll make me blush 🐼☺️",
+    'Happy to help! Remember: double-check the facts — even with me 😉',
+    'No problem! Go forth and be awesome 🌟',
+  ],
+  who: [
+    "I'm Professor Panda 🐼🎓 — KBZ Life's learning buddy. I answer from our approved training materials, so you can trust my facts… my jokes, not so much 😄",
+    "Professor Panda, at your service! 🐼 Part teacher, part bamboo enthusiast, 100% here to help you learn.",
+  ],
+  howAreYou: [
+    "Fantastic! Just finished my bamboo and ready to teach 🎋💪 How about you — what are we learning?",
+    "Better now that a learner showed up 😄 What's your question?",
+    "Feeling smart and a little sleepy — classic panda 😴🐼 Ask away!",
+  ],
+  joke: [
+    "Why did the insurance agent bring a ladder? To reach a higher level of coverage! 🪜😂 …Okay, back to studying.",
+    "What's a panda's favourite insurance? Bam-BOO-dy coverage! 🎋😆 I'll see myself out…",
+    "Why don't pandas ever lapse their policies? They never miss a pay-mint… I mean, payment 🐼💸",
+    "I'd tell you a joke about grace periods, but you have 30 days to laugh 😏",
+  ],
+  bye: [
+    'Bye bye! 👋 Don’t forget your homework 😉🐼',
+    'See you later, superstar! Go make the Professor proud 🌟',
+    'Class dismissed! 🔔 Come back anytime 🐼',
+  ],
+  cheeky: [
+    "Ouch! 🐼💔 Pandas have feelings too, you know… but I forgive you. Try asking me about a product or policy?",
+    "Hey, I'm doing my best with paws instead of fingers 🐾😅 Ask me something from our training materials!",
+    "Rude! …just kidding 😄 Let's try again — ask me about our products, policies or procedures.",
+  ],
+  laugh: ['Hehe 😄 Glad I amuse you. Now… back to studying! 📚', 'LOL 😂 Okay okay, focus! What’s your question?'],
+  love: ["Aww 🥰 The Professor loves enthusiastic learners too! Now, let's learn something 📚"],
+  help: [
+    "Here's how I work 🐼: ask me in English about our products, policies, claims or procedures. I'll find the answer in our approved materials. If I don't know, I'll pass your question to the L&D team!",
+  ],
+  myanmar: [
+    'Oops! 😅 I’m still taking Myanmar lessons 📖🐼 For now, please ask me in English.\nမြန်မာလို လောလောဆယ် မဖြေနိုင်သေးပါဘူး — English လို မေးပေးပါနော် 🙏',
+    'Ah, my Myanmar isn’t ready yet — the Professor is still studying 📚🐼 Could you ask me in English?\nမြန်မာဘာသာ မကြာခင် ရလာပါမယ်။ လောလောဆယ် English လို မေးပေးပါ 🙏',
+  ],
+  trap: [
+    "Nice try! 😏 Professor Panda doesn't do crystal-ball promises 🔮 Every case depends on the policy terms, the documents and the official review.",
+    'Ooh, a trick question! 🕵️ I can’t promise a yes or no on that — the policy terms and the official review decide, not this panda 🐼',
+    "Careful, that's a trap question 😄 Nobody can guarantee that in advance — it depends on the policy terms and the case.",
+    "Hah! You almost got me 😏 Pandas don't make promises about outcomes — the policy and the review do.",
+    "Is this a test? 🧐 Because the right answer is: 'it depends on the policy terms and the official assessment.'",
+  ],
+  trapHelp: 'Here’s what our materials say, so you can explain it properly:',
+  trapNoInfo: 'For a definite answer on a real case, please check the policy document or ask the L&D team.',
+  verifyMy: 'အချက်အလက်တွေကို အမြဲ ပြန်စစ်ဆေးပါ — Panda ကိုလည်း အကုန်မယုံပါနဲ့ 🐼',
+  verify: 'Always double-check the facts — don’t trust the Panda blindly! 🐼',
+  related: 'Curious? Try these too:',
+  source: 'Source',
+  openProduct: 'Open in Product Knowledge Hub',
+  placeholder: 'Ask a question in English…',
+  teamAnswer: 'Ding ding! 🔔 The L&D team answered',
+  disclaimer: 'English only for now · For learning reference',
 };
 
 // Random line, never the same one twice in a row
@@ -154,12 +172,25 @@ const TRAP_PATTERNS = [
 ];
 const isTrapQuestion = (q: string) => TRAP_PATTERNS.some((re) => re.test(q));
 
-const smallTalk = (q: string): 'hello' | 'thanks' | 'who' | null => {
-  const t = q.trim().toLowerCase().replace(/[!?.။,]+/g, '');
-  if (/^(hi|hello|hey|hii+|yo|good (morning|afternoon|evening)|mingalaba|မင်္ဂလာပါ?|ဟိုင်း|ဟယ်လို)( (there|professor|panda))?$/.test(t)) return 'hello';
-  if (/^(thanks?|thank you( so much)?|thx|ty|cheers|ကျေးဇူး(တင်ပါတယ်|ပဲ|ပါ)?|ကျေးဇူးတင်တယ်)$/.test(t)) return 'thanks';
-  if (/^(who are you|what are you|your name|ဘယ်သူလဲ|နာမည်ဘယ်လိုခေါ်လဲ|မင်းဘယ်သူလဲ)$/.test(t)) return 'who';
-  return null;
+type SmallTalk = 'hello' | 'thanks' | 'who' | 'howAreYou' | 'joke' | 'bye' | 'cheeky' | 'laugh' | 'love' | 'help';
+const SMALL_TALK: [RegExp, SmallTalk][] = [
+  [/^(hi+|hello+|hey+|hiya|yo|sup|good (morning|afternoon|evening|day)|mingalaba)( (there|professor|panda|prof))?$/, 'hello'],
+  [/^(thanks?( a lot)?|thank you( so much| very much)?|thx|ty|tq|cheers|appreciate it|great thanks)$/, 'thanks'],
+  [/^(who are you|what are you|what is your name|whats your name|your name|are you a (bot|robot|human|ai))$/, 'who'],
+  [/^(how are you( doing| today)?|how r u|hows it going|how is it going|whats up|what's up)$/, 'howAreYou'],
+  [/\b(tell me a joke|joke|make me laugh|something funny)\b/, 'joke'],
+  [/^(bye+|goodbye|see you|see ya|good night|gtg|later|cya)$/, 'bye'],
+  [/\b(stupid|dumb|useless|idiot|you suck|bad bot|hate you|shut up|boring)\b/, 'cheeky'],
+  [/^(lol+|lmao|haha+|hehe+|😂+|🤣+)$/, 'laugh'],
+  [/^(i love you|love you|ily|you are (cute|awesome|great|the best)|good bot)$/, 'love'],
+  [/^(help|what can you do|how do you work|how to use)$/, 'help'],
+];
+/** Small talk that should get a playful reply instead of a knowledge search. */
+const smallTalk = (q: string): SmallTalk | null => {
+  const t = q.trim().toLowerCase().replace(/[!?.,]+/g, '').replace(/\s+/g, ' ');
+  // Longer messages are real questions, even if they contain "joke" or "boring"
+  if (t.split(' ').length > 7) return null;
+  return SMALL_TALK.find(([re]) => re.test(t))?.[1] ?? null;
 };
 
 const uid = () => Math.random().toString(36).slice(2);
@@ -236,13 +267,12 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
   };
 
   // ---- Chat state -----------------------------------------------------------
-  const [lang, setLang] = useState<'en' | 'my'>('en');
-  const t = T[lang];
   const [messages, setMessages] = useState<Message[]>(() => readJson<Message[]>(CHAT_KEY, window.sessionStorage, []));
   const [input, setInput] = useState('');
   const [entries, setEntries] = useState<Awaited<ReturnType<typeof loadPublishedEntries>> | null>(null);
   const [loadingKnowledge, setLoadingKnowledge] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [greeting] = useState(() => pick(T.greetings));
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -278,7 +308,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
               id: uid(),
               role: 'bot' as const,
               tone: 'team' as const,
-              title: `${T[isMyanmar(q.question) ? 'my' : 'en'].teamAnswer}: “${q.question}”`,
+              title: `${T.teamAnswer}: “${q.question}”`,
               text: q.answer || '',
               source: q.answered_by_name ? `L&D · ${q.answered_by_name}` : 'L&D team',
             })),
@@ -314,16 +344,15 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
   }, [messages, open]);
 
   const suggestions = useMemo(() => {
-    const faqs = (entries || []).filter((e) => e.kind === 'faq' && e.question).slice(0, 3).map((e) => e.question!.split('\n')[0]);
-    const productQs = publishedProducts.slice(0, 2).map((p) => (lang === 'my' ? `${p.title} အကျိုးခံစားခွင့်` : `${p.title} benefits`));
+    const faqs = (entries || []).filter((e) => e.kind === 'faq' && e.question && !isMyanmar(e.question)).slice(0, 3).map((e) => e.question!.split('\n')[0]);
+    const productQs = publishedProducts.slice(0, 2).map((p) => `${p.title} benefits`);
     return [...faqs, ...productQs].slice(0, 4);
-  }, [entries, publishedProducts, lang]);
+  }, [entries, publishedProducts]);
 
-  const answerFromItem = (item: KnowledgeItem, l: 'en' | 'my' = lang): Message => ({
+  const answerFromItem = (item: KnowledgeItem): Message => ({
     id: uid(),
     role: 'bot',
-    intro: pick(T[l].intros),
-    note: l === 'my' && !isMyanmar(item.content) ? T.my.englishNote : undefined,
+    intro: pick(T.intros),
     title: item.question?.split('\n')[0] || item.title || undefined,
     text: trimAnswer(item.content),
     source: item.source,
@@ -333,36 +362,40 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
   const ask = (raw: string) => {
     const question = raw.trim();
     if (!question) return;
-    const l = isMyanmar(question) ? 'my' : 'en';
-    setLang(l);
     setInput('');
     const userMsg: Message = { id: uid(), role: 'user', text: question };
-    const chat = smallTalk(question);
-    if (chat) {
-      setMessages((prev) => [...prev, userMsg, { id: uid(), role: 'bot', text: pick(T[l][chat]) }]);
+    // English only for now: Myanmar questions get a friendly "coming soon"
+    if (isMyanmar(question)) {
+      setMessages((prev) => [...prev, userMsg, { id: uid(), role: 'bot', text: pick(T.myanmar), tone: 'info' }]);
       return;
     }
-    const { hits, min } = searchBilingual(index, question, translateMyanmarQuery, 4);
+    const chat = smallTalk(question);
+    if (chat) {
+      setMessages((prev) => [...prev, userMsg, { id: uid(), role: 'bot', text: pick(T[chat]) }]);
+      return;
+    }
+    const hits = index.search(question, 4);
+    const min = minAnswerScore(question);
     let reply: Message;
     if (isTrapQuestion(question)) {
       // No promises: deflect, then share the relevant facts if we have them
       const best = hits.length && hits[0].score >= min * 0.8 ? hits[0].item : null;
       reply = best
-        ? { ...answerFromItem(best, l), intro: `${pick(T[l].trap)} ${T[l].trapHelp}`, tone: 'info' }
-        : { id: uid(), role: 'bot', text: `${pick(T[l].trap)}\n\n${T[l].trapNoInfo}`, askable: question, tone: 'info' };
+        ? { ...answerFromItem(best), intro: `${pick(T.trap)} ${T.trapHelp}`, tone: 'info' }
+        : { id: uid(), role: 'bot', text: `${pick(T.trap)}\n\n${T.trapNoInfo}`, askable: question, tone: 'info' };
       setMessages((prev) => [...prev, userMsg, reply]);
       return;
     }
     if (hits.length && hits[0].score >= min) {
       reply = {
-        ...answerFromItem(hits[0].item, l),
+        ...answerFromItem(hits[0].item),
         related: hits
           .slice(1)
           .filter((h) => h.score >= min * 0.8)
           .map((h) => h.item),
       };
     } else {
-      reply = { id: uid(), role: 'bot', text: pick(T[l].notFound), askable: question, tone: 'info' };
+      reply = { id: uid(), role: 'bot', text: pick(T.notFound), askable: question, tone: 'info' };
     }
     setMessages((prev) => [...prev, userMsg, reply]);
   };
@@ -373,7 +406,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
       await askTeam(currentUser.id, currentUser.full_name, msg.askable);
       setMessages((prev) => [
         ...prev.map((m) => (m.id === msg.id ? { ...m, askable: undefined } : m)),
-        { id: uid(), role: 'bot', text: pick(T[isMyanmar(msg.askable!) ? 'my' : 'en'].sent), tone: 'info' },
+        { id: uid(), role: 'bot', text: pick(T.sent), tone: 'info' },
       ]);
     } catch (err) {
       showToast('error', 'Not sent', (err as Error).message);
@@ -415,7 +448,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
             <MentorMascot className="w-10 h-10 shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="font-extrabold text-sm leading-tight">Professor Panda 🐼</p>
-              <p className="text-[11px] text-sky-100/90 truncate">မြန်မာ / English · {t.disclaimer}</p>
+              <p className="text-[11px] text-sky-100/90 truncate">{T.disclaimer}</p>
             </div>
             <button
               type="button"
@@ -438,17 +471,16 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
           >
             <span aria-hidden="true">⚠️</span>
             <span>
-              <strong>{T.my.verify}</strong>
+              <strong>{T.verifyMy}</strong>
               <br />
-              <span className="text-amber-800">{T.en.verify}</span>
+              <span className="text-amber-800">{T.verify}</span>
             </span>
           </div>
 
           {/* Messages */}
           <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-3 bg-[#F3F8FB] dark:bg-[#0B131E]">
             <BotBubble>
-              <p>{T.my.greeting}</p>
-              <p className="mt-2 text-slate-600">{T.en.greeting}</p>
+              <p>{greeting}</p>
               {suggestions.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {suggestions.map((s) => (
@@ -477,11 +509,10 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
                   {m.intro && <p className="text-[12px] italic text-[#176B98] mb-1.5">{m.intro}</p>}
                   {m.title && <p className="font-bold text-slate-900 mb-1">{m.title}</p>}
                   <p className="whitespace-pre-wrap break-words">{m.text}</p>
-                  {m.note && <p className="mt-2 text-[11px] text-slate-500 italic">{m.note}</p>}
                   {m.source && (
                     <p className="mt-2 text-[10.5px] text-slate-500 flex items-center gap-1">
                       <BookOpen className="w-3 h-3 shrink-0" />
-                      {T[lang].source}: {m.source}
+                      {T.source}: {m.source}
                     </p>
                   )}
                   {m.productId && onOpenProduct && (
@@ -493,7 +524,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
                       }}
                       className="mt-2 px-3 py-1.5 rounded-lg bg-[#176B98] hover:bg-[#12567a] text-white text-[11px] font-bold cursor-pointer"
                     >
-                      {T[lang].openProduct}
+                      {T.openProduct}
                     </button>
                   )}
                   {m.askable && (
@@ -503,12 +534,12 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
                       className="mt-2 px-3 py-1.5 rounded-lg bg-[#176B98] hover:bg-[#12567a] text-white text-[11px] font-bold cursor-pointer inline-flex items-center gap-1.5"
                     >
                       <UserRound className="w-3.5 h-3.5" />
-                      {T[isMyanmar(m.askable) ? 'my' : 'en'].send}
+                      {T.send}
                     </button>
                   )}
                   {m.related && m.related.length > 0 && (
                     <div className="mt-2.5 pt-2 border-t border-slate-100">
-                      <p className="text-[10.5px] font-bold text-slate-500 mb-1">{T[lang].related}</p>
+                      <p className="text-[10.5px] font-bold text-slate-500 mb-1">{T.related}</p>
                       <div className="flex flex-col gap-1">
                         {m.related.map((r) => (
                           <button
@@ -545,7 +576,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`${T.my.placeholder} / ${T.en.placeholder}`}
+              placeholder={T.placeholder}
               maxLength={500}
               aria-label="Your question"
               className="flex-1 min-w-0 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-[13px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#176B98]/30"
