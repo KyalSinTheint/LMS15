@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MonthlyTopPerformerGroup, PerformerRecord } from '../data/portalExtensionsData';
 import { PerformerAvatarPlaceholder } from './PerformerAvatarPlaceholder';
 import {
@@ -62,7 +62,13 @@ const CHANNEL_CONFIG: ChannelMeta[] = [
 
 export const TopPerformerMonthCard: React.FC<TopPerformerMonthCardProps> = ({ monthData }) => {
   // State: Displays ONLY ONE channel at a time as required
-  const [activeChannelIndex, setActiveChannelIndex] = useState<number>(0);
+  // Start on the first channel that has a performer, so a new entry is visible right away
+  const firstFilled = CHANNEL_CONFIG.findIndex((c) => Boolean(monthData.performers[c.key]?.name?.trim()));
+  const [activeChannelIndex, setActiveChannelIndex] = useState<number>(firstFilled >= 0 ? firstFilled : 0);
+  const [userPicked, setUserPicked] = useState(false);
+  useEffect(() => {
+    if (!userPicked && firstFilled >= 0) setActiveChannelIndex(firstFilled);
+  }, [firstFilled, userPicked]);
   const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
 
   const currentChannelMeta = CHANNEL_CONFIG[activeChannelIndex];
@@ -73,12 +79,14 @@ export const TopPerformerMonthCard: React.FC<TopPerformerMonthCardProps> = ({ mo
   const handlePrevChannel = (e: React.MouseEvent) => {
     e.stopPropagation();
     setSlideDirection('prev');
+    setUserPicked(true);
     setActiveChannelIndex((prev) => (prev > 0 ? prev - 1 : CHANNEL_CONFIG.length - 1));
   };
 
   const handleNextChannel = (e: React.MouseEvent) => {
     e.stopPropagation();
     setSlideDirection('next');
+    setUserPicked(true);
     setActiveChannelIndex((prev) => (prev < CHANNEL_CONFIG.length - 1 ? prev + 1 : 0));
   };
 
@@ -207,7 +215,10 @@ export const TopPerformerMonthCard: React.FC<TopPerformerMonthCardProps> = ({ mo
               <button
                 key={cfg.key}
                 type="button"
-                onClick={() => setActiveChannelIndex(idx)}
+                onClick={() => {
+                  setUserPicked(true);
+                  setActiveChannelIndex(idx);
+                }}
                 className={`transition-all rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-[#00529B] ${
                   isSelected
                     ? 'w-5 h-2 bg-[#003366]'
