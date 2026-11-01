@@ -3,6 +3,7 @@
  * High-performance rendering of PDF first-page previews and full documents
  */
 import * as pdfjsLib from 'pdfjs-dist';
+import { isSupabaseStorageUrl } from './supabase';
 
 // Point worker to local public asset so it works offline and without cross-origin CDN constraints
 if (typeof window !== 'undefined') {
@@ -33,6 +34,8 @@ export function getPdfStreamUrl(rawUrl: string): string {
         return urlObj.pathname + urlObj.search;
       }
     } catch {}
+    // Supabase Storage files are served with CORS headers: load them directly
+    if (isSupabaseStorageUrl(trimmed)) return trimmed;
     return `/api/pdf-stream?url=${encodeURIComponent(trimmed)}`;
   }
   if (trimmed.startsWith('/')) {

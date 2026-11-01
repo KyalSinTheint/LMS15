@@ -38,12 +38,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Top Welcome & Database Banner */}
       <div className="bg-gradient-to-r from-[#176B98] to-[#12567a] rounded-2xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
         <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-white/90 mb-4 backdrop-blur-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>
-              {isSupabaseLive ? 'Supabase Live Sync Connected' : 'Supabase connection issue — check migrations'}
-            </span>
-          </div>
+          {/* Only shown when some data failed to load */}
+          {!isSupabaseLive && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-400/20 text-amber-100 mb-4">
+              <span className="w-2 h-2 rounded-full bg-amber-300" />
+              <span>Some data could not be loaded. Check that all database migrations have been applied.</span>
+            </div>
+          )}
 
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             KBZLife LMS Administration Center

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, RefreshCw, LogOut, Building, Mail, User, ShieldCheck, AlertCircle } from 'lucide-react';
+import { RefreshCw, LogOut, Building, Mail, User, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
-import { ApprovalSteps, AuthPageShell } from './ApprovalFlowScreens';
+import { ApprovalSteps, AuthPageShell, KbzLogoBadge } from './ApprovalFlowScreens';
 
 interface PendingApprovalPageProps {
   /** Called when approval is detected; the app then shows the "You're approved" screen. */
@@ -69,9 +69,7 @@ export const PendingApprovalPage: React.FC<PendingApprovalPageProps> = ({ onAppr
       {/* Header */}
       <div className="bg-gradient-to-r from-[#003366] to-[#176B98] text-white p-7 relative overflow-hidden">
         <div className="flex items-start gap-4 relative z-10">
-          <div className="w-14 h-14 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 shadow-lg">
-            <Clock className="w-8 h-8" />
-          </div>
+          <KbzLogoBadge />
           <div>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-400/20 text-amber-200 border border-amber-300/30">
               Status: Pending approval

@@ -3,7 +3,8 @@
  * Supports direct device uploads up to 1 GB for videos and 100 MB for PDFs
  */
 
-import { getSupabaseClient } from './supabase';
+import * as tus from 'tus-js-client';
+import { getSupabaseClient, getSupabaseConfig, isSupabaseStorageUrl } from './supabase';
 
 /** Authorization header carrying the signed-in user's Supabase access token. */
 async function authHeader(): Promise<Record<string, string>> {
@@ -217,6 +218,118 @@ export async function uploadImageFile(
   }
 }
 
+
+/**
+ * Explains a failed Supabase Storage upload in plain words.
+ */
+function describeStorageError(err: unknown, bucket: string): string {
+  const anyErr = err as { message?: string; originalResponse?: { getStatus?: () => number; getBody?: () => string } };
+  const status = anyErr?.originalResponse?.getStatus?.() ?? 0;
+  const body = anyErr?.originalResponse?.getBody?.() || '';
+  const text = `${anyErr?.message || ''} ${body}`.toLowerCase();
+
+  if (status === 413 || text.includes('maximum allowed size') || text.includes('payload too large') || text.includes('too large')) {
+    return 'This file is larger than the Supabase Storage upload limit. Raise it in Supabase → Storage → Settings → "Upload file size limit" (the Free plan allows up to 50 MB per file), or upload a smaller file.';
+  }
+  if (text.includes('bucket not found') || (status === 404 && text.includes('bucket'))) {
+    return `The storage bucket "${bucket}" does not exist. Run the SQL files in supabase/migrations in the Supabase SQL Editor.`;
+  }
+  if (status === 401 || status === 403 || text.includes('row-level security') || text.includes('unauthorized')) {
+    return 'You do not have permission to upload this file. Please sign out, sign in again and retry.';
+  }
+  if (text.includes('mime type') || text.includes('invalid_mime_type')) {
+    return 'This file type is not allowed by the storage bucket settings.';
+  }
+  return anyErr?.message ? `Upload failed: ${anyErr.message}` : 'Upload failed. Please check your connection and try again.';
+}
+
+/**
+ * Uploads a large file straight from the browser to Supabase Storage using the
+ * resumable (TUS) protocol: 6 MB chunks, progress, automatic retries and
+ * resume after a dropped connection. Works without the Node server (e.g. on Vercel).
+ */
+async function uploadToSupabaseResumable(
+  file: File,
+  bucket: string,
+  onProgress?: (progressPct: number, loadedBytes: number, totalBytes: number) => void,
+  signal?: AbortSignal
+): Promise<UploadResult> {
+  const supabase = getSupabaseClient();
+  const { url, anonKey } = getSupabaseConfig();
+  if (!supabase || !url) return { success: false, error: 'Supabase is not configured.' };
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const session = sessionData.session;
+  if (!session) return { success: false, error: 'Your session has expired. Please sign in again before uploading.' };
+
+  const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
+  const objectName = `${session.user.id}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}_${sanitizedName}`;
+
+  return new Promise<UploadResult>((resolve) => {
+    let settled = false;
+    const finish = (result: UploadResult) => {
+      if (!settled) {
+        settled = true;
+        resolve(result);
+      }
+    };
+
+    const upload = new tus.Upload(file, {
+      endpoint: `${url.replace(/\/$/, '')}/storage/v1/upload/resumable`,
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      headers: {
+        authorization: `Bearer ${session.access_token}`,
+        apikey: anonKey,
+        'x-upsert': 'false',
+      },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      chunkSize: 6 * 1024 * 1024, // Supabase requires exactly 6 MB chunks
+      metadata: {
+        bucketName: bucket,
+        objectName,
+        contentType: file.type || 'application/octet-stream',
+        cacheControl: '3600',
+      },
+      onProgress: (sent, total) => {
+        onProgress?.(Math.min(100, Math.round((sent / Math.max(1, total)) * 100)), sent, total);
+      },
+      onError: (err) => {
+        console.warn('[KBZLife Storage] Resumable upload failed:', err);
+        finish({ success: false, error: describeStorageError(err, bucket) });
+      },
+      onSuccess: () => {
+        const { data } = supabase.storage.from(bucket).getPublicUrl(objectName);
+        finish({
+          success: true,
+          url: data.publicUrl,
+          storage_path: objectName,
+          path: objectName,
+          fileName: file.name,
+          size: file.size,
+          formattedSize: formatBytes(file.size),
+        });
+      },
+    });
+
+    if (signal) {
+      if (signal.aborted) return finish({ success: false, error: 'Upload was cancelled by user.' });
+      signal.addEventListener('abort', () => {
+        upload.abort(true).catch(() => {});
+        finish({ success: false, error: 'Upload was cancelled by user.' });
+      });
+    }
+
+    upload
+      .findPreviousUploads()
+      .then((previous) => {
+        if (previous.length > 0) upload.resumeFromPreviousUpload(previous[0]);
+        upload.start();
+      })
+      .catch(() => upload.start());
+  });
+}
+
 /**
  * Resumable & Chunked Upload for Large Files up to 1 GB (Videos & PDFs)
  * Never loads the entire file into browser memory as base64.
@@ -252,6 +365,12 @@ export async function uploadLargeFileChunked(
     signal = fileOrOptions.signal;
   }
 
+  // Preferred path: straight to Supabase Storage (works on static hosting like Vercel)
+  if (getSupabaseClient()) {
+    return uploadToSupabaseResumable(file, bucket, onProgress, signal);
+  }
+
+  // Fallback (no Supabase configured): upload through the local Node server
   const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB per chunk
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
   const uploadId = `up_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -364,7 +483,10 @@ export function estimateVideoDuration(file: File): Promise<number> {
 export function triggerFileDownload(fileUrl: string, fileName?: string, role: string = 'user') {
   if (!fileUrl) return;
   const targetFileName = fileName || fileUrl.split('/').pop() || 'download';
-  const downloadUrl = `/api/download?url=${encodeURIComponent(fileUrl)}&filename=${encodeURIComponent(targetFileName)}&role=${encodeURIComponent(role)}`;
+  // Supabase Storage forces "Save as" itself via ?download=<name>; other URLs use the server route
+  const downloadUrl = isSupabaseStorageUrl(fileUrl)
+    ? `${fileUrl}${fileUrl.includes('?') ? '&' : '?'}download=${encodeURIComponent(targetFileName)}`
+    : `/api/download?url=${encodeURIComponent(fileUrl)}&filename=${encodeURIComponent(targetFileName)}&role=${encodeURIComponent(role)}`;
 
   const link = document.createElement('a');
   link.href = downloadUrl;
