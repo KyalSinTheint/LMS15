@@ -142,7 +142,24 @@ function AppContent() {
 
   // Arrived via a password-reset email link
   if (isPasswordRecovery) {
-    return <ResetPasswordPage />;
+    return (
+      <ResetPasswordPage
+        onPasswordChanged={(email) => {
+          // Sign in again with the new password
+          setLoginPrefill({
+            identifier: email,
+            notice: {
+              tone: 'success',
+              title: 'Password changed',
+              message: 'Your new password has been saved. Please sign in again with your new password.',
+            },
+          });
+          setAuthView('login');
+          window.location.hash = 'login';
+          signOut({ silent: true });
+        }}
+      />
+    );
   }
 
   // 1. Unauthenticated visitors MUST NOT access protected Admin or User Panel
@@ -196,7 +213,7 @@ function AppContent() {
         onApprovalDetected={async () => {
           await refreshData();
         }}
-        onLogout={signOut}
+        onLogout={() => signOut()}
       />
     );
   }
@@ -231,8 +248,8 @@ function AppContent() {
   if (currentUser.account_status === 'rejected' || currentUser.account_status === 'suspended') {
     return (
       <AccountRestrictedPage
-        onLogout={signOut}
-        onNavigateToLogin={signOut}
+        onLogout={() => signOut()}
+        onNavigateToLogin={() => signOut()}
       />
     );
   }

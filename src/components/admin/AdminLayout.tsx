@@ -103,7 +103,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
               <span>Admin Login (Credentials)</span>
             </button>
             <button
-              onClick={signOut}
+              onClick={() => signOut()}
               className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold transition-colors cursor-pointer border border-red-200 flex items-center justify-center gap-2"
             >
               <LogOut className="w-3.5 h-3.5" />

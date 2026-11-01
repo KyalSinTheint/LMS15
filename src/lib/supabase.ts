@@ -11,6 +11,28 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 // publishable key ship in every browser bundle and access is enforced by
 // Row Level Security. Never put a secret / service_role key here.
 // ---------------------------------------------------------------------
+// The page URL as it was when the app started. supabase-js removes the auth
+// tokens from the URL (#access_token=...&type=recovery) as soon as the client
+// is created, often before React renders, so the reset-password link has to
+// be recognised from this snapshot.
+const INITIAL_URL = typeof window !== 'undefined' ? window.location.href : '';
+
+/** Path that password-reset emails link to. */
+export const RESET_PASSWORD_PATH = '/reset-password';
+
+/** True when the app was opened from a password-reset email link. */
+export function openedFromPasswordResetLink(): boolean {
+  if (!INITIAL_URL) return false;
+  try {
+    const url = new URL(INITIAL_URL);
+    if (url.pathname.replace(/\/+$/, '') === RESET_PASSWORD_PATH) return true;
+    const params = new URLSearchParams(`${url.search.replace(/^\?/, '')}&${url.hash.replace(/^#/, '')}`);
+    return params.get('type') === 'recovery';
+  } catch {
+    return false;
+  }
+}
+
 const DEFAULT_SUPABASE_URL = 'https://zednjokmaubhlwvhhtzb.supabase.co';
 const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_-NTkMHrRHgGCTP8YwcXWIg_ABwP0RHr';
 

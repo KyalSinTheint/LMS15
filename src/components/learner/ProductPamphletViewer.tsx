@@ -204,6 +204,7 @@ export const ProductPamphletViewer: React.FC<ProductPamphletViewerProps> = ({
 
   // Touch: swipe to turn pages
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const swipedAt = useRef(0);
   const onTouchStart = (e: React.TouchEvent) => {
     touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   };
@@ -214,9 +215,23 @@ export const ProductPamphletViewer: React.FC<ProductPamphletViewerProps> = ({
     const dx = e.changedTouches[0].clientX - start.x;
     const dy = e.changedTouches[0].clientY - start.y;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      swipedAt.current = Date.now();
       if (dx < 0) next();
       else prev();
     }
+  };
+
+  // Tap/click: right half of the pamphlet = next page, left half = previous page
+  const onBookClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (Date.now() - swipedAt.current < 400) return; // already handled as a swipe
+    const target = e.target as HTMLElement;
+    // Leave buttons, links and form fields working normally
+    if (target.closest('button, a, input, select, textarea, label, [role="button"], [contenteditable="true"]')) return;
+    // Don't turn the page when the reader is selecting text
+    if ((window.getSelection?.()?.toString() || '').trim()) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (e.clientX - rect.left >= rect.width / 2) next();
+    else prev();
   };
 
   // ---- Page renderers ---------------------------------------------
@@ -579,7 +594,12 @@ export const ProductPamphletViewer: React.FC<ProductPamphletViewerProps> = ({
         className="relative select-text px-3 sm:px-6 py-8 sm:py-10 bg-[radial-gradient(ellipse_at_top,_#f1ece2_0%,_#e7dfd0_60%,_#ddd3c1_100%)] dark:bg-[radial-gradient(ellipse_at_top,_#1e293b_0%,_#0f172a_70%)]"
       >
         {stageWidth > 0 && (
-          <div className="relative mx-auto" style={{ width: spreadMode ? pageWidth * 2 : pageWidth, height: pageHeight }}>
+          <div
+            className="relative mx-auto"
+            style={{ width: spreadMode ? pageWidth * 2 : pageWidth, height: pageHeight }}
+            onClick={onBookClick}
+            title="Tap the right side for the next page, the left side for the previous page"
+          >
             <div
               className="absolute inset-0"
               style={{

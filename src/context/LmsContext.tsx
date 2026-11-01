@@ -38,7 +38,7 @@ import {
   CompanyBulletinItem,
   BulletinCategory,
 } from '../types/lms';
-import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
+import { getSupabaseClient, isSupabaseConfigured, openedFromPasswordResetLink, RESET_PASSWORD_PATH } from '../lib/supabase';
 
 export function generateUuid(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -110,7 +110,7 @@ interface LmsContextType {
   updateAdminProfile: (updates: Partial<Profile>) => Promise<boolean>;
   updateProfile: (userId: string, updates: Partial<Profile>) => Promise<{ success: boolean; message: string; profile?: Profile }>;
   fetchProfile: (userId: string) => Promise<Profile | null>;
-  signOut: () => void;
+  signOut: (options?: { silent?: boolean }) => void;
 
   // Computed / Queries
   getStats: () => AdminStats;
@@ -504,8 +504,6 @@ function toLessonProgress(row: any): LessonProgressInfo {
   };
 }
 
-/** Page that password-reset emails link to (rewritten to index.html by Vercel). */
-export const RESET_PASSWORD_PATH = '/reset-password';
 
 const leaveResetPasswordUrl = () => {
   if (typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '') === RESET_PASSWORD_PATH) {
@@ -554,13 +552,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [myProfile, setMyProfile] = useState<Profile | null | undefined>(undefined);
   // Recovery mode is detected from the URL too, so it works even if the
   // PASSWORD_RECOVERY auth event fires before the app starts listening.
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return (
-      window.location.pathname.replace(/\/+$/, '') === RESET_PASSWORD_PATH ||
-      /(^|[#&?])type=recovery(&|$)/.test(window.location.hash + window.location.search)
-    );
-  });
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState<boolean>(() => openedFromPasswordResetLink());
   const authUserIdRef = useRef<string | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -1209,9 +1201,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const { error } = await db().auth.updateUser({ password: newPassword });
       if (error) return { success: false, message: error.message };
-      setIsPasswordRecovery(false);
-      leaveResetPasswordUrl();
-      showToast('success', 'Password Updated', 'Your new password has been saved.');
+      // The caller signs out and shows the sign-in page (signOut leaves recovery mode)
       return { success: true, message: 'Password updated.' };
     } catch (err) {
       return { success: false, message: errorMessage(err) };
@@ -1223,7 +1213,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     leaveResetPasswordUrl();
   };
 
-  const signOut = () => {
+  const signOut = (options?: { silent?: boolean }) => {
     const client = getSupabaseClient();
     setIsPasswordRecovery(false);
     leaveResetPasswordUrl();
@@ -1232,7 +1222,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     setAuthUserId(null);
     window.location.hash = '';
-    showToast('info', 'Signed Out', 'You have been securely signed out of KBZLife LMS.');
+    if (!options?.silent) showToast('info', 'Signed Out', 'You have been securely signed out of KBZLife LMS.');
   };
 
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
