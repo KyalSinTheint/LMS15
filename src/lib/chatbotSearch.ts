@@ -31,9 +31,19 @@ export interface SearchHit {
 
 const MYANMAR = /[က-႟ꩠ-ꩿꧠ-꧿]/;
 const STOPWORDS = new Set(
-  'a an the and or of to in on for is are was were be been can could do does did i you we they he she it my your our their this that these those what which who whom how when where why with about from at by as if so please tell me know want need there any some'.split(
+  'a an the and or of to in on for is are was were be been can could do does did i you we they he she it my your our their this that these those what which who whom how when where why with about from at by as if so please tell me know want need there any some meaning mean means define definition explain explanation describe term terms called'.split(
     ' '
   )
+);
+
+/** Myanmar question words / particles, ignored when comparing text */
+const MM_PARTICLES = new RegExp(
+  [
+    'ဘာတွေ', 'ဘာလဲ', 'ဘယ်လို', 'ဘယ်လောက်', 'ဘယ်သူ', 'ဘယ်မှာ', 'ဘယ်အချိန်', 'ဘယ်', 'ဘာ',
+    'ဆိုတာ', 'ဆိုသည်မှာ', 'ဖြစ်သလဲ', 'ဖြစ်လဲ', 'ဖြစ်', 'ရမလဲ', 'ရလဲ', 'ရမလား', 'ရလား', 'သလဲ', 'မလဲ', 'လဲ', 'လား',
+    'နိုင်', 'လို့', 'ကနေ', 'တွေ', 'များ', 'ရင်', 'ပါသလား', 'ပါ', 'သည်', 'တယ်', 'မယ်', 'ပေးပါ', 'ချင်',
+  ].join('|'),
+  'g'
 );
 
 const stem = (w: string) =>
@@ -56,10 +66,14 @@ export function features(text: string): Map<string, number> {
   for (const token of normalize(text).split(' ')) {
     if (!token) continue;
     if (MYANMAR.test(token)) {
-      // Myanmar: character bigrams and trigrams (no word spaces)
-      const chars = Array.from(token.replace(/[^က-႟ꩠ-ꩿꧠ-꧿]/g, ''));
-      for (let i = 0; i < chars.length - 1; i++) add('m2:' + chars[i] + chars[i + 1], 0.5);
-      for (let i = 0; i < chars.length - 2; i++) add('m3:' + chars[i] + chars[i + 1] + chars[i + 2], 1.5);
+      // Myanmar: character bigrams and trigrams (no word spaces), without
+      // question particles that appear in almost every question
+      const core = token.replace(MM_PARTICLES, ' ').replace(/[^\u1000-\u109F\uAA60-\uAA7F\uA9E0-\uA9FF ]/g, '');
+      for (const part of core.split(' ')) {
+        const chars = Array.from(part);
+        for (let i = 0; i < chars.length - 1; i++) add('m2:' + chars[i] + chars[i + 1], 0.5);
+        for (let i = 0; i < chars.length - 2; i++) add('m3:' + chars[i] + chars[i + 1] + chars[i + 2], 1.5);
+      }
       continue;
     }
     if (STOPWORDS.has(token) || token.length < 2) continue;
@@ -201,4 +215,29 @@ export const isMyanmar = (text: string) => MYANMAR.test(text);
  * Below this the assistant says it does not know (tuned on sample data).
  * Myanmar text shares many character pairs by chance, so it needs more.
  */
-export const minAnswerScore = (query: string) => (isMyanmar(query) ? 0.25 : 0.15);
+export const minAnswerScore = (query: string) => (isMyanmar(query) ? 0.3 : 0.15);
+
+/**
+ * Searches with a Myanmar question also "translated" into English insurance
+ * terms (see chatbotGlossary), so it can match English handbook text.
+ */
+export function searchBilingual(
+  index: KnowledgeIndex,
+  question: string,
+  translate: (q: string) => string,
+  limit = 4
+): { hits: SearchHit[]; min: number; translated: boolean } {
+  const english = isMyanmar(question) ? translate(question) : '';
+  if (!english) return { hits: index.search(question, limit), min: minAnswerScore(question), translated: false };
+  const direct = index.search(question, limit);
+  const viaEnglish = index.search(english, limit);
+  const mmMin = minAnswerScore(question);
+  // A strong Myanmar match (e.g. a Myanmar FAQ) wins; otherwise prefer the
+  // English text found through the translated insurance terms.
+  if (direct.length && direct[0].score >= 0.6) return { hits: direct, min: mmMin, translated: false };
+  if (viaEnglish.length && viaEnglish[0].score >= 0.15 && viaEnglish[0].item.id !== direct[0]?.item.id) {
+    return { hits: viaEnglish, min: 0.15, translated: true };
+  }
+  if (direct.length && direct[0].score >= mmMin) return { hits: direct, min: mmMin, translated: false };
+  return { hits: viaEnglish, min: 0.15, translated: true };
+}

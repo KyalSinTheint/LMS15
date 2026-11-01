@@ -22,11 +22,46 @@ export const plainText = (md: string) =>
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
+// ---------------------------------------------------------------------
+// PDFs made with non-Unicode Myanmar fonts give scrambled Myanmar text
+// (signs split from their letters: "ဖေင ်", "ခ ိုင်"). Such text can't be
+// searched or read, so it is hidden and the (correct) English is kept.
+// ---------------------------------------------------------------------
+const MM_CHAR = /[\u1000-\u109F]/g;
+const BROKEN_SIGNS = [
+  /\s[\u102B-\u103E]/g, // a vowel sign / medial / asat after a space
+  /(^|[^\u1000-\u109F])[\u102B-\u103E]/g, // a sign with no letter before it
+  /\u1031(?=\s|$)/g, // "ေ" left alone at the end of a word
+];
+
+export function hasBrokenMyanmar(text: string): boolean {
+  const mm = (text.match(MM_CHAR) || []).length;
+  if (mm < 10) return false;
+  const anomalies = BROKEN_SIGNS.reduce((n, re) => n + (text.match(re) || []).length, 0);
+  return anomalies >= 2 && anomalies / mm > 0.01;
+}
+
+/** Removes scrambled Myanmar from extracted text, keeping everything else. */
+export function stripBrokenMyanmar(text: string): string {
+  if (!hasBrokenMyanmar(text)) return text;
+  return text
+    .replace(/\([^()]*[\u1000-\u109F][^()]*\)/g, ' ') // "(… Myanmar translation …)"
+    .replace(/[\u1000-\u109F][\u1000-\u109F\s\d.,;:%/–\-()]*/g, ' ')
+    .replace(/\(\s*\)/g, ' ')
+    .replace(/\(([^()]*)$/, '$1') // a "(" whose closing part was removed
+    .replace(/\s+([.,;:])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 export function buildKnowledge(
   entries: (ChatbotEntry & { document_title?: string | null })[],
   products: ProductKnowledgeItem[]
 ): KnowledgeItem[] {
-  const items: KnowledgeItem[] = entries.map((e) => ({
+  const items: KnowledgeItem[] = entries
+    .map((e) => ({ ...e, content: stripBrokenMyanmar(e.content), title: e.title ? stripBrokenMyanmar(e.title) : e.title }))
+    .filter((e) => e.content.length >= 15 || e.kind === 'faq')
+    .map((e) => ({
     id: e.id,
     kind: e.kind,
     question: e.question,

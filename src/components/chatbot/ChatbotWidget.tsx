@@ -10,7 +10,8 @@ import { useLms } from '../../context/LmsContext';
 import { MentorMascot } from './MentorMascot';
 import { askTeam, loadMyQuestions, loadPublishedEntries, markAnswersSeen } from '../../lib/chatbotApi';
 import { buildKnowledge } from '../../lib/chatbotKnowledge';
-import { isMyanmar, KnowledgeIndex, KnowledgeItem, minAnswerScore } from '../../lib/chatbotSearch';
+import { isMyanmar, KnowledgeIndex, KnowledgeItem, searchBilingual } from '../../lib/chatbotSearch';
+import { translateMyanmarQuery } from '../../lib/chatbotGlossary';
 
 interface Message {
   id: string;
@@ -22,6 +23,8 @@ interface Message {
   related?: KnowledgeItem[];
   /** Playful line shown before the answer */
   intro?: string;
+  /** Small note under the answer (e.g. answer kept in the handbook's English) */
+  note?: string;
   /** Offer to send this question to the L&D team */
   askable?: string;
   tone?: 'info' | 'team';
@@ -78,6 +81,7 @@ const T = {
     trapHelp: 'Here’s what our materials say, so you can explain it properly:',
     trapNoInfo: 'For a definite answer on a real case, please check the policy document or ask the L&D team.',
     verify: 'Always double-check the facts — don’t trust the Panda blindly! 🐼',
+    englishNote: '',
     related: 'Curious? Try these too:',
     source: 'Source',
     openProduct: 'Open in Product Knowledge Hub',
@@ -114,6 +118,7 @@ const T = {
     trapHelp: 'ကောင်းကောင်း ရှင်းပြနိုင်အောင် သင်ခန်းစာထဲမှာ ဒီလို ရေးထားပါတယ်:',
     trapNoInfo: 'တကယ့် case အတွက် အတိအကျ သိချင်ရင် policy စာတမ်းကို ကြည့်ပါ သို့မဟုတ် L&D အဖွဲ့ကို မေးပါ။',
     verify: 'အချက်အလက်တွေကို အမြဲ ပြန်စစ်ဆေးပါ — Panda ကိုလည်း အကုန်မယုံပါနဲ့ 🐼',
+    englishNote: '📘 မူရင်း handbook ရဲ့ English စာအတိုင်း ဖော်ပြထားပါတယ် — ဝေါဟာရ မရှင်းရင် L&D ကို မေးနိုင်ပါတယ်။',
     related: 'ဒါတွေလည်း စိတ်ဝင်စားမလား:',
     source: 'ရင်းမြစ်',
     openProduct: 'Product Knowledge Hub တွင် ဖွင့်ရန်',
@@ -318,6 +323,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
     id: uid(),
     role: 'bot',
     intro: pick(T[l].intros),
+    note: l === 'my' && !isMyanmar(item.content) ? T.my.englishNote : undefined,
     title: item.question?.split('\n')[0] || item.title || undefined,
     text: trimAnswer(item.content),
     source: item.source,
@@ -336,8 +342,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
       setMessages((prev) => [...prev, userMsg, { id: uid(), role: 'bot', text: pick(T[l][chat]) }]);
       return;
     }
-    const hits = index.search(question, 4);
-    const min = minAnswerScore(question);
+    const { hits, min } = searchBilingual(index, question, translateMyanmarQuery, 4);
     let reply: Message;
     if (isTrapQuestion(question)) {
       // No promises: deflect, then share the relevant facts if we have them
@@ -472,6 +477,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
                   {m.intro && <p className="text-[12px] italic text-[#176B98] mb-1.5">{m.intro}</p>}
                   {m.title && <p className="font-bold text-slate-900 mb-1">{m.title}</p>}
                   <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                  {m.note && <p className="mt-2 text-[11px] text-slate-500 italic">{m.note}</p>}
                   {m.source && (
                     <p className="mt-2 text-[10.5px] text-slate-500 flex items-center gap-1">
                       <BookOpen className="w-3 h-3 shrink-0" />

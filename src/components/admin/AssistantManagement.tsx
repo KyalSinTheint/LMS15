@@ -36,8 +36,9 @@ import {
   saveFaq,
   setEntryPublished,
 } from '../../lib/chatbotApi';
-import { buildKnowledge } from '../../lib/chatbotKnowledge';
-import { KnowledgeIndex, minAnswerScore } from '../../lib/chatbotSearch';
+import { buildKnowledge, hasBrokenMyanmar, stripBrokenMyanmar } from '../../lib/chatbotKnowledge';
+import { KnowledgeIndex, searchBilingual } from '../../lib/chatbotSearch';
+import { translateMyanmarQuery } from '../../lib/chatbotGlossary';
 import { MentorMascot } from '../chatbot/MentorMascot';
 import { PdfViewerModal } from '../common/PdfViewerModal';
 
@@ -176,7 +177,8 @@ export const AssistantManagement: React.FC = () => {
       ),
     [entries, products, docTitle]
   );
-  const testHits = testQuery.trim() ? testIndex.search(testQuery, 3) : [];
+  const testResult = testQuery.trim() ? searchBilingual(testIndex, testQuery, translateMyanmarQuery, 3) : null;
+  const testHits = testResult?.hits || [];
 
   const openQuestions = questions.filter((q) => q.status === 'open');
   const faqCount = entries.filter((e) => e.kind === 'faq').length;
@@ -443,7 +445,12 @@ export const AssistantManagement: React.FC = () => {
               <li key={e.id} className={`px-4 py-3 flex gap-3 ${e.is_published ? '' : 'opacity-50'}`}>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-slate-900">{e.kind === 'faq' ? e.question : e.title || 'Untitled section'}</p>
-                  <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">{e.content}</p>
+                  <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">{stripBrokenMyanmar(e.content)}</p>
+                  {hasBrokenMyanmar(e.content) && (
+                    <p className="text-[10px] text-amber-700 mt-0.5">
+                      ⚠️ The Myanmar text in this PDF is unreadable (font problem), so it is hidden. Myanmar questions are matched to the English text.
+                    </p>
+                  )}
                   <p className="text-[10px] text-slate-400 mt-1">
                     {e.document_id ? `${docTitle.get(e.document_id) || 'PDF'}${e.page ? ` · p.${e.page}` : ''}` : 'Added by an admin'}
                   </p>
@@ -492,7 +499,7 @@ export const AssistantManagement: React.FC = () => {
         <input value={testQuery} onChange={(e) => setTestQuery(e.target.value)} placeholder="e.g. What is the grace period? / ဝင်ရောက်နိုင်သည့် အသက်" className={inputCls} />
         {testQuery.trim() && (
           <ul className="mt-3 space-y-2">
-            {testHits.length === 0 || testHits[0].score < minAnswerScore(testQuery) ? (
+            {testHits.length === 0 || testHits[0].score < (testResult?.min ?? 1) ? (
               <li className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
                 No good match — employees would be offered to send this question to the L&D team.
               </li>
