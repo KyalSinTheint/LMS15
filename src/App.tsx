@@ -49,7 +49,7 @@ import { RegisterPage } from './components/auth/RegisterPage';
 import { PendingApprovalPage } from './components/auth/PendingApprovalPage';
 import { AccountRestrictedPage } from './components/auth/AccountRestrictedPage';
 import { AccountApprovedPage } from './components/auth/ApprovalFlowScreens';
-import { SupabaseSetupRequired, AuthLoadingScreen, ResetPasswordPage } from './components/auth/AuthStatusScreens';
+import { SupabaseSetupRequired, AuthLoadingScreen, ResetPasswordPage, TemporaryPasswordChangePage } from './components/auth/AuthStatusScreens';
 import { isSupabaseConfigured } from './lib/supabase';
 
 function AppContent() {
@@ -204,6 +204,11 @@ function AppContent() {
         }}
       />
     );
+  }
+
+  // 1b. Signed in with an admin-issued temporary password → must set a new password first
+  if (currentUser.temp_password_expires_at) {
+    return <TemporaryPasswordChangePage />;
   }
 
   // 2. Pending account approval gating: Do NOT show protected content while pending

@@ -12,9 +12,26 @@ export interface Profile {
   department?: string;
   avatar_url?: string;
   must_change_password?: boolean;
+  /** Set while the account uses an admin-issued temporary password */
+  temp_password_expires_at?: string | null;
   created_at: string;
   updated_at: string;
   last_sign_in_at?: string;
+}
+
+/** A sign-in page request for an admin to issue a temporary password. */
+export interface PasswordResetRequest {
+  id: string;
+  user_id: string;
+  identifier: string;
+  reason?: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'expired' | 'cancelled';
+  expires_at?: string | null;
+  resolved_by?: string | null;
+  resolved_by_name?: string | null;
+  resolved_at?: string | null;
+  completed_at?: string | null;
+  created_at: string;
 }
 
 export interface Course {
