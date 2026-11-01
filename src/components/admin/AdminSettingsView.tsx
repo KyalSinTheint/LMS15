@@ -1,35 +1,16 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
-  Copy,
-  Database,
-  ExternalLink,
   Headset,
   KeyRound,
   Loader2,
-  RefreshCw,
   Save,
   Settings,
   UserPlus,
-  XCircle,
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
-import { getSupabaseClient, getSupabaseConfig, RESET_PASSWORD_PATH } from '../../lib/supabase';
 import type { AppSettings } from '../../types/lms';
-
-// ---------------------------------------------------------------------
-// Database updates the app relies on: each is checked live against Supabase
-// ---------------------------------------------------------------------
-const DB_UPDATES: { file: string; label: string; table: string; column: string }[] = [
-  { file: '20261102_product_pamphlet_cover.sql', label: 'Product pamphlet covers', table: 'product_knowledge_items', column: 'pamphlet_cover_url' },
-  { file: '20261103_product_icon_key.sql', label: 'Product insurance icons', table: 'product_knowledge_items', column: 'icon_key' },
-  { file: '20261104_video_parts.sql', label: 'Videos over 50 MB (parts)', table: 'license_training_lessons', column: 'video_parts' },
-  { file: '20261105_admin_password_reset.sql', label: 'Admin-approved password reset', table: 'password_reset_requests', column: 'id' },
-  { file: '20261106_app_settings.sql', label: 'Saving these settings', table: 'app_settings', column: 'id' },
-];
-
-type CheckState = 'checking' | 'ok' | 'missing' | 'error';
 
 const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean }> = ({
   checked,
@@ -94,8 +75,7 @@ const inputCls =
   'w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#176B98]/30 focus:border-[#176B98]';
 
 export const AdminSettingsView: React.FC = () => {
-  const { appSettings, appSettingsReady, loadAppSettings, updateAppSettings, isSupabaseLive, refreshData, isLoading, showToast } =
-    useLms();
+  const { appSettings, appSettingsReady, updateAppSettings } = useLms();
 
   // ---- Editable settings --------------------------------------------
   const toForm = (s: AppSettings) => ({
@@ -134,46 +114,6 @@ export const AdminSettingsView: React.FC = () => {
     setSaving(false);
   };
 
-  // ---- System status (read-only, live checks) ------------------------
-  const { url: supabaseUrl } = getSupabaseConfig();
-  const projectRef = supabaseUrl.replace(/^https:\/\//, '').split('.')[0];
-  const dashboardUrl = `https://supabase.com/dashboard/project/${projectRef}`;
-  const resetPageUrl = `${window.location.origin}${RESET_PASSWORD_PATH}`;
-
-  const [checks, setChecks] = useState<Record<string, CheckState>>({});
-  const runChecks = useCallback(async () => {
-    const client = getSupabaseClient();
-    if (!client) return;
-    setChecks(Object.fromEntries(DB_UPDATES.map((u) => [u.file, 'checking' as CheckState])));
-    const results = await Promise.all(
-      DB_UPDATES.map(async (u) => {
-        const { error } = await client.from(u.table).select(u.column).limit(1);
-        if (!error) return [u.file, 'ok'] as const;
-        const text = `${error.message} ${error.code || ''}`;
-        const missing = /does not exist|could not find|schema cache|42P01|42703|PGRST20[45]/i.test(text);
-        return [u.file, missing ? 'missing' : 'error'] as const;
-      })
-    );
-    setChecks(Object.fromEntries(results));
-  }, []);
-  useEffect(() => {
-    runChecks();
-  }, [runChecks]);
-  const missingCount = Object.values(checks).filter((c) => c === 'missing').length;
-
-  const recheckAll = async () => {
-    await Promise.all([runChecks(), loadAppSettings(), refreshData()]);
-  };
-
-  const copy = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast('success', 'Copied', text);
-    } catch {
-      /* clipboard blocked */
-    }
-  };
-
   return (
     <div className="space-y-6 text-left font-sans">
       {/* Header */}
@@ -183,20 +123,17 @@ export const AdminSettingsView: React.FC = () => {
           <span>Settings</span>
         </h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          Every setting here is saved in the database and takes effect for everyone immediately.
+          Changes take effect for everyone as soon as you save.
         </p>
       </div>
 
       {!appSettingsReady && (
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-          <div>
-            <p className="font-bold">One-time database update needed to save settings</p>
-            <p className="mt-1 leading-relaxed">
-              Run <code className="font-mono bg-white/70 px-1 rounded">supabase/migrations/20261106_app_settings.sql</code> in
-              Supabase → SQL Editor, then press <strong>Check again</strong> below. Until then the defaults shown here are used.
-            </p>
-          </div>
+          <p className="leading-relaxed">
+            <strong>Settings can't be saved right now.</strong> The portal keeps working with the standard settings shown
+            below. Please ask the system developer to finish the settings setup.
+          </p>
         </div>
       )}
 
@@ -212,8 +149,8 @@ export const AdminSettingsView: React.FC = () => {
               title="Allow employees to register"
               description={
                 <>
-                  Shows <strong>Register for LMS Access</strong> on the sign-in page. When off, the link is hidden and the
-                  database refuses new sign-ups from the LMS.
+                  Shows <strong>Register for LMS Access</strong> on the sign-in page. When off, the link is hidden and new sign-ups are
+                  refused.
                 </>
               }
             >
@@ -281,7 +218,7 @@ export const AdminSettingsView: React.FC = () => {
             description={
               <>
                 Shows <strong>Send me a reset link by email</strong> in the Forgot password window. Turn this off if
-                emails are not being delivered. Emails are sent by Supabase using the SMTP settings below.
+                reset emails are not reaching employees.
               </>
             }
           >
@@ -292,53 +229,6 @@ export const AdminSettingsView: React.FC = () => {
             />
           </SettingRow>
 
-          {form.email_password_reset_enabled && (
-            <div className="p-4 rounded-2xl border border-slate-200 space-y-3 text-xs">
-              <p className="font-bold text-slate-800">Email sending is configured in Supabase</p>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href={`${dashboardUrl}/auth/smtp`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold inline-flex items-center gap-1.5"
-                >
-                  SMTP settings <ExternalLink className="w-3 h-3" />
-                </a>
-                <a
-                  href={`${dashboardUrl}/auth/url-configuration`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold inline-flex items-center gap-1.5"
-                >
-                  URL configuration <ExternalLink className="w-3 h-3" />
-                </a>
-                <a
-                  href={`${dashboardUrl}/logs/auth-logs`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold inline-flex items-center gap-1.5"
-                >
-                  Email error logs <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-              <div>
-                <p className="text-slate-600 mb-1">Add this address to Supabase → URL configuration → Redirect URLs:</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 min-w-0 truncate px-3 py-2 rounded-lg bg-slate-100 font-mono text-[11px] text-slate-700">
-                    {resetPageUrl}
-                  </code>
-                  <button
-                    type="button"
-                    onClick={() => copy(resetPageUrl)}
-                    className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer"
-                    aria-label="Copy reset page address"
-                  >
-                    <Copy className="w-3.5 h-3.5 text-slate-600" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </Card>
 
         {/* 3. Help desk */}
@@ -414,81 +304,6 @@ export const AdminSettingsView: React.FC = () => {
         </div>
       </form>
 
-      {/* 4. System status (read-only) */}
-      <Card
-        icon={<Database className="w-5 h-5" />}
-        title="System Status"
-        subtitle="Live checks of the Supabase database this portal uses."
-        aside={
-          <button
-            type="button"
-            onClick={recheckAll}
-            disabled={isLoading}
-            className="shrink-0 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Check again
-          </button>
-        }
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200">
-            <p className="font-bold text-slate-800">Database connection</p>
-            <p className={`mt-1 flex items-center gap-1.5 font-semibold ${isSupabaseLive ? 'text-emerald-700' : 'text-amber-700'}`}>
-              <span className={`w-2 h-2 rounded-full ${isSupabaseLive ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              {isSupabaseLive ? 'Connected' : 'Some data could not be loaded'}
-            </p>
-          </div>
-          <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200 min-w-0">
-            <p className="font-bold text-slate-800">Supabase project</p>
-            <a
-              href={dashboardUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-flex items-center gap-1.5 font-mono text-[11px] text-[#176B98] hover:underline break-all"
-            >
-              {projectRef} <ExternalLink className="w-3 h-3 shrink-0" />
-            </a>
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold text-slate-800">Database updates</p>
-            <span className={`text-[11px] font-semibold ${missingCount ? 'text-amber-700' : 'text-emerald-700'}`}>
-              {missingCount ? `${missingCount} to run in Supabase → SQL Editor` : 'All installed'}
-            </span>
-          </div>
-          <ul className="rounded-2xl border border-slate-200 divide-y divide-slate-100 text-xs">
-            {DB_UPDATES.map((u) => {
-              const state = checks[u.file] || 'checking';
-              return (
-                <li key={u.file} className="px-4 py-2.5 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-800">{u.label}</p>
-                    <p className="font-mono text-[10px] text-slate-400 truncate">supabase/migrations/{u.file}</p>
-                  </div>
-                  {state === 'checking' ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-slate-400 shrink-0" aria-label="Checking" />
-                  ) : state === 'ok' ? (
-                    <span className="shrink-0 inline-flex items-center gap-1 text-emerald-700 font-bold">
-                      <CheckCircle2 className="w-4 h-4" /> Installed
-                    </span>
-                  ) : state === 'missing' ? (
-                    <span className="shrink-0 inline-flex items-center gap-1 text-amber-700 font-bold">
-                      <AlertTriangle className="w-4 h-4" /> Run this file
-                    </span>
-                  ) : (
-                    <span className="shrink-0 inline-flex items-center gap-1 text-slate-500 font-bold">
-                      <XCircle className="w-4 h-4" /> Could not check
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </Card>
     </div>
   );
 };
