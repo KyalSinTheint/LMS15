@@ -46,8 +46,11 @@ export const AuthLoadingScreen: React.FC = () => (
 );
 
 /** Shown after the user follows a password-reset email link. */
-export const ResetPasswordPage: React.FC = () => {
-  const { completePasswordRecovery, signOut, exitPasswordRecovery, isAuthenticated } = useLms();
+export const ResetPasswordPage: React.FC<{
+  /** Called after the new password is saved; the app then signs out and shows the sign-in page. */
+  onPasswordChanged: (email: string) => void;
+}> = ({ onPasswordChanged }) => {
+  const { completePasswordRecovery, signOut, exitPasswordRecovery, isAuthenticated, currentUser } = useLms();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -66,9 +69,11 @@ export const ResetPasswordPage: React.FC = () => {
       return;
     }
     setSaving(true);
+    const email = currentUser.email;
     const res = await completePasswordRecovery(password);
     setSaving(false);
     if (!res.success) setError(res.message);
+    else onPasswordChanged(email);
   };
 
   // Opened /reset-password without a valid recovery session: the link expired or was already used
@@ -152,7 +157,7 @@ export const ResetPasswordPage: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={signOut}
+          onClick={() => signOut()}
           className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5" />
