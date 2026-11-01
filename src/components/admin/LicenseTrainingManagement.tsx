@@ -7,6 +7,7 @@ import {
   LicenseChapter,
   LicenseQuiz,
   LicenseQuizQuestion,
+  VideoPart,
 } from '../../types/lms';
 import {
   validateLessonFile,
@@ -14,6 +15,9 @@ import {
   uploadImageFile,
   estimateVideoDuration,
   formatBytes,
+  formatVideoClock,
+  uploadVideoWithAutoSplit,
+  type VideoUploadResult,
   triggerFileDownload,
 } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
@@ -72,6 +76,7 @@ interface LessonFormData {
   file_size?: number;
   file_size_formatted?: string;
   video_duration?: string;
+  video_parts?: VideoPart[] | null;
   thumbnail_url?: string;
   thumbnail_path?: string;
 }
@@ -283,6 +288,7 @@ export const LicenseTrainingManagement: React.FC = () => {
         lesson.file_size_formatted ||
         (lesson.file_size_bytes ? formatBytes(lesson.file_size_bytes) : undefined),
       video_duration: lesson.video_duration || lesson.duration,
+      video_parts: lesson.video_parts || null,
       thumbnail_url: lesson.thumbnail_url || '',
       thumbnail_path: lesson.thumbnail_path,
     });
@@ -343,17 +349,28 @@ export const LicenseTrainingManagement: React.FC = () => {
         }
       }
 
-      const result = await uploadLargeFileChunked(
-        file,
-        'license-training',
-        (pct, loaded, total) => {
-          setUploadProgress(pct);
-          setUploadStatusText(
-            `Uploading: ${formatBytes(loaded)} / ${formatBytes(total)} (${pct}%)`
-          );
-        },
-        abortController.signal
-      );
+      // Videos over the 50 MB storage limit are split into parts automatically
+      const result: VideoUploadResult =
+        lessonFormData.lesson_type === 'video'
+          ? await uploadVideoWithAutoSplit(
+              file,
+              'license-training',
+              (pct, message) => {
+                setUploadProgress(pct);
+                setUploadStatusText(message);
+              },
+              abortController.signal
+            )
+          : await uploadLargeFileChunked(
+              file,
+              'license-training',
+              (pct, loaded, total) => {
+                setUploadProgress(pct);
+                setUploadStatusText(`Uploading: ${formatBytes(loaded)} / ${formatBytes(total)} (${pct}%)`);
+              },
+              abortController.signal
+            );
+      if (result.durationSeconds) durationStr = formatVideoClock(result.durationSeconds);
 
       if (result.success && result.url) {
         setLessonFormData((prev) => ({
@@ -363,12 +380,19 @@ export const LicenseTrainingManagement: React.FC = () => {
           file_size: file.size,
           file_size_formatted: formatBytes(file.size),
           video_duration: durationStr || prev.video_duration,
+          video_parts: result.parts && result.parts.length > 1 ? result.parts : null,
         }));
-        setUploadStatusText('Upload complete and verified.');
+        setUploadStatusText(
+          result.parts && result.parts.length > 1
+            ? `Upload complete: ${result.parts.length} parts.`
+            : 'Upload complete and verified.'
+        );
         showToast(
           'success',
           'File Uploaded',
-          `${file.name} (${formatBytes(file.size)}) uploaded successfully.`
+          result.parts && result.parts.length > 1
+            ? `${file.name} (${formatBytes(file.size)}) was larger than 50 MB, so it was uploaded in ${result.parts.length} parts. Learners will see them play one after another.`
+            : `${file.name} (${formatBytes(file.size)}) uploaded successfully.`
         );
       } else {
         const errorMsg = result.error || 'Upload could not be finished.';
@@ -454,6 +478,13 @@ export const LicenseTrainingManagement: React.FC = () => {
           file_size_formatted: lessonFormData.file_size_formatted,
           video_duration: lessonFormData.video_duration,
           duration: lessonFormData.video_duration,
+          // Only sent when parts exist (or must be cleared), so saving works before the migration is run
+          video_parts:
+            lessonFormData.lesson_type === 'video' && lessonFormData.video_parts?.length
+              ? lessonFormData.video_parts
+              : lessonFormData.id && licenseTrainingLessons.find((x) => x.id === lessonFormData.id)?.video_parts?.length
+              ? null
+              : undefined,
           thumbnail_url: lessonFormData.thumbnail_url || undefined,
           thumbnail_path: lessonFormData.thumbnail_path,
         });
@@ -478,6 +509,13 @@ export const LicenseTrainingManagement: React.FC = () => {
           file_size_formatted: lessonFormData.file_size_formatted,
           video_duration: lessonFormData.video_duration,
           duration: lessonFormData.video_duration,
+          // Only sent when parts exist (or must be cleared), so saving works before the migration is run
+          video_parts:
+            lessonFormData.lesson_type === 'video' && lessonFormData.video_parts?.length
+              ? lessonFormData.video_parts
+              : lessonFormData.id && licenseTrainingLessons.find((x) => x.id === lessonFormData.id)?.video_parts?.length
+              ? null
+              : undefined,
           thumbnail_url: lessonFormData.thumbnail_url || undefined,
           thumbnail_path: lessonFormData.thumbnail_path,
         });
@@ -1749,7 +1787,11 @@ export const LicenseTrainingManagement: React.FC = () => {
                       </span>
                       {lessonFormData.file_size_formatted && (
                         <span className="text-[11px] font-mono text-slate-500">
-                          ({lessonFormData.file_size_formatted})
+                          ({lessonFormData.file_size_formatted}
+                          {lessonFormData.video_parts && lessonFormData.video_parts.length > 1
+                            ? `, ${lessonFormData.video_parts.length} parts`
+                            : ''}
+                          )
                         </span>
                       )}
                     </div>
@@ -1790,7 +1832,7 @@ export const LicenseTrainingManagement: React.FC = () => {
                       </span>
                       <span className="text-[11px] text-slate-400">
                         {lessonFormData.lesson_type === 'video'
-                          ? 'Supports MP4, WebM (up to 1 GB)'
+                          ? 'MP4 or WebM, up to 1 GB. Videos over 50 MB are split into parts automatically.'
                           : 'Official PDF documents (up to 150 MB)'}
                       </span>
                     </button>

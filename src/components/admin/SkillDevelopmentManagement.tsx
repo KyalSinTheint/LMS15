@@ -7,6 +7,7 @@ import {
   SkillQuiz,
   SkillQuizQuestion,
   SkillQuizAttempt,
+  VideoPart,
 } from '../../types/lms';
 import {
   validateLessonFile,
@@ -14,6 +15,9 @@ import {
   uploadImageFile,
   estimateVideoDuration,
   formatBytes,
+  formatVideoClock,
+  uploadVideoWithAutoSplit,
+  type VideoUploadResult,
 } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import {
@@ -65,6 +69,7 @@ interface ResourceFormData {
   file_size_formatted?: string;
   external_url?: string;
   video_duration?: string;
+  video_parts?: VideoPart[] | null;
   thumbnail_url?: string;
   thumbnail_path?: string;
   instructor_name?: string;
@@ -515,6 +520,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
       file_size_formatted: r.file_size_formatted,
       external_url: r.external_url || (r.content_type === 'link' ? r.content_url : ''),
       video_duration: r.video_duration || r.duration,
+      video_parts: r.video_parts || null,
       thumbnail_url: r.thumbnail_url || '',
       thumbnail_path: r.thumbnail_path,
       instructor_name: r.instructor_name || '',
@@ -587,15 +593,28 @@ export const SkillDevelopmentManagement: React.FC = () => {
         }
       }
 
-      const res = await uploadLargeFileChunked(
-        file,
-        'skill-materials',
-        (percent, loaded, total) => {
-          setUploadProgress(percent);
-          setUploadStatusText(`Uploading: ${percent}% (${(loaded / 1024 / 1024).toFixed(1)}MB of ${(total / 1024 / 1024).toFixed(1)}MB)`);
-        },
-        abortControllerRef.current.signal
-      );
+      // Videos over the 50 MB storage limit are split into parts automatically
+      const res: VideoUploadResult =
+        expectedType === 'video'
+          ? await uploadVideoWithAutoSplit(
+              file,
+              'skill-materials',
+              (percent, message) => {
+                setUploadProgress(percent);
+                setUploadStatusText(message);
+              },
+              abortControllerRef.current.signal
+            )
+          : await uploadLargeFileChunked(
+              file,
+              'skill-materials',
+              (percent, loaded, total) => {
+                setUploadProgress(percent);
+                setUploadStatusText(`Uploading: ${percent}% (${(loaded / 1024 / 1024).toFixed(1)}MB of ${(total / 1024 / 1024).toFixed(1)}MB)`);
+              },
+              abortControllerRef.current.signal
+            );
+      if (res.durationSeconds) durationStr = formatVideoClock(res.durationSeconds);
 
       if (res.success && res.url) {
         setResourceForm((prev) => ({
@@ -606,9 +625,16 @@ export const SkillDevelopmentManagement: React.FC = () => {
           file_size_bytes: res.size,
           file_size_formatted: res.formattedSize || formatBytes(res.size || 0),
           video_duration: durationStr || prev.video_duration,
+          video_parts: res.parts && res.parts.length > 1 ? res.parts : null,
           title: prev.title.trim() ? prev.title : file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' '),
         }));
-        showToast('success', 'Upload Complete', `${file.name} successfully uploaded.`);
+        showToast(
+          'success',
+          'Upload Complete',
+          res.parts && res.parts.length > 1
+            ? `${file.name} was larger than 50 MB, so it was uploaded in ${res.parts.length} parts. Learners will see them play one after another.`
+            : `${file.name} successfully uploaded.`
+        );
       } else {
         throw new Error(res.error || 'Upload failed.');
       }
@@ -720,6 +746,13 @@ export const SkillDevelopmentManagement: React.FC = () => {
         file_size_formatted: resourceForm.file_size_formatted,
         video_duration: resourceForm.video_duration,
         duration: resourceForm.video_duration,
+        // Only sent when parts exist (or must be cleared), so saving works before the migration is run
+        video_parts:
+          resourceForm.content_type === 'video' && resourceForm.video_parts?.length
+            ? resourceForm.video_parts
+            : resourceForm.id && skillDevelopmentResources.find((x) => x.id === resourceForm.id)?.video_parts?.length
+            ? null
+            : undefined,
         thumbnail_url: resourceForm.thumbnail_url?.trim() || undefined,
         instructor_name: resourceForm.instructor_name?.trim() || 'KBZLife Academy',
         instructor_role: resourceForm.instructor_title?.trim() || 'Lead Specialist',
@@ -2075,7 +2108,11 @@ export const SkillDevelopmentManagement: React.FC = () => {
                           {resourceForm.file_name}
                         </p>
                         <p className="text-[11px] text-slate-500">
-                          Click to replace file ({resourceForm.file_size_formatted || 'Uploaded'})
+                          Click to replace file ({resourceForm.file_size_formatted || 'Uploaded'}
+                          {resourceForm.video_parts && resourceForm.video_parts.length > 1
+                            ? `, ${resourceForm.video_parts.length} parts`
+                            : ''}
+                          )
                         </p>
                       </div>
                     ) : (
@@ -2084,7 +2121,9 @@ export const SkillDevelopmentManagement: React.FC = () => {
                           Click to upload from device (supports up to 1GB)
                         </p>
                         <p className="text-[10px] text-slate-400">
-                          Chunked streaming to Supabase Storage with local resilient fallback
+                          {resourceForm.content_type === 'video'
+                            ? 'Videos over 50 MB are split into parts automatically'
+                            : 'Chunked streaming to Supabase Storage with local resilient fallback'}
                         </p>
                       </div>
                     )}

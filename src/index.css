@@ -631,3 +631,46 @@ html.dark :is(.hover\:bg-red-50, .hover\:bg-red-100):not([class*="dark:hover:bg-
 html.dark :is(.hover\:bg-emerald-50, .hover\:bg-emerald-100):not([class*="dark:hover:bg-"]):hover {
   background-color: rgba(16, 185, 129, 0.18);
 }
+
+/* =========================================================================
+   DARK MODE: remaining light surfaces in the user panel
+   (License Training chapter panels, Top Performer placeholders, image
+   placeholders, light info boxes). Light mode is unchanged.
+   ========================================================================= */
+html.dark .bg-slate-100\/50,
+html.dark .bg-slate-100\/60,
+html.dark .bg-slate-200\/60 {
+  background-color: rgba(21, 50, 82, 0.6);
+}
+
+html.dark .bg-sky-50\/40,
+html.dark .bg-sky-100,
+html.dark .bg-blue-50 {
+  background-color: rgba(23, 107, 152, 0.16);
+}
+
+html.dark .bg-\[\#EDF4FB\],
+html.dark .bg-\[\#F8FAFC\] {
+  background-color: #0e1f33;
+}
+
+/* Light gradient stops (e.g. "from-slate-100 to-slate-200", "to-white") */
+html.dark .from-white,
+html.dark .from-slate-50,
+html.dark .from-slate-100,
+html.dark .from-\[\#F0F5FA\],
+html.dark .from-\[\#F3F8FB\] {
+  --tw-gradient-from: #153252;
+}
+html.dark .via-white,
+html.dark .via-slate-50,
+html.dark .via-slate-100 {
+  --tw-gradient-via: #12304d;
+}
+html.dark .to-white,
+html.dark .to-slate-50,
+html.dark .to-slate-100,
+html.dark .to-slate-200,
+html.dark .to-\[\#F3F8FB\] {
+  --tw-gradient-to: #10243c;
+}

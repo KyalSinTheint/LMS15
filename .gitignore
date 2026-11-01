@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# pdf.js worker and data, copied from node_modules at build time
+public/pdfjs/
+public/ffmpeg/

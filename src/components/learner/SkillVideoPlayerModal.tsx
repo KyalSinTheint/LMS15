@@ -3,6 +3,7 @@ import { SkillDevelopmentResource, LessonProgressInfo } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
 import { isSupabaseStorageUrl } from '../../lib/supabase';
 import { ViewerWatermark } from '../common/ViewerWatermark';
+import { useVideoParts, VideoPartsList } from './VideoParts';
 import { extractYouTubeId } from '../../lib/videoUtils';
 import {
   X,
@@ -40,6 +41,13 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
   const [hasRestoredPosition, setHasRestoredPosition] = useState<boolean>(false);
   const [seekWarning, setSeekWarning] = useState<string | null>(null);
 
+  // Long videos uploaded in parts play back-to-back; times below are on the whole-video timeline
+  const { parts, isMultiPart, activeIndex, setActiveIndex, activePart, offset, totalDuration } = useVideoParts(
+    resource.video_parts,
+    initialProgress.last_position || 0
+  );
+  const [watchedUpTo, setWatchedUpTo] = useState<number>(initialProgress.last_position || 0);
+
   // Direct fallback & error state
   // Supabase Storage videos stream directly (range requests supported); other URLs try the server proxy first
   const [useDirectFallback, setUseDirectFallback] = useState<boolean>(() =>
@@ -47,7 +55,7 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
   );
   const [playbackError, setPlaybackError] = useState<{ title: string; message: string } | null>(null);
 
-  const videoSource = (resource.file_url || resource.content_url || '').trim();
+  const videoSource = (activePart?.url || resource.file_url || resource.content_url || '').trim();
   const ytId = extractYouTubeId(videoSource);
 
   // Clean stream URL routed through protected endpoint with no-download headers
@@ -61,7 +69,7 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
       const video = videoRef.current;
       if (!video) return;
 
-      const duration = video.duration || 1;
+      const duration = (isMultiPart ? totalDuration : video.duration) || 1;
       const playbackRate = video.playbackRate || 1.0;
 
       if (end > start && end - start > 0.4) {
@@ -77,7 +85,7 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
         }
       }
     },
-    [resource.id, recordVideoHeartbeat]
+    [resource.id, recordVideoHeartbeat, isMultiPart, totalDuration]
   );
 
   // When video metadata is loaded, restore last position if available
@@ -87,26 +95,27 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
 
     setPlaybackError(null);
 
+    const fullDuration = isMultiPart ? totalDuration : video.duration;
     if (!hasRestoredPosition && progressInfo.last_position && progressInfo.last_position > 3) {
       // Restore up to last position if not already completed
-      if (progressInfo.progress_percentage < 95 && progressInfo.last_position < video.duration - 5) {
-        video.currentTime = progressInfo.last_position;
+      if (progressInfo.progress_percentage < 95 && progressInfo.last_position < fullDuration - 5) {
+        video.currentTime = Math.max(0, progressInfo.last_position - offset);
         const mins = Math.floor(progressInfo.last_position / 60);
         const secs = Math.floor(progressInfo.last_position % 60);
         showToast('info', 'Playback Resumed', `Resumed from ${mins}:${secs.toString().padStart(2, '0')}`);
       }
       setHasRestoredPosition(true);
     }
-    lastTimeRef.current = video.currentTime;
-    segmentStartRef.current = video.currentTime;
+    lastTimeRef.current = video.currentTime + offset;
+    segmentStartRef.current = video.currentTime + offset;
   };
 
   const handlePlay = () => {
     const video = videoRef.current;
     if (!video) return;
     isPlayingRef.current = true;
-    lastTimeRef.current = video.currentTime;
-    segmentStartRef.current = video.currentTime;
+    lastTimeRef.current = video.currentTime + offset;
+    segmentStartRef.current = video.currentTime + offset;
     lastSendTimeRef.current = Date.now();
     setSeekWarning(null);
     setPlaybackError(null);
@@ -116,7 +125,7 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
     const video = videoRef.current;
     if (!video) return;
     isPlayingRef.current = false;
-    const curr = video.currentTime;
+    const curr = video.currentTime + offset;
     const start = segmentStartRef.current;
     sendSegmentProgress(start, curr, curr);
     lastTimeRef.current = curr;
@@ -135,7 +144,7 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
     }
 
     // Inform user that seeking forward does not grant completion credit
-    const curr = video.currentTime;
+    const curr = video.currentTime + offset;
     if (curr > prev + 5) {
       setSeekWarning('Seeking ahead detected. Only genuinely watched segments count toward 95% completion.');
       setTimeout(() => setSeekWarning(null), 4000);
@@ -145,8 +154,8 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
   const handleSeeked = () => {
     const video = videoRef.current;
     if (!video) return;
-    lastTimeRef.current = video.currentTime;
-    segmentStartRef.current = video.currentTime;
+    lastTimeRef.current = video.currentTime + offset;
+    segmentStartRef.current = video.currentTime + offset;
     lastSendTimeRef.current = Date.now();
   };
 
@@ -154,13 +163,14 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
     const video = videoRef.current;
     if (!video || !isPlayingRef.current) return;
 
-    const curr = video.currentTime;
+    const curr = video.currentTime + offset;
     const prev = lastTimeRef.current;
     const delta = curr - prev;
 
     // Normal forward playback check (prevent artificial teleporting)
     if (delta > 0 && delta <= 3.5) {
       lastTimeRef.current = curr;
+      if (curr > watchedUpTo + 1) setWatchedUpTo(curr);
 
       // Send periodic heartbeat every ~3 seconds
       const now = Date.now();
@@ -181,9 +191,18 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
     const video = videoRef.current;
     if (!video) return;
     isPlayingRef.current = false;
-    const curr = video.currentTime;
+    const curr = video.currentTime + offset;
     const start = segmentStartRef.current;
     sendSegmentProgress(start, curr, curr);
+
+    // More parts to go: continue with the next part in the same player
+    if (isMultiPart && activeIndex < parts.length - 1) {
+      const next = parts[activeIndex + 1];
+      lastTimeRef.current = next.start;
+      segmentStartRef.current = next.start;
+      setActiveIndex(activeIndex + 1);
+      return;
+    }
 
     if (progressInfo.progress_percentage >= 95) {
       showToast('success', 'Class Completed!', `Congratulations! You have fulfilled the 95% completion requirement for "${resource.title}".`);
@@ -213,11 +232,26 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
   const handleClose = () => {
     const video = videoRef.current;
     if (video && isPlayingRef.current) {
-      const curr = video.currentTime;
+      const curr = video.currentTime + offset;
       const start = segmentStartRef.current;
       sendSegmentProgress(start, curr, curr);
     }
     onClose();
+  };
+
+  // Jump to another part from the parts list
+  const handleSelectPart = (index: number) => {
+    if (index === activeIndex) return;
+    const video = videoRef.current;
+    if (video && isPlayingRef.current) {
+      const curr = video.currentTime + offset;
+      sendSegmentProgress(segmentStartRef.current, curr, curr);
+    }
+    isPlayingRef.current = false;
+    lastTimeRef.current = parts[index].start;
+    segmentStartRef.current = parts[index].start;
+    setPlaybackError(null);
+    setActiveIndex(index);
   };
 
   const isCompleted = progressInfo.completion_status === 'completed' || progressInfo.progress_percentage >= 95;
@@ -411,6 +445,10 @@ export const SkillVideoPlayerModal: React.FC<SkillVideoPlayerModalProps> = ({
             </video>
           )}
         </div>
+
+        {isMultiPart && (
+          <VideoPartsList parts={parts} activeIndex={activeIndex} watchedUpTo={watchedUpTo} onSelect={handleSelectPart} />
+        )}
 
         {/* Footer Meta & Policy Information (Strictly View-Only: NO DOWNLOAD BUTTONS) */}
         <div className="p-5 sm:p-6 space-y-4 bg-white">

@@ -47,7 +47,7 @@ export const AuthLoadingScreen: React.FC = () => (
 
 /** Shown after the user follows a password-reset email link. */
 export const ResetPasswordPage: React.FC = () => {
-  const { completePasswordRecovery, signOut } = useLms();
+  const { completePasswordRecovery, signOut, exitPasswordRecovery, isAuthenticated } = useLms();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +70,37 @@ export const ResetPasswordPage: React.FC = () => {
     setSaving(false);
     if (!res.success) setError(res.message);
   };
+
+  // Opened /reset-password without a valid recovery session: the link expired or was already used
+  if (!isAuthenticated) {
+    const description =
+      new URLSearchParams(window.location.hash.replace(/^#/, '')).get('error_description') ||
+      'This password reset link has expired or has already been used.';
+    return (
+      <Shell>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200">
+            <AlertCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-slate-900">Reset link no longer valid</h1>
+            <p className="text-xs text-slate-500">{description.replace(/\+/g, ' ')}</p>
+          </div>
+        </div>
+        <p className="text-sm text-slate-600">
+          Go back to sign in and choose <strong>Forgot password?</strong> to receive a new link. Each link works once and
+          expires after a short time.
+        </p>
+        <button
+          type="button"
+          onClick={exitPasswordRecovery}
+          className="w-full py-2.5 rounded-xl bg-[#003366] hover:bg-[#00529B] text-white text-sm font-bold transition-colors cursor-pointer"
+        >
+          Back to sign in
+        </button>
+      </Shell>
+    );
+  }
 
   return (
     <Shell>
