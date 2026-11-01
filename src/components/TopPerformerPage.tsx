@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLms } from '../context/LmsContext';
 import { MonthlyTopPerformerGroup } from '../data/portalExtensionsData';
 import type { TopPerformerEntry } from '../types/lms';
+import { performerMonth } from '../lib/performerMonth';
 import { TopPerformerMonthCard } from './TopPerformerMonthCard';
 import {
   ChevronLeft,
@@ -26,7 +27,7 @@ export const TopPerformerPage: React.FC<TopPerformerPageProps> = () => {
     const byKey = new Map<string, TopPerformerEntry>();
     const time = (p: TopPerformerEntry) => new Date(p.updated_at || p.created_at || 0).getTime();
     for (const p of publishedPerformers) {
-      const key = `${p.month_index}|${p.channel}`;
+      const key = `${performerMonth(p)}|${p.channel}`;
       const current = byKey.get(key);
       if (!current || time(p) > time(current)) byKey.set(key, p);
     }
@@ -40,7 +41,7 @@ export const TopPerformerPage: React.FC<TopPerformerPageProps> = () => {
     const latest = [...publishedPerformers].sort(
       (a, b) => new Date(b.updated_at || b.created_at || 0).getTime() - new Date(a.updated_at || a.created_at || 0).getTime()
     )[0];
-    return setForMonth(latest?.month_index || new Date().getMonth() + 1);
+    return setForMonth(latest ? performerMonth(latest) : new Date().getMonth() + 1);
   }, [publishedPerformers]);
 
   // Set index: 0 = Jan-Apr (Set 1), 1 = May-Aug (Set 2), 2 = Sep-Dec (Set 3)
