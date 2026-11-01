@@ -115,6 +115,23 @@ export function describePdfLoadError(err: unknown, url: string): string {
   return e?.message ? `Could not open the PDF: ${e.message}` : 'Could not open the PDF. Please check your connection and try again.';
 }
 
+const PDF_DATA_OPTIONS = {
+  cMapUrl: `${PDFJS_ASSET_BASE}cmaps/`,
+  cMapPacked: true,
+  standardFontDataUrl: `${PDFJS_ASSET_BASE}standard_fonts/`,
+  wasmUrl: `${PDFJS_ASSET_BASE}wasm/`,
+  iccUrl: `${PDFJS_ASSET_BASE}iccs/`,
+};
+
+/** Opens a PDF that is already in memory (e.g. a file chosen for upload). */
+export async function loadPdfFromData(data: ArrayBuffer): Promise<pdfjsLib.PDFDocumentProxy> {
+  try {
+    return await pdfjsLib.getDocument({ data: new Uint8Array(data), ...PDF_DATA_OPTIONS }).promise;
+  } catch (err) {
+    throw new Error(describePdfLoadError(err, ''));
+  }
+}
+
 /**
  * Loads a PDF document from URL using PDF.js
  */
