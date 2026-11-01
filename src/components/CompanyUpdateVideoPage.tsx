@@ -12,6 +12,7 @@ import {
   Search,
 } from 'lucide-react';
 import { parseVideoUrl } from '../lib/videoUtils';
+import { closeOnBackdrop } from '../lib/closeOnOutside';
 
 interface CompanyUpdateVideoPageProps {
   onBackToOverview?: () => void;
@@ -249,9 +250,9 @@ export const CompanyUpdateVideoPage: React.FC<CompanyUpdateVideoPageProps> = () 
             role="dialog"
             aria-modal="true"
             aria-labelledby="video-modal-title"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setActiveVideo(null);
-            }}
+            {...closeOnBackdrop(() => {
+              setActiveVideo(null);
+            })}
           >
             <div
               className="bg-slate-900 rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-800 text-left"

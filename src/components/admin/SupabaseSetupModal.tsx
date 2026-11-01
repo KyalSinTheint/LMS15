@@ -3,6 +3,7 @@ import { Database, Copy, Check, ExternalLink, ShieldCheck, RefreshCw, AlertCircl
 import { useLms } from '../../context/LmsContext';
 import { testSupabaseConnection, getSupabaseConfig } from '../../lib/supabase';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface SupabaseSetupModalProps {
   isOpen: boolean;
@@ -44,7 +45,10 @@ export const SupabaseSetupModal: React.FC<SupabaseSetupModalProps> = ({ isOpen, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+      {...closeOnBackdrop(onClose)}
+    >
       <div className="bg-white rounded-2xl max-w-2xl w-full border border-slate-200 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="bg-[#003366] text-white p-5 flex items-center justify-between">

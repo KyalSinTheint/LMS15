@@ -54,6 +54,7 @@ import { PdfViewerModal } from '../common/PdfViewerModal';
 import { SkillVideoPlayerModal } from '../learner/SkillVideoPlayerModal';
 import { ExternalLinkModal } from '../learner/ExternalLinkModal';
 import { PdfQuizGeneratorModal, GeneratedQuestionItem } from './PdfQuizGeneratorModal';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface ResourceFormData {
   id?: string;
@@ -1713,7 +1714,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
       {isCategoryModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
-          onClick={() => setIsCategoryModalOpen(false)}
+          {...closeOnBackdrop(() => setIsCategoryModalOpen(false))}
         >
           <div
             className="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-200 my-auto animate-in fade-in zoom-in-95 duration-200 text-left"
@@ -1912,7 +1913,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
       {isResourceModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
-          onClick={() => !isUploading && setIsResourceModalOpen(false)}
+          {...closeOnBackdrop(() => !isUploading && setIsResourceModalOpen(false))}
         >
           <div
             className="bg-white rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl border border-slate-200 my-auto animate-in fade-in zoom-in-95 duration-200 text-left"
@@ -2351,7 +2352,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
       {deleteResourceConfirmId && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-          onClick={() => setDeleteResourceConfirmId(null)}
+          {...closeOnBackdrop(() => setDeleteResourceConfirmId(null))}
         >
           <div
             className="bg-white rounded-3xl max-w-md w-full p-6 text-left shadow-2xl border border-slate-200 space-y-4"
@@ -2392,7 +2393,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
       {deleteCategoryConfirmId && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-          onClick={() => setDeleteCategoryConfirmId(null)}
+          {...closeOnBackdrop(() => setDeleteCategoryConfirmId(null))}
         >
           <div
             className="bg-white rounded-3xl max-w-md w-full p-6 text-left shadow-2xl border border-slate-200 space-y-4"
@@ -2467,7 +2468,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
       {questionModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-          onClick={() => setQuestionModalOpen(false)}
+          {...closeOnBackdrop(() => setQuestionModalOpen(false))}
         >
           <div
             className="bg-white rounded-3xl max-w-lg w-full p-6 text-left shadow-2xl border border-slate-200 space-y-4"
@@ -2586,7 +2587,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
       {deleteQuizConfirmId && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-          onClick={() => setDeleteQuizConfirmId(null)}
+          {...closeOnBackdrop(() => setDeleteQuizConfirmId(null))}
         >
           <div
             className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-slate-200"

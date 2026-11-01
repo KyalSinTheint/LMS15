@@ -23,6 +23,7 @@ import { useLms } from '../../context/LmsContext';
 import { Profile, AccountStatus, UserRole, CourseEnrollment, ChannelAccess } from '../../types/lms';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 export const UserManagement: React.FC = () => {
   const {
@@ -420,7 +421,7 @@ export const UserManagement: React.FC = () => {
         createPortal(
           <div
             className="fixed inset-0 z-[9999] overflow-y-auto flex items-start justify-center p-4 sm:p-6 pt-10 sm:pt-14 md:pt-16 pb-6 sm:pb-10 bg-slate-950/75 backdrop-blur-xs text-left transition-opacity"
-            onClick={() => setSelectedUser(null)}
+            {...closeOnBackdrop(() => setSelectedUser(null))}
             role="dialog"
             aria-modal="true"
           >
@@ -600,7 +601,10 @@ export const UserManagement: React.FC = () => {
       {/* CONFIRMATION DIALOG FOR SENSITIVE ACTIONS */}
       {confirmDialog.isOpen &&
         createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+            {...closeOnBackdrop(() => setConfirmDialog((prev) => ({ ...prev, isOpen: false })))}
+          >
             <div className="bg-white dark:bg-[#10243C] rounded-2xl max-w-md w-full border border-slate-200 dark:border-[#1E426D] shadow-2xl p-6 space-y-4">
               <div className="flex items-start gap-3">
                 <div className="p-2.5 rounded-xl bg-red-100 text-red-600 shrink-0">

@@ -19,6 +19,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { loadPdfDocument, getPdfStreamUrl } from '../../lib/pdfUtils';
 import { useLms } from '../../context/LmsContext';
 import { ViewerWatermark } from './ViewerWatermark';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface PdfViewerModalProps {
   isOpen: boolean;
@@ -298,7 +299,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/85 backdrop-blur-sm animate-in fade-in duration-200 select-none"
-      onClick={onClose}
+      {...closeOnBackdrop(onClose)}
       onContextMenu={(e) => e.preventDefault()}
       role="dialog"
       aria-modal="true"

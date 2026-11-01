@@ -24,6 +24,7 @@ import { CompanyVideoItem } from '../../types/lms';
 import { parseVideoUrl } from '../../lib/videoUtils';
 import { uploadImageFile, validateImageFile } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 export const CompanyVideosManagement: React.FC = () => {
   const { companyVideos, createVideo, updateVideo, deleteVideo } = useLms();
@@ -352,7 +353,10 @@ export const CompanyVideosManagement: React.FC = () => {
 
       {/* CREATE / EDIT VIDEO MODAL WITH LIVE PREVIEW */}
       {videoModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setVideoModal((prev) => ({ ...prev, isOpen: false })))}
+        >
           <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto text-left">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-2.5">
@@ -600,6 +604,7 @@ export const CompanyVideosManagement: React.FC = () => {
       {activePlayerVideo && (
         <div
           className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+          {...closeOnBackdrop(() => setActivePlayerVideo(null))}
           role="dialog"
           aria-modal="true"
         >
@@ -711,7 +716,10 @@ export const CompanyVideosManagement: React.FC = () => {
 
       {/* DELETE CONFIRMATION MODAL */}
       {deleteConfirm.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setDeleteConfirm({ isOpen: false, id: '', title: '' }))}
+        >
           <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-4 text-left">
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-xl bg-red-100 text-red-600 shrink-0">

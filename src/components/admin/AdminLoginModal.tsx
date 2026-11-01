@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface AdminLoginModalProps {
   isOpen: boolean;
@@ -118,7 +119,10 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200"
+      {...closeOnBackdrop(onClose)}
+    >
       <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden flex flex-col">
         {/* Top Header */}
         <div className="bg-[#176B98] text-white p-6 relative">

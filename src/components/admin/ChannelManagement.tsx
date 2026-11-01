@@ -18,6 +18,7 @@ import { useLms } from '../../context/LmsContext';
 import { Channel } from '../../types/lms';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 export const ChannelManagement: React.FC = () => {
   const {
@@ -340,7 +341,10 @@ export const ChannelManagement: React.FC = () => {
 
       {/* CREATE / EDIT CHANNEL MODAL */}
       {channelModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setChannelModal((prev) => ({ ...prev, isOpen: false })))}
+        >
           <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-base text-slate-900">
               {channelModal.isEditing ? 'Edit Learning Channel' : 'Create New Learning Channel'}
@@ -465,7 +469,10 @@ export const ChannelManagement: React.FC = () => {
 
       {/* AUTHORIZED LEARNERS MODAL */}
       {selectedChannelForUsers && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setSelectedChannelForUsers(null))}
+        >
           <div className="bg-white rounded-2xl max-w-2xl w-full border border-slate-200 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden">
             <div className="bg-[#176B98] text-white p-5 flex items-center justify-between">
               <div>
@@ -559,7 +566,10 @@ export const ChannelManagement: React.FC = () => {
 
       {/* ASSIGN USER MODAL */}
       {assignUserModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setAssignUserModal((prev) => ({ ...prev, isOpen: false })))}
+        >
           <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-4">
             <h3 className="font-bold text-base text-slate-900">Grant Channel Permission</h3>
 

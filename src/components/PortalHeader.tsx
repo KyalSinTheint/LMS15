@@ -22,6 +22,7 @@ import {
 import { useLms } from '../context/LmsContext';
 import { LearnerProfileModal } from './learner/LearnerProfileModal';
 import { getUserAvatar, avatarFallbackOnError } from '../lib/avatar';
+import { useClickOutside } from '../lib/closeOnOutside';
 
 export type NavTabId = 'our-company' | 'product-knowledge' | 'learning-dev' | 'company-bulletin';
 export type OurCompanySubpage = 'overview' | 'news' | 'videos' | 'top-performers';
@@ -128,6 +129,11 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const ldDropdownRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  useClickOutside(userMenuRef, userDropdownOpen, () => setUserDropdownOpen(false));
+  // Mobile drawer: the header holds both the toggle button and the drawer
+  useClickOutside(headerRef, mobileMenuOpen, () => setMobileMenuOpen(false));
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -170,7 +176,7 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0E2035]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1E426D] shadow-xs transition-colors">
+    <header ref={headerRef} className="sticky top-0 z-40 bg-white/95 dark:bg-[#0E2035]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1E426D] shadow-xs transition-colors">
       {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-2 sm:gap-4 lg:gap-8 h-18">
@@ -449,7 +455,7 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
             </button>
 
             {/* User Account Menu (Strict Regular User Session) */}
-            <div className="relative">
+            <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors cursor-pointer text-left"

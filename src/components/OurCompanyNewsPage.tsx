@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Search,
 } from 'lucide-react';
+import { closeOnBackdrop } from '../lib/closeOnOutside';
 
 interface OurCompanyNewsPageProps {
   onBackToOverview?: () => void;
@@ -310,9 +311,9 @@ export const OurCompanyNewsPage: React.FC<OurCompanyNewsPageProps> = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="article-modal-title"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setSelectedArticle(null);
-            }}
+            {...closeOnBackdrop(() => {
+              setSelectedArticle(null);
+            })}
           >
             <div
               className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 text-left"

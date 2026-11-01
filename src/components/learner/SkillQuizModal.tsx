@@ -17,6 +17,7 @@ import {
 import { SkillQuiz, SkillQuizQuestion } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface SkillQuizModalProps {
   isOpen: boolean;
@@ -145,7 +146,7 @@ export const SkillQuizModal: React.FC<SkillQuizModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-950/80 backdrop-blur-sm overflow-y-auto text-left"
-      onClick={onClose}
+      {...closeOnBackdrop(onClose)}
     >
       <div
         className="bg-white dark:bg-[#10243C] rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 dark:border-[#1E426D] my-auto animate-in fade-in zoom-in-95 duration-200"

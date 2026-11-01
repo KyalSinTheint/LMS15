@@ -19,6 +19,7 @@ import { useLms } from '../../context/LmsContext';
 import { Course } from '../../types/lms';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 export const CourseManagement: React.FC = () => {
   const {
@@ -317,7 +318,10 @@ export const CourseManagement: React.FC = () => {
 
       {/* CREATE / EDIT COURSE MODAL */}
       {courseModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setCourseModal((prev) => ({ ...prev, isOpen: false })))}
+        >
           <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="font-bold text-base text-slate-900">
               {courseModal.isEditing ? 'Edit Course Information' : 'Create New LMS Course'}
@@ -438,7 +442,10 @@ export const CourseManagement: React.FC = () => {
 
       {/* ENROLLED LEARNERS MODAL */}
       {selectedCourseForEnrollments && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setSelectedCourseForEnrollments(null))}
+        >
           <div className="bg-white rounded-2xl max-w-2xl w-full border border-slate-200 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden">
             <div className="bg-[#176B98] text-white p-5 flex items-center justify-between">
               <div>
@@ -532,7 +539,10 @@ export const CourseManagement: React.FC = () => {
 
       {/* ASSIGN USER MODAL */}
       {assignUserModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          {...closeOnBackdrop(() => setAssignUserModal((prev) => ({ ...prev, isOpen: false })))}
+        >
           <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-4">
             <h3 className="font-bold text-base text-slate-900">Enroll Learner in Course</h3>
 

@@ -46,6 +46,7 @@ import { uploadImageFile } from '../../lib/storageUtils';
 import { ProductKnowledgeRichEditor } from './ProductKnowledgeRichEditor';
 import { getProductRichContent } from '../../lib/productKnowledgeUtils';
 import { PdfQuizGeneratorModal, GeneratedQuestionItem } from './PdfQuizGeneratorModal';
+import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 export const ProductManagement: React.FC = () => {
   const {
@@ -800,7 +801,7 @@ export const ProductManagement: React.FC = () => {
       {isProductModalOpen && (
         <div
           className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 text-left transition-opacity"
-          onClick={() => setIsProductModalOpen(false)}
+          {...closeOnBackdrop(() => setIsProductModalOpen(false))}
           role="dialog"
           aria-modal="true"
         >
@@ -1065,7 +1066,7 @@ export const ProductManagement: React.FC = () => {
       {isQuizModalOpen && (
         <div
           className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 text-left transition-opacity"
-          onClick={() => setIsQuizModalOpen(false)}
+          {...closeOnBackdrop(() => setIsQuizModalOpen(false))}
           role="dialog"
           aria-modal="true"
         >
