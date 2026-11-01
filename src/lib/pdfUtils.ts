@@ -5,9 +5,12 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import { isSupabaseStorageUrl } from './supabase';
 
-// Point worker to local public asset so it works offline and without cross-origin CDN constraints
+// pdf.js worker and helper data are copied from node_modules into public/pdfjs/
+// at dev/build time (scripts/copy-pdfjs-assets.mjs), so they always match the
+// installed library version.
+const PDFJS_ASSET_BASE = '/pdfjs/';
 if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `${PDFJS_ASSET_BASE}pdf.worker.min.mjs`;
 }
 
 /**
@@ -86,16 +89,54 @@ export function setCachedPdfThumbnail(url: string, dataUrl: string): void {
 }
 
 /**
+ * Turns a pdf.js loading error into a message an admin or learner can act on.
+ */
+export function describePdfLoadError(err: unknown, url: string): string {
+  const e = err as { name?: string; message?: string; status?: number };
+  const status = typeof e?.status === 'number' ? e.status : Number((e?.message || '').match(/\b(4\d\d|5\d\d)\b/)?.[1] || 0);
+  const isLocalUpload = url.trim().startsWith('/uploads/') || url.includes('/api/storage/uploads/');
+
+  if (status === 404 || e?.name === 'MissingPDFException') {
+    return isLocalUpload
+      ? 'This PDF was saved on a local development server and is not available online. Please ask an administrator to upload it again.'
+      : 'The PDF file could not be found in storage. Please ask an administrator to upload it again.';
+  }
+  if (status === 400 || status === 401 || status === 403) {
+    return 'You do not have access to this PDF file (the storage bucket may be private). Please contact an administrator.';
+  }
+  if (e?.name === 'InvalidPDFException') {
+    return isLocalUpload
+      ? 'This PDF was saved on a local development server and is not available online. Please ask an administrator to upload it again.'
+      : 'This file is not a valid PDF, or it could not be downloaded completely. Please ask an administrator to upload it again.';
+  }
+  if (e?.name === 'PasswordException') {
+    return 'This PDF is password-protected and cannot be displayed. Please upload a version without a password.';
+  }
+  return e?.message ? `Could not open the PDF: ${e.message}` : 'Could not open the PDF. Please check your connection and try again.';
+}
+
+/**
  * Loads a PDF document from URL using PDF.js
  */
 export async function loadPdfDocument(url: string): Promise<pdfjsLib.PDFDocumentProxy> {
   const streamUrl = getPdfStreamUrl(url);
   const loadingTask = pdfjsLib.getDocument({
     url: streamUrl,
-    cMapUrl: 'https://unpkg.com/pdfjs-dist@legacy/cmaps/',
+    // Needed by many real-world PDFs: CJK/CID fonts (CMaps), non-embedded
+    // standard fonts, scanned images (JBIG2/JPEG 2000 wasm decoders) and
+    // colour profiles. Previously the CMap URL pointed to a non-existent
+    // "@legacy" tag and the others were missing, so such PDFs failed.
+    cMapUrl: `${PDFJS_ASSET_BASE}cmaps/`,
     cMapPacked: true,
+    standardFontDataUrl: `${PDFJS_ASSET_BASE}standard_fonts/`,
+    wasmUrl: `${PDFJS_ASSET_BASE}wasm/`,
+    iccUrl: `${PDFJS_ASSET_BASE}iccs/`,
   });
-  return await loadingTask.promise;
+  try {
+    return await loadingTask.promise;
+  } catch (err) {
+    throw new Error(describePdfLoadError(err, url));
+  }
 }
 
 /**
