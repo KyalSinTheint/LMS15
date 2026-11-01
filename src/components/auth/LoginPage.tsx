@@ -32,7 +32,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   initialIdentifier,
   notice,
 }) => {
-  const { loginWithCredentials, requestPasswordReset, requestAdminPasswordReset } = useLms();
+  const { loginWithCredentials, requestPasswordReset, requestAdminPasswordReset, appSettings } = useLms();
   const [identifier, setIdentifier] = useState(initialIdentifier || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -271,7 +271,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </button>
           </form>
 
-          {/* Registration Link */}
+          {/* Registration Link (Admin → Settings can turn self-registration off) */}
+          {appSettings.allow_self_registration ? (
           <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-600">
             <span>Don't have an approved account yet? </span>
             <button
@@ -282,6 +283,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               Register for LMS Access
             </button>
           </div>
+          ) : (
+            <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-600">
+              Need an account? Please contact the LMS Administrator
+              {appSettings.support_email ? (
+                <>
+                  {' '}
+                  at{' '}
+                  <a href={`mailto:${appSettings.support_email}`} className="font-bold text-[#176B98] hover:underline">
+                    {appSettings.support_email}
+                  </a>
+                </>
+              ) : null}
+              .
+            </div>
+          )}
 
         </div>
       </div>
@@ -397,6 +413,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   </button>
                 </div>
 
+                {appSettings.email_password_reset_enabled && (
                 <p className="text-center text-[11px] text-slate-500 border-t border-slate-100 pt-3">
                   {forgotMode === 'admin' ? 'Prefer email? ' : 'No email arrived? '}
                   <button
@@ -407,6 +424,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     {forgotMode === 'admin' ? 'Send me a reset link by email' : 'Ask the Administrator instead'}
                   </button>
                 </p>
+                )}
               </form>
             )}
           </div>

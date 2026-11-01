@@ -38,6 +38,7 @@ import {
   CompanyBulletinItem,
   BulletinCategory,
   PasswordResetRequest,
+  AppSettings,
 } from '../types/lms';
 import { getSupabaseClient, isSupabaseConfigured, openedFromPasswordResetLink, RESET_PASSWORD_PATH } from '../lib/supabase';
 
@@ -108,6 +109,12 @@ interface LmsContextType {
   rejectUser: (userId: string, reason: string) => Promise<boolean>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
   requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string; isConfigured?: boolean }>;
+  // LMS settings (Admin → Settings)
+  appSettings: AppSettings;
+  /** false when the settings migration has not been run yet (defaults are used) */
+  appSettingsReady: boolean;
+  loadAppSettings: () => Promise<void>;
+  updateAppSettings: (patch: Partial<AppSettings>) => Promise<boolean>;
   // Admin-approved reset (no email needed)
   requestAdminPasswordReset: (identifier: string, reason?: string) => Promise<{ success: boolean; message: string }>;
   passwordResetRequests: PasswordResetRequest[];
@@ -478,6 +485,15 @@ const cleanRow = (row: Record<string, any>): Record<string, any> => {
     out[key] = NULLABLE_FK_COLUMNS.includes(key) && value === '' ? null : value;
   });
   return out;
+};
+
+export const DEFAULT_APP_SETTINGS: AppSettings = {
+  allow_self_registration: true,
+  require_admin_approval: true,
+  allowed_email_domains: [],
+  email_password_reset_enabled: true,
+  support_email: 'kbzlifelms@gmail.com',
+  support_phone: null,
 };
 
 const shortId = (prefix: string) => `${prefix}_${generateUuid().replace(/-/g, '').slice(0, 12)}`;
@@ -1105,6 +1121,17 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const client = db();
       const username = data.username.trim().toLowerCase();
+      const emailDomain = data.email.trim().toLowerCase().split('@')[1] || '';
+
+      if (!appSettings.allow_self_registration) {
+        return { success: false, message: 'Self-registration is currently turned off. Please contact the LMS Administrator.' };
+      }
+      if (appSettings.allowed_email_domains.length > 0 && !appSettings.allowed_email_domains.includes(emailDomain)) {
+        return {
+          success: false,
+          message: `Please register with your work email address (${appSettings.allowed_email_domains.map((d) => '@' + d).join(', ')}).`,
+        };
+      }
 
       const { data: available, error: availError } = await client.rpc('is_username_available', { p_username: username });
       if (availError) throw availError;
@@ -1125,7 +1152,22 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           },
         },
       });
-      if (error) return { success: false, message: error.message };
+      if (error) {
+        // The database enforces the same settings; map its errors to plain words
+        if (/LMS_REGISTRATION_CLOSED/.test(error.message)) {
+          return { success: false, message: 'Self-registration is currently turned off. Please contact the LMS Administrator.' };
+        }
+        if (/LMS_EMAIL_DOMAIN_NOT_ALLOWED/.test(error.message)) {
+          return { success: false, message: 'Please register with your work email address.' };
+        }
+        if (/database error saving new user/i.test(error.message)) {
+          return {
+            success: false,
+            message: 'Registration was not accepted. Please check that you used your work email, or contact the LMS Administrator.',
+          };
+        }
+        return { success: false, message: error.message };
+      }
 
       // Supabase returns a user with no identities when the email is already registered
       if (signUp.user && Array.isArray(signUp.user.identities) && signUp.user.identities.length === 0) {
@@ -1143,7 +1185,9 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return {
         success: true,
         needsEmailConfirmation: false,
-        message: 'Registration submitted successfully! Your account is pending administrator review.',
+        message: appSettings.require_admin_approval
+          ? 'Registration submitted successfully! Your account is pending administrator review.'
+          : 'Registration complete! You can start learning now.',
       };
     } catch (err) {
       return { success: false, message: errorMessage(err) };
@@ -1212,6 +1256,69 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return { success: true, message, isConfigured: true };
     } catch (err) {
       return { success: false, message: errorMessage(err) };
+    }
+  };
+
+  // -------------------------------------------------------------
+  // LMS SETTINGS (readable by everyone, incl. the sign-in page)
+  // -------------------------------------------------------------
+  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
+  const [appSettingsReady, setAppSettingsReady] = useState(true);
+  const APP_SETTINGS_COLUMNS =
+    'allow_self_registration, require_admin_approval, allowed_email_domains, email_password_reset_enabled, support_email, support_phone, updated_at, updated_by_name';
+
+  const loadAppSettings = useCallback(async () => {
+    const client = getSupabaseClient();
+    if (!client) return;
+    const { data, error } = await client.from('app_settings').select(APP_SETTINGS_COLUMNS).eq('id', 'global').maybeSingle();
+    if (error || !data) {
+      if (error) console.warn('[KBZLife LMS] Could not load LMS settings (using defaults):', error.message);
+      setAppSettingsReady(false);
+      return;
+    }
+    setAppSettingsReady(true);
+    setAppSettings({ ...DEFAULT_APP_SETTINGS, ...(data as Partial<AppSettings>), allowed_email_domains: (data as AppSettings).allowed_email_domains || [] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    loadAppSettings();
+  }, [authUserId, loadAppSettings]);
+
+  const updateAppSettings = async (patch: Partial<AppSettings>): Promise<boolean> => {
+    if (!requireAdmin('change LMS settings')) return false;
+    try {
+      const domains = patch.allowed_email_domains
+        ? Array.from(
+            new Set(
+              patch.allowed_email_domains
+                .map((d) => d.trim().toLowerCase().replace(/^@/, ''))
+                .filter((d) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(d))
+            )
+          )
+        : undefined;
+      const row = {
+        ...patch,
+        ...(domains ? { allowed_email_domains: domains } : {}),
+        ...(patch.support_email !== undefined ? { support_email: patch.support_email.trim().toLowerCase() } : {}),
+        ...(patch.support_phone !== undefined ? { support_phone: patch.support_phone?.trim() || null } : {}),
+        updated_at: new Date().toISOString(),
+        updated_by: currentUser.id,
+        updated_by_name: currentUser.full_name,
+      };
+      const { data, error } = await db().from('app_settings').update(cleanRow(row)).eq('id', 'global').select(APP_SETTINGS_COLUMNS).maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('Settings could not be saved. Run supabase/migrations/20261106_app_settings.sql in the Supabase SQL Editor.');
+      setAppSettings({ ...DEFAULT_APP_SETTINGS, ...(data as Partial<AppSettings>) });
+      await logAuditAction('settings_updated', 'system', 'global', 'Updated LMS settings.');
+      showToast('success', 'Settings Saved', 'The new settings are in effect for everyone.');
+      return true;
+    } catch (err) {
+      const message = /app_settings|schema cache|42P01|PGRST/i.test(errorMessage(err))
+        ? 'Settings need a one-time database update: run supabase/migrations/20261106_app_settings.sql in the Supabase SQL Editor.'
+        : errorMessage(err);
+      showToast('error', 'Settings Not Saved', message);
+      return false;
     }
   };
 
@@ -3043,6 +3150,10 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         rejectUser,
         changePassword,
         requestPasswordReset,
+        appSettings,
+        appSettingsReady,
+        loadAppSettings,
+        updateAppSettings,
         requestAdminPasswordReset,
         passwordResetRequests,
         passwordResetSetupReady,

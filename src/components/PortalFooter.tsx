@@ -1,10 +1,9 @@
 import React from 'react';
 import { ExternalLink, ArrowUp, Mail, Phone, MapPin, Globe, Share2, Facebook, Linkedin, Youtube, Headset } from 'lucide-react';
 import { NavTabId, NAV_ITEMS } from './PortalHeader';
+import { useLms } from '../context/LmsContext';
 
-/** LMS help desk (password problems, course access, technical issues) */
-export const LMS_SUPPORT_EMAIL = 'kbzlifelms@gmail.com';
-const LMS_SUPPORT_MAILTO = `mailto:${LMS_SUPPORT_EMAIL}?subject=${encodeURIComponent('KBZLife LMS Support')}`;
+const supportMailto = (email: string) => `mailto:${email}?subject=${encodeURIComponent('KBZLife LMS Support')}`;
 
 const TikTokIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
@@ -25,6 +24,11 @@ interface PortalFooterProps {
 }
 
 export const PortalFooter: React.FC<PortalFooterProps> = ({ onSelectTab, activeTab }) => {
+  // LMS help desk contact, set in Admin → Settings
+  const { appSettings } = useLms();
+  const LMS_SUPPORT_EMAIL = appSettings.support_email;
+  const LMS_SUPPORT_MAILTO = supportMailto(LMS_SUPPORT_EMAIL);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -159,6 +163,9 @@ export const PortalFooter: React.FC<PortalFooterProps> = ({ onSelectTab, activeT
               <span className="min-w-0">
                 <span className="block text-xs font-extrabold text-[#176B98] uppercase tracking-wider">Contact Us · LMS Support</span>
                 <span className="block text-sm font-bold break-all group-hover:underline">{LMS_SUPPORT_EMAIL}</span>
+                {appSettings.support_phone && (
+                  <span className="block text-xs font-semibold text-slate-700 mt-0.5">{appSettings.support_phone}</span>
+                )}
                 <span className="block text-[11px] text-slate-500 mt-0.5">
                   Sign-in problems, course access or technical issues with the learning portal.
                 </span>
