@@ -7,6 +7,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, Loader2, RotateCcw, Send, UserRound, X } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
+import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { MentorMascot } from './MentorMascot';
 import { say, ScriptKey } from './pandaScript';
 import { askTeam, loadMyQuestions, loadPublishedEntries, markAnswersSeen } from '../../lib/chatbotApi';
@@ -28,7 +29,7 @@ interface Message {
   tone?: 'info' | 'team';
 }
 
-const BUTTON = 64;
+const BUTTON = 60;
 const MARGIN = 12;
 const POS_KEY = 'kbz_assistant_pos';
 const CHAT_KEY = 'kbz_assistant_chat';
@@ -118,6 +119,26 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
   const { currentUser, products, showToast } = useLms();
 
   const [open, setOpen] = useState(false);
+  const [isPhone, setIsPhone] = useState(() => window.innerWidth < 640);
+  useEffect(() => {
+    const onResize = () => setIsPhone(window.innerWidth < 640);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  // Phones: the chat is full screen, so the page behind it must not scroll
+  useBodyScrollLock(open && isPhone);
+  // Phones: the system Back button/gesture closes the chat instead of leaving the page
+  useEffect(() => {
+    if (!open || !isPhone) return;
+    window.history.pushState({ ...(window.history.state || {}), trainerPanda: true }, '');
+    const onPop = () => setOpen(false);
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      if (window.history.state?.trainerPanda) window.history.back();
+    };
+  }, [open, isPhone]);
+  const [noticeOpen, setNoticeOpen] = useState(false);
 
   // ---- Draggable position -------------------------------------------------
   const [pos, setPos] = useState(() => {
@@ -231,7 +252,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
     if (!open) return;
     loadKnowledge();
     checkTeamAnswers(true);
-    setTimeout(() => inputRef.current?.focus(), 50);
+    if (window.innerWidth >= 640) setTimeout(() => inputRef.current?.focus(), 50);
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -245,7 +266,8 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
   const suggestions = useMemo(() => {
     const faqs = (entries || []).filter((e) => e.kind === 'faq' && e.question && !isMyanmar(e.question)).slice(0, 3).map((e) => e.question!.split('\n')[0]);
     const productQs = publishedProducts.slice(0, 2).map((p) => `${p.title} benefits`);
-    return [...faqs, ...productQs].slice(0, 4);
+    // Always-working starters, so a new chat is never empty
+    return [...faqs, ...productQs].slice(0, 3).concat(['What can you do?', 'Tell me a joke 😄']);
   }, [entries, publishedProducts]);
 
   const introFor = (item: KnowledgeItem): ScriptKey =>
@@ -342,11 +364,14 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
         <div
           role="dialog"
           aria-label="Trainer Panda — KBZ Life Assistant"
-          style={panelStyle}
-          className="fixed z-[60] inset-0 sm:inset-auto sm:w-[380px] bg-white sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
+          style={isPhone ? { height: '100dvh' } : panelStyle}
+          className="fixed z-[60] inset-x-0 top-0 sm:inset-auto sm:w-[380px] bg-white sm:rounded-3xl shadow-2xl sm:border border-slate-200 flex flex-col overflow-hidden overscroll-contain"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#003366] to-[#176B98] text-white px-4 py-3 flex items-center gap-3 shrink-0">
+          <div
+            className="bg-gradient-to-r from-[#003366] to-[#176B98] text-white px-3 sm:px-4 pb-3 flex items-center gap-2.5 sm:gap-3 shrink-0"
+            style={{ paddingTop: isPhone ? 'max(12px, env(safe-area-inset-top))' : 12 }}
+          >
             <MentorMascot className="w-10 h-10 shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="font-extrabold text-sm leading-tight">Trainer Panda 🐼</p>
@@ -357,27 +382,41 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
               onClick={() => setMessages([])}
               title="Clear chat"
               aria-label="Clear chat"
-              className="p-1.5 rounded-lg hover:bg-white/15 cursor-pointer"
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center hover:bg-white/15 active:bg-white/25 cursor-pointer"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-[18px] h-[18px] sm:w-4 sm:h-4" />
             </button>
-            <button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="p-1.5 rounded-lg hover:bg-white/15 cursor-pointer">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close assistant"
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center bg-white/10 sm:bg-transparent hover:bg-white/15 active:bg-white/25 cursor-pointer"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Always-visible reminder */}
-          <div
+          {/* Always-visible reminder (one compact line on phones, tap for Myanmar) */}
+          <button
+            type="button"
             role="note"
-            className="shrink-0 px-3.5 py-2 bg-amber-50 border-b border-amber-200 text-[11px] leading-snug text-amber-900 flex items-start gap-2"
+            onClick={() => setNoticeOpen((o) => !o)}
+            aria-expanded={!isPhone || noticeOpen}
+            className="shrink-0 w-full text-left px-3.5 py-1.5 sm:py-2 bg-amber-50 border-b border-amber-200 text-[11px] leading-snug text-amber-900 flex items-start gap-2 cursor-pointer sm:cursor-default"
           >
             <span aria-hidden="true">⚠️</span>
-            <span>
-              <strong>{T.verifyMy}</strong>
-              <br />
-              <span className="text-amber-800">{T.verify}</span>
-            </span>
-          </div>
+            {isPhone && !noticeOpen ? (
+              <span className="flex-1 truncate">
+                {T.verify} <span className="text-amber-700 underline">မြန်မာ</span>
+              </span>
+            ) : (
+              <span>
+                <strong>{T.verifyMy}</strong>
+                <br />
+                <span className="text-amber-800">{T.verify}</span>
+              </span>
+            )}
+          </button>
 
           {/* Messages */}
           <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-3 bg-[#F3F8FB] dark:bg-[#0B131E]">
@@ -390,7 +429,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
                       key={s}
                       type="button"
                       onClick={() => ask(s)}
-                      className="px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200 text-[#176B98] text-[11px] font-semibold hover:bg-sky-100 cursor-pointer text-left"
+                      className="px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-full bg-sky-50 border border-sky-200 text-[#176B98] text-[13px] sm:text-[11px] font-semibold hover:bg-sky-100 cursor-pointer text-left"
                     >
                       {s}
                     </button>
@@ -402,7 +441,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
             {messages.map((m) =>
               m.role === 'user' ? (
                 <div key={m.id} className="flex justify-end">
-                  <div className="max-w-[85%] px-3.5 py-2 rounded-2xl rounded-br-md bg-[#176B98] text-white text-[13px] leading-relaxed whitespace-pre-wrap break-words">
+                  <div className="max-w-[85%] px-3.5 py-2 rounded-2xl rounded-br-md bg-[#176B98] text-white text-[15px] sm:text-[13px] leading-relaxed whitespace-pre-wrap break-words">
                     {m.text}
                   </div>
                 </div>
@@ -472,7 +511,8 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
               e.preventDefault();
               ask(input);
             }}
-            className="p-3 border-t border-slate-200 bg-white flex items-center gap-2 shrink-0"
+            className="px-3 pt-3 border-t border-slate-200 bg-white flex items-center gap-2 shrink-0"
+            style={{ paddingBottom: isPhone ? 'max(12px, env(safe-area-inset-bottom))' : 12 }}
           >
             <input
               ref={inputRef}
@@ -481,13 +521,15 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
               placeholder={T.placeholder}
               maxLength={500}
               aria-label="Your question"
-              className="flex-1 min-w-0 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-[13px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#176B98]/30"
+              enterKeyHint="send"
+              autoComplete="off"
+              className="flex-1 min-w-0 px-4 py-3 sm:px-3.5 sm:py-2.5 rounded-2xl sm:rounded-xl border border-slate-200 bg-slate-50 text-base sm:text-[13px] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#176B98]/30"
             />
             <button
               type="submit"
               disabled={!input.trim()}
               aria-label="Send"
-              className="w-10 h-10 rounded-xl bg-[#176B98] hover:bg-[#12567a] text-white flex items-center justify-center cursor-pointer disabled:opacity-40 shrink-0"
+              className="w-12 h-12 sm:w-10 sm:h-10 rounded-2xl sm:rounded-xl bg-[#176B98] hover:bg-[#12567a] active:scale-95 text-white flex items-center justify-center cursor-pointer disabled:opacity-40 shrink-0 transition-transform"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -534,7 +576,7 @@ const BotBubble: React.FC<{ children: React.ReactNode; tone?: 'info' | 'team' }>
   <div className="flex items-end gap-2">
     <MentorMascot className="w-7 h-7 shrink-0" />
     <div
-      className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-bl-md text-[13px] leading-relaxed shadow-2xs border ${
+      className={`max-w-[88%] sm:max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-bl-md text-[15px] sm:text-[13px] leading-relaxed shadow-2xs border ${
         tone === 'team' ? 'bg-emerald-50 border-emerald-200 text-slate-800' : 'bg-white border-slate-200 text-slate-800'
       }`}
     >
