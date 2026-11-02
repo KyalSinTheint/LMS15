@@ -588,6 +588,7 @@ export const ProductManagement: React.FC = () => {
 
           {/* Products Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+            <p className="sm:hidden px-3 pt-2 text-[10px] font-semibold text-slate-400 text-right">Swipe sideways to see all columns →</p>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-700">
                 <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-wider text-slate-500">
@@ -733,6 +734,7 @@ export const ProductManagement: React.FC = () => {
             </span>
           </div>
 
+          <p className="sm:hidden px-3 pt-2 text-[10px] font-semibold text-slate-400 text-right">Swipe sideways to see all columns →</p>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
               <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase tracking-wider text-slate-500">
