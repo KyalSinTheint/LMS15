@@ -213,6 +213,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   // Active categories list
   const activeCategories = useMemo(() => {
@@ -678,8 +679,14 @@ export const SkillDevelopmentManagement: React.FC = () => {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('error', 'Not an image', 'Please choose a photo (JPG, PNG, WebP).');
+      return;
+    }
 
+    setAvatarUploading(true);
     try {
       showToast('info', 'Uploading Avatar', 'Processing instructor photo...');
       const res = await uploadImageFile(file, 'skill-instructors');
@@ -695,6 +702,8 @@ export const SkillDevelopmentManagement: React.FC = () => {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       showToast('error', 'Avatar Error', msg);
+    } finally {
+      setAvatarUploading(false);
     }
   };
 
@@ -2259,7 +2268,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      Instructor Avatar URL
+                      Instructor Photo
                     </label>
                     <input
                       ref={avatarInputRef}
@@ -2268,22 +2277,46 @@ export const SkillDevelopmentManagement: React.FC = () => {
                       onChange={handleAvatarUpload}
                       className="hidden"
                     />
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        placeholder="Avatar image URL"
-                        value={resourceForm.instructor_avatar || ''}
-                        onChange={(e) => setResourceForm({ ...resourceForm, instructor_avatar: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-white text-xs border border-slate-200 rounded-xl"
-                      />
+                    <div className="flex items-center gap-3">
                       <button
                         type="button"
                         onClick={() => avatarInputRef.current?.click()}
-                        className="px-2.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                        title={resourceForm.instructor_avatar ? 'Change photo' : 'Upload photo'}
+                        className="relative w-14 h-14 shrink-0 rounded-full overflow-hidden border-2 border-dashed border-slate-300 bg-white hover:border-[#176B98] flex items-center justify-center cursor-pointer"
                       >
-                        Upload
+                        {resourceForm.instructor_avatar ? (
+                          <img
+                            src={resourceForm.instructor_avatar}
+                            alt="Instructor"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Upload className="w-5 h-5 text-slate-400" />
+                        )}
                       </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => avatarInputRef.current?.click()}
+                          disabled={avatarUploading}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer disabled:opacity-60"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          {avatarUploading ? 'Uploading…' : resourceForm.instructor_avatar ? 'Change Photo' : 'Upload Photo'}
+                        </button>
+                        {resourceForm.instructor_avatar && !avatarUploading && (
+                          <button
+                            type="button"
+                            onClick={() => setResourceForm({ ...resourceForm, instructor_avatar: '' })}
+                            className="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            Remove
+                          </button>
+                        )}
+                      </div>
                     </div>
+                    <p className="mt-1 text-[10px] text-slate-500">JPG or PNG, square works best.</p>
                   </div>
 
                   <div>
