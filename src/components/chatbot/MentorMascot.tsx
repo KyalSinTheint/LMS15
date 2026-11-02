@@ -1,7 +1,8 @@
 /**
  * "Trainer Panda" — the LMS Assistant mascot: an original, cheerful giant
- * panda in a graduation cap, drawn in the KBZ Life palette
- * (navy #003366 instead of black, brand blue #176B98, sky #a5e0f2, gold tassel).
+ * panda wearing an operator headset (headband, ear cups and a microphone),
+ * drawn in the KBZ Life palette (navy #003366 instead of black, brand blue
+ * #176B98, sky #a5e0f2, gold microphone tip).
  */
 import React from 'react';
 
@@ -53,10 +54,14 @@ export const MentorMascot: React.FC<{ className?: string; title?: string }> = ({
     <path d="M43 71 Q50 78 57 71" fill="none" stroke="#003366" strokeWidth="2.2" strokeLinecap="round" />
     <path d="M48 75.5 Q50 78.5 52 75.5 Z" fill="#f59fb3" />
 
-    {/* Graduation cap */}
-    <path d="M27 25 L50 15 L73 25 L50 34 Z" fill="#003366" />
-    <path d="M37 29 L37 35 Q50 41 63 35 L63 29 L50 34 Z" fill="#0b2a4a" />
-    <path d="M73 25 L73 37" stroke="#f5c542" strokeWidth="1.8" strokeLinecap="round" />
-    <circle cx="73" cy="38.5" r="2.4" fill="#f5c542" />
+    {/* Operator headset: headband over the head, ear cups, microphone */}
+    <path d="M17 56 Q15 13 50 12 Q85 13 83 56" fill="none" stroke="#003366" strokeWidth="4.2" strokeLinecap="round" />
+    <path d="M22 40 Q26 19 50 17" fill="none" stroke="#a5e0f2" strokeWidth="1.3" strokeLinecap="round" opacity="0.7" />
+    <rect x="10.5" y="47" width="13" height="19" rx="6" fill="#003366" />
+    <rect x="76.5" y="47" width="13" height="19" rx="6" fill="#003366" />
+    <rect x="13" y="50" width="5" height="13" rx="2.5" fill="#176B98" />
+    <rect x="82" y="50" width="5" height="13" rx="2.5" fill="#176B98" />
+    <path d="M17 65 Q19 80 37 78" fill="none" stroke="#003366" strokeWidth="2.6" strokeLinecap="round" />
+    <ellipse cx="39.5" cy="77.6" rx="3.6" ry="2.8" fill="#f5c542" stroke="#003366" strokeWidth="1.2" />
   </svg>
 );
