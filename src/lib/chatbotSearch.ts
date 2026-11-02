@@ -245,6 +245,8 @@ export class KnowledgeIndex {
       if (entry.item.kind === 'faq') score *= 1.15; // curated answers first
       // Practice-test questions ("Which of the below…") are not answers
       if (QUIZ.test(entry.item.content)) score *= 0.6;
+      // Very short text matches easily but rarely answers anything
+      if (entry.item.kind === 'section' && entry.item.content.length < 120) score *= 0.55 + entry.item.content.length / 270;
       // "What is X?": the passage that defines X wins
       if (defTerms) {
         score += [0, 0.2, 0.32][definitionStrength(entry.item.content, defTerms)];

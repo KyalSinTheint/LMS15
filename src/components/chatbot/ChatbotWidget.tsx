@@ -346,10 +346,28 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
   const answerFromItem = (item: KnowledgeItem, lang: Lang): Message =>
     buildAnswer(item.question || item.title || '', [{ item, score: 1 }], lang, lang === 'my' ? 'myRelated' : 'related');
 
+  // A question asked while the handbooks are still loading is answered once they are in
+  const [pending, setPending] = useState<string | null>(null);
+  useEffect(() => {
+    if (pending && entries && !loadingKnowledge) {
+      const q = pending;
+      setPending(null);
+      ask(q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending, entries, loadingKnowledge]);
+
   const ask = (raw: string) => {
     const question = raw.trim();
     if (!question) return;
     setInput('');
+    if (!entries || loadingKnowledge) {
+      if (!smallTalk(question)) {
+        setPending(question);
+        void loadKnowledge();
+        return;
+      }
+    }
     const lang: Lang = isMyanmar(question) ? 'my' : 'en';
     const userMsg: Message = { id: uid(), role: 'user', text: question };
     const chat = smallTalk(question);
