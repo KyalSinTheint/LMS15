@@ -14,6 +14,8 @@ import { askTeam, loadMyQuestions, loadPublishedEntries, markAnswersSeen } from 
 import { buildKnowledge } from '../../lib/chatbotKnowledge';
 import { isMyanmar, KnowledgeIndex, KnowledgeItem, minAnswerScore, SearchHit } from '../../lib/chatbotSearch';
 import { composeAnswer } from '../../lib/chatbotAnswer';
+import { buildSiteKnowledge } from '../../lib/chatbotSiteData';
+import type { CompanyContentData } from '../../data/companyContent';
 
 type Lang = 'en' | 'my';
 
@@ -162,8 +164,25 @@ const writeJson = (key: string, store: Storage | undefined, value: unknown) => {
 };
 const trimAnswer = (text: string, max = 900) => (text.length > max ? text.slice(0, max).replace(/\s+\S*$/, '') + ' …' : text);
 
-export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => void }> = ({ onOpenProduct }) => {
-  const { currentUser, products, showToast } = useLms();
+export const ChatbotWidget: React.FC<{
+  onOpenProduct?: (productId: string) => void;
+  /** Our Company page content, so the assistant can answer about it */
+  companyContent?: CompanyContentData | null;
+}> = ({ onOpenProduct, companyContent }) => {
+  const {
+    currentUser,
+    products,
+    showToast,
+    topPerformers,
+    teamMembers,
+    hodMotto,
+    companyNews,
+    companyVideos,
+    companyBulletins,
+    licenseTrainingLessons,
+    skillDevelopmentResources,
+    courses,
+  } = useLms();
 
   const [open, setOpen] = useState(false);
   const [isPhone, setIsPhone] = useState(() => window.innerWidth < 640);
@@ -249,7 +268,26 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
   useEffect(() => writeJson(CHAT_KEY, window.sessionStorage, messages.slice(-60)), [messages]);
 
   const publishedProducts = useMemo(() => products.filter((p) => p.is_published || p.status === 'published'), [products]);
-  const index = useMemo(() => new KnowledgeIndex(buildKnowledge(entries || [], publishedProducts)), [entries, publishedProducts]);
+  const siteKnowledge = useMemo(
+    () =>
+      buildSiteKnowledge({
+        companyContent,
+        topPerformers,
+        teamMembers,
+        hodMotto,
+        companyNews,
+        companyVideos,
+        companyBulletins,
+        licenseTrainingLessons,
+        skillDevelopmentResources,
+        courses,
+      }),
+    [companyContent, topPerformers, teamMembers, hodMotto, companyNews, companyVideos, companyBulletins, licenseTrainingLessons, skillDevelopmentResources, courses]
+  );
+  const index = useMemo(
+    () => new KnowledgeIndex([...buildKnowledge(entries || [], publishedProducts), ...siteKnowledge]),
+    [entries, publishedProducts, siteKnowledge]
+  );
 
   const loadKnowledge = useCallback(async () => {
     if (entries || loadingKnowledge) return;
@@ -316,14 +354,21 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
   }, [messages, open]);
 
   const suggestions = useMemo(() => {
-    const faqs = (entries || []).filter((e) => e.kind === 'faq' && e.question && !isMyanmar(e.question)).slice(0, 3).map((e) => e.question!.split('\n')[0]);
-    const productQs = publishedProducts.slice(0, 2).map((p) => `${p.title} benefits`);
-    // Always-working starters, so a new chat is never empty
-    return [...faqs, ...productQs].slice(0, 3).concat(['What can you do?', 'အာမခံဆိုတာဘာလဲ?', 'Tell me a joke 😄']);
-  }, [entries, publishedProducts]);
+    // Questions written by admins (not quiz questions picked up from handbooks)
+    const faqs = (entries || [])
+      .filter((e) => e.kind === 'faq' && !e.document_id && e.question && !isMyanmar(e.question) && !/which of the|incorrect|correct\?$/i.test(e.question))
+      .slice(0, 2)
+      .map((e) => e.question!.split('\n')[0]);
+    const starters: string[] = [];
+    if (topPerformers.some((p) => p.status === 'published')) starters.push('Who are the latest Top Performers?');
+    starters.push(...faqs);
+    if (publishedProducts[0]) starters.push(`${publishedProducts[0].title} benefits`);
+    starters.push('What is insurance?', 'အာမခံဆိုတာဘာလဲ?', 'ပရီမီယံဆိုတာဘာလဲ?', 'What can you do?');
+    return starters.slice(0, 5);
+  }, [entries, publishedProducts, topPerformers]);
 
   const introFor = (item: KnowledgeItem): ScriptKey =>
-    item.kind === 'faq' ? 'answerFaq' : item.kind === 'product' ? 'answerProduct' : 'answerHandbook';
+    item.kind === 'faq' || item.kind === 'site' ? 'answerFaq' : item.kind === 'product' ? 'answerProduct' : 'answerHandbook';
   /** Builds a reply from search hits: best sentences, other language, extra points. */
   const buildAnswer = (question: string, hits: SearchHit[], lang: Lang, introKey?: ScriptKey): Message => {
     const best = hits[0].item;

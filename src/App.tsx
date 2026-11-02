@@ -432,6 +432,7 @@ function AppContent() {
 
       {/* LMS Assistant: draggable floating chat on every user-panel page */}
       <ChatbotWidget
+        companyContent={activeContent}
         onOpenProduct={(productId) => {
           handleSelectTab('product-knowledge', 'overview');
           setProductOpenRequest({ productId, nonce: Date.now() });
