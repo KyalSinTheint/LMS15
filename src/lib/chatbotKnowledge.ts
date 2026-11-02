@@ -8,6 +8,7 @@ import type { ChatbotEntry } from './chatbotApi';
 import type { KnowledgeItem } from './chatbotSearch';
 import { buildPamphletPages } from './pamphlet';
 import { getProductRichContent } from './productKnowledgeUtils';
+import { fixMyanmar } from './myanmarFix';
 
 /** Plain text for search and display (drops Markdown symbols and images). */
 export const plainText = (md: string) =>
@@ -55,11 +56,16 @@ export function stripBrokenMyanmar(text: string): string {
 }
 
 export function buildKnowledge(
-  entries: (ChatbotEntry & { document_title?: string | null })[],
+  entries: (ChatbotEntry & { document_title?: string | null; document_is_word?: boolean })[],
   products: ProductKnowledgeItem[]
 ): KnowledgeItem[] {
   const items: KnowledgeItem[] = entries
-    .map((e) => ({ ...e, content: stripBrokenMyanmar(e.content), title: e.title ? stripBrokenMyanmar(e.title) : e.title }))
+    // Older uploads may still hold damaged Myanmar: repair it, then hide what is still unreadable
+    .map((e) => ({
+      ...e,
+      content: stripBrokenMyanmar(fixMyanmar(e.content)),
+      title: e.title ? stripBrokenMyanmar(fixMyanmar(e.title)) : e.title,
+    }))
     .filter((e) => e.content.length >= 15 || e.kind === 'faq')
     .map((e) => ({
     id: e.id,
@@ -68,7 +74,9 @@ export function buildKnowledge(
     title: e.title,
     content: e.content,
     page: e.page,
-    source: e.document_title ? `${e.document_title}${e.page ? ` · p.${e.page}` : ''}` : 'LMS FAQ',
+    source: e.document_title
+      ? `${e.document_title}${e.page ? ` · ${e.document_is_word ? 'Chapter' : 'p.'} ${e.page}` : ''}`
+      : 'LMS FAQ',
   }));
 
   for (const product of products) {

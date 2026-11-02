@@ -12,7 +12,10 @@ import { MentorMascot } from './MentorMascot';
 import { say, ScriptKey } from './pandaScript';
 import { askTeam, loadMyQuestions, loadPublishedEntries, markAnswersSeen } from '../../lib/chatbotApi';
 import { buildKnowledge } from '../../lib/chatbotKnowledge';
-import { isMyanmar, KnowledgeIndex, KnowledgeItem, minAnswerScore } from '../../lib/chatbotSearch';
+import { isMyanmar, KnowledgeIndex, KnowledgeItem, minAnswerScore, SearchHit } from '../../lib/chatbotSearch';
+import { composeAnswer } from '../../lib/chatbotAnswer';
+
+type Lang = 'en' | 'my';
 
 interface Message {
   id: string;
@@ -26,6 +29,12 @@ interface Message {
   intro?: string;
   /** Offer to send this question to the L&D team */
   askable?: string;
+  /** The answer in the other language (English original / Myanmar) */
+  alt?: string;
+  altLang?: 'en' | 'my';
+  /** Short extra points from other matching sections */
+  points?: { title: string; text: string }[];
+  lang?: 'en' | 'my';
   tone?: 'info' | 'team';
 }
 
@@ -37,7 +46,8 @@ const CHAT_KEY = 'kbz_assistant_chat';
 /**
  * Trainer Panda's voice: a playful, cheeky trainer — teasing but never rude.
  * Facts always come word-for-word from the approved knowledge; only the
- * lines around them are playful. English only for now (Myanmar coming soon).
+ * lines around them are playful. Questions can be in English or Myanmar;
+ * the reply follows the question's language.
  */
 /** Fixed labels (the playful lines live in pandaScript.ts) */
 const T = {
@@ -49,8 +59,19 @@ const T = {
   related: 'Curious? Try these too:',
   source: 'Source',
   openProduct: 'Open in Product Knowledge Hub',
-  placeholder: 'Ask a question in English…',
-  disclaimer: 'English only for now · For learning reference',
+  placeholder: 'Ask in English or မြန်မာ…',
+  disclaimer: 'English · မြန်မာ · For learning reference',
+  showEnglish: 'English မူရင်း ကြည့်ရန်',
+  showMyanmar: 'မြန်မာလို ကြည့်ရန်',
+  hideAlt: 'ပိတ်ရန် / Hide',
+  alsoEn: 'Also worth knowing:',
+  alsoMy: 'ထပ်သိထားသင့်တာ —',
+  sourceMy: 'ရင်းမြစ်',
+  sendMy: 'L&D team ကို မေးပေးပါ',
+  relatedMy: 'ဒါတွေလည်း မေးကြည့်ပါ —',
+  trapHelpMy: 'ရှင်းပြနိုင်အောင် စာအုပ်ထဲက အချက်အလက်ကို ပြပေးမယ် —',
+  trapNoInfoMy: 'Case တစ်ခုချင်းအတွက် အတိအကျသိချင်ရင် policy စာရွက်စာတမ်း စစ်ကြည့်ပါ၊ ဒါမှမဟုတ် L&D team ကို မေးပါ။',
+  autoFixed: 'မြန်မာစာကို စက်ဖြင့် ပြင်ထားသဖြင့် အမှားအနည်းငယ် ပါနိုင်ပါသည်။ English မူရင်းနှင့် တိုက်စစ်ပါ။',
 };
 
 
@@ -85,8 +106,34 @@ const SMALL_TALK: [RegExp, SmallTalk][] = [
   [/^(i love you|love you|ily|you are (cute|awesome|great|the best)|good bot)$/, 'love'],
   [/^(help|what can you do|how do you work|how to use)$/, 'help'],
 ];
+const SMALL_TALK_MY: [RegExp, SmallTalk][] = [
+  [/^(မင်္ဂလာ(ပါ)?(ခင်ဗျာ|ခင်ဗျ|ရှင့်|ရှင်)?|ဟယ်လို|ဟိုင်း)(\s*(panda|ပန်ဒါ|ဆရာ))?$/i, 'hello'],
+  [/^(ကျေးဇူး(ပဲ|ပါ|တင်ပါတယ်|တင်တယ်|အများကြီးတင်ပါတယ်|ပဲနော်)?(ခင်ဗျာ|ရှင့်|နော်)?)$/, 'thanks'],
+  [/((မင်း|နင်|ခင်ဗျား|ရှင်)\s*(က)?\s*(ဘယ်သူ|ဘာ)(လဲ)?|နာမည်\s*(ဘာ|ဘယ်လို))/, 'who'],
+  [/^(နေကောင်းလား|အဆင်ပြေလား|ဘယ်လိုနေလဲ)/, 'howAreYou'],
+  [/(ဟာသ|ရယ်စရာ|ပြက်လုံး)/, 'joke'],
+  [/^(တာ့တာ|ဘိုင်|သွားပြီ(နော်)?|နောက်မှ\s*တွေ့မယ်)$/, 'bye'],
+  [/^(ဘာ(တွေ)?\s*လုပ်ပေးနိုင်|အကူအညီ|ဘယ်လိုသုံးရ)/, 'help'],
+  [/(အသုံးမကျ|အရူး|ညံ့လိုက်|ပေါတာ)/, 'cheeky'],
+];
+const MY_TALK: Partial<Record<SmallTalk, ScriptKey>> = {
+  hello: 'myHello',
+  thanks: 'myThanks',
+  who: 'myWho',
+  howAreYou: 'myHowAreYou',
+  joke: 'myJoke',
+  bye: 'myBye',
+  help: 'myHelp',
+  cheeky: 'myCheeky',
+};
+
 /** Small talk that should get a playful reply instead of a knowledge search. */
 const smallTalk = (q: string): SmallTalk | null => {
+  if (isMyanmar(q)) {
+    const t = q.trim().replace(/[!?.,။၊]+/g, '').replace(/\s+/g, ' ');
+    if (t.length > 40) return null;
+    return SMALL_TALK_MY.find(([re]) => re.test(t))?.[1] ?? null;
+  }
   const t = q.trim().toLowerCase().replace(/[!?.,]+/g, '').replace(/\s+/g, ' ');
   // Longer messages are real questions, even if they contain "joke" or "boring"
   if (t.split(' ').length > 7) return null;
@@ -188,6 +235,8 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
 
   // ---- Chat state -----------------------------------------------------------
   const [messages, setMessages] = useState<Message[]>(() => readJson<Message[]>(CHAT_KEY, window.sessionStorage, []));
+  /** Answers whose other-language version is open */
+  const [showAlt, setShowAlt] = useState<Set<string>>(() => new Set());
   const [input, setInput] = useState('');
   const [entries, setEntries] = useState<Awaited<ReturnType<typeof loadPublishedEntries>> | null>(null);
   const [loadingKnowledge, setLoadingKnowledge] = useState(false);
@@ -267,34 +316,43 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
     const faqs = (entries || []).filter((e) => e.kind === 'faq' && e.question && !isMyanmar(e.question)).slice(0, 3).map((e) => e.question!.split('\n')[0]);
     const productQs = publishedProducts.slice(0, 2).map((p) => `${p.title} benefits`);
     // Always-working starters, so a new chat is never empty
-    return [...faqs, ...productQs].slice(0, 3).concat(['What can you do?', 'Tell me a joke 😄']);
+    return [...faqs, ...productQs].slice(0, 3).concat(['What can you do?', 'အာမခံဆိုတာဘာလဲ?', 'Tell me a joke 😄']);
   }, [entries, publishedProducts]);
 
   const introFor = (item: KnowledgeItem): ScriptKey =>
     item.kind === 'faq' ? 'answerFaq' : item.kind === 'product' ? 'answerProduct' : 'answerHandbook';
-  const answerFromItem = (item: KnowledgeItem, introKey?: ScriptKey): Message => ({
-    id: uid(),
-    role: 'bot',
-    intro: say(introKey ?? introFor(item)),
-    title: item.question?.split('\n')[0] || item.title || undefined,
-    text: trimAnswer(item.content),
-    source: item.source,
-    productId: item.productId,
-  });
+  /** Builds a reply from search hits: best sentences, other language, extra points. */
+  const buildAnswer = (question: string, hits: SearchHit[], lang: Lang, introKey?: ScriptKey): Message => {
+    const best = hits[0].item;
+    const a = composeAnswer(question, hits, index, lang);
+    return {
+      id: uid(),
+      role: 'bot',
+      lang,
+      intro: say(introKey ?? (lang === 'my' ? 'myAnswer' : introFor(best))),
+      title: best.question?.split('\n')[0] || best.title || undefined,
+      text: trimAnswer(a.text),
+      alt: a.alt ? trimAnswer(a.alt) : undefined,
+      altLang: lang === 'my' ? 'en' : 'my',
+      points: a.points.map((p) => ({ title: p.title, text: trimAnswer(p.text, 300) })),
+      source: best.source,
+      productId: best.productId,
+    };
+  };
+  /** Opens a suggested topic as its own answer. */
+  const answerFromItem = (item: KnowledgeItem, lang: Lang): Message =>
+    buildAnswer(item.question || item.title || '', [{ item, score: 1 }], lang, lang === 'my' ? 'myRelated' : 'related');
 
   const ask = (raw: string) => {
     const question = raw.trim();
     if (!question) return;
     setInput('');
+    const lang: Lang = isMyanmar(question) ? 'my' : 'en';
     const userMsg: Message = { id: uid(), role: 'user', text: question };
-    // English only for now: Myanmar questions get a friendly "coming soon"
-    if (isMyanmar(question)) {
-      setMessages((prev) => [...prev, userMsg, { id: uid(), role: 'bot', text: say('myanmar'), tone: 'info' }]);
-      return;
-    }
     const chat = smallTalk(question);
     if (chat) {
-      setMessages((prev) => [...prev, userMsg, { id: uid(), role: 'bot', text: say(chat) }]);
+      const key: ScriptKey = lang === 'my' ? MY_TALK[chat] ?? 'myHello' : chat;
+      setMessages((prev) => [...prev, userMsg, { id: uid(), role: 'bot', text: say(key), lang }]);
       return;
     }
     const hits = index.search(question, 4);
@@ -302,24 +360,34 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
     let reply: Message;
     if (isTrapQuestion(question)) {
       // No promises: deflect, then share the relevant facts if we have them
-      const best = hits.length && hits[0].score >= min * 0.8 ? hits[0].item : null;
-      reply = best
-        ? { ...answerFromItem(best), intro: `${say('trap')} ${T.trapHelp}`, tone: 'info' }
-        : { id: uid(), role: 'bot', text: `${say('trap')}\n\n${T.trapNoInfo}`, askable: question, tone: 'info' };
+      const trap = `${say(lang === 'my' ? 'myTrap' : 'trap')} ${lang === 'my' ? T.trapHelpMy : T.trapHelp}`;
+      reply =
+        hits.length && hits[0].score >= min * 0.8
+          ? { ...buildAnswer(question, hits, lang), intro: trap, tone: 'info' }
+          : {
+              id: uid(),
+              role: 'bot',
+              lang,
+              text: `${say(lang === 'my' ? 'myTrap' : 'trap')}\n\n${lang === 'my' ? T.trapNoInfoMy : T.trapNoInfo}`,
+              askable: question,
+              tone: 'info',
+            };
       setMessages((prev) => [...prev, userMsg, reply]);
       return;
     }
     if (hits.length && hits[0].score >= min) {
       const askedBefore = messages.some((m) => m.role === 'user' && m.text.trim().toLowerCase() === question.toLowerCase());
+      const answer = buildAnswer(question, hits, lang, askedBefore ? (lang === 'my' ? 'myAgain' : 'again') : undefined);
+      const used = new Set([...(answer.points || []).map((p) => p.title), hits[0].item.title || '']);
       reply = {
-        ...answerFromItem(hits[0].item, askedBefore ? 'again' : undefined),
+        ...answer,
         related: hits
           .slice(1)
-          .filter((h) => h.score >= min * 0.8)
+          .filter((h) => h.score >= min * 0.8 && !used.has(h.item.title || ''))
           .map((h) => h.item),
       };
     } else {
-      reply = { id: uid(), role: 'bot', text: say('notFound'), askable: question, tone: 'info' };
+      reply = { id: uid(), role: 'bot', lang, text: say(lang === 'my' ? 'myNotFound' : 'notFound'), askable: question, tone: 'info' };
     }
     setMessages((prev) => [...prev, userMsg, reply]);
   };
@@ -330,7 +398,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
       await askTeam(currentUser.id, currentUser.full_name, msg.askable);
       setMessages((prev) => [
         ...prev.map((m) => (m.id === msg.id ? { ...m, askable: undefined } : m)),
-        { id: uid(), role: 'bot', text: say('sent'), tone: 'info' },
+        { id: uid(), role: 'bot', text: say(msg.lang === 'my' ? 'mySent' : 'sent'), tone: 'info', lang: msg.lang },
       ]);
     } catch (err) {
       showToast('error', 'Not sent', (err as Error).message);
@@ -450,10 +518,48 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
                   {m.intro && <p className="text-[12px] italic text-[#176B98] mb-1.5">{m.intro}</p>}
                   {m.title && <p className="font-bold text-slate-900 mb-1">{m.title}</p>}
                   <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                  {m.alt && (
+                    <div className="mt-1.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowAlt((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(m.id)) next.delete(m.id);
+                            else next.add(m.id);
+                            return next;
+                          })
+                        }
+                        className="text-[11px] font-semibold text-[#176B98] hover:underline cursor-pointer"
+                      >
+                        {showAlt.has(m.id) ? T.hideAlt : m.altLang === 'en' ? T.showEnglish : T.showMyanmar}
+                      </button>
+                      {showAlt.has(m.id) && (
+                        <p className="mt-1 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-[13px] sm:text-[12px] text-slate-600 whitespace-pre-wrap break-words">
+                          {m.alt}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {m.points && m.points.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-100">
+                      <p className="text-[10.5px] font-bold text-slate-500 mb-1">{m.lang === 'my' ? T.alsoMy : T.alsoEn}</p>
+                      <ul className="space-y-1">
+                        {m.points.map((pt, i) => (
+                          <li key={i} className="text-[13px] sm:text-[12px] text-slate-700 leading-relaxed">
+                            <span className="font-semibold text-slate-900">{pt.title}:</span> {pt.text}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {m.lang === 'my' && m.alt && m.altLang === 'en' && (
+                    <p className="mt-1.5 text-[10px] text-amber-700">{T.autoFixed}</p>
+                  )}
                   {m.source && (
                     <p className="mt-2 text-[10.5px] text-slate-500 flex items-center gap-1">
                       <BookOpen className="w-3 h-3 shrink-0" />
-                      {T.source}: {m.source}
+                      {m.lang === 'my' ? T.sourceMy : T.source}: {m.source}
                     </p>
                   )}
                   {m.productId && onOpenProduct && (
@@ -475,18 +581,18 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
                       className="mt-2 px-3 py-1.5 rounded-lg bg-[#176B98] hover:bg-[#12567a] text-white text-[11px] font-bold cursor-pointer inline-flex items-center gap-1.5"
                     >
                       <UserRound className="w-3.5 h-3.5" />
-                      {T.send}
+                      {m.lang === 'my' ? T.sendMy : T.send}
                     </button>
                   )}
                   {m.related && m.related.length > 0 && (
                     <div className="mt-2.5 pt-2 border-t border-slate-100">
-                      <p className="text-[10.5px] font-bold text-slate-500 mb-1">{T.related}</p>
+                      <p className="text-[10.5px] font-bold text-slate-500 mb-1">{m.lang === 'my' ? T.relatedMy : T.related}</p>
                       <div className="flex flex-col gap-1">
                         {m.related.map((r) => (
                           <button
                             key={r.id}
                             type="button"
-                            onClick={() => setMessages((prev) => [...prev, answerFromItem(r, 'related')])}
+                            onClick={() => setMessages((prev) => [...prev, answerFromItem(r, m.lang || 'en')])}
                             className="text-left text-[11.5px] text-[#176B98] hover:underline cursor-pointer"
                           >
                             → {r.question?.split('\n')[0] || r.title}
