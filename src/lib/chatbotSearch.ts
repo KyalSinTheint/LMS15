@@ -14,7 +14,8 @@
 
 export interface KnowledgeItem {
   id: string;
-  kind: 'faq' | 'section' | 'product';
+  /** site = portal content (Top Performers, team, news, company info…) */
+  kind: 'faq' | 'section' | 'product' | 'site';
   /** FAQ question (faq) */
   question?: string | null;
   /** Section heading or product name */
@@ -48,6 +49,7 @@ export function normalize(text: string): string {
     .normalize('NFC')
     .replace(/[​-‍﻿]/g, '')
     .toLowerCase()
+    .replace(/\bl\s*&\s*d\b/g, ' learning development ')
     .replace(/[!-/:-@[-`{-~။၊“”‘’…•·]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -232,6 +234,7 @@ export class KnowledgeIndex {
     if (qv.size === 0) return [];
     const qnorm = Math.sqrt(qsum);
     const defTerms = definitionTerms(query);
+    const askingWho = /\b(who|whom|whose)\b|ဘယ်သူ|မည်သူ|နာမည်/i.test(query);
 
     const hits: SearchHit[] = [];
     for (const entry of this.items) {
@@ -244,7 +247,11 @@ export class KnowledgeIndex {
       let score = dot / (qnorm * entry.norm);
       if (entry.item.kind === 'faq') score *= 1.15; // curated answers first
       // Practice-test questions ("Which of the below…") are not answers
-      if (QUIZ.test(entry.item.content)) score *= 0.6;
+      if (QUIZ.test(entry.item.content) || QUIZ.test(entry.item.question || '')) score *= 0.6;
+      // Very short text matches easily but rarely answers anything
+      if (entry.item.kind === 'section' && entry.item.content.length < 120) score *= 0.55 + entry.item.content.length / 270;
+      // "Who is…?" / "ဘယ်သူလဲ": people on the portal (CEO, team, Top Performers) first
+      if (askingWho && /^site:(ceo|hod|team|top)/.test(entry.item.id)) score *= 1.5;
       // "What is X?": the passage that defines X wins
       if (defTerms) {
         score += [0, 0.2, 0.32][definitionStrength(entry.item.content, defTerms)];

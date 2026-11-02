@@ -64,13 +64,21 @@ const friendly = (err: unknown): Error => {
 // Knowledge (employees + admins)
 // ---------------------------------------------------------------------
 export async function loadPublishedEntries(): Promise<(ChatbotEntry & { document_title?: string | null; document_is_word?: boolean })[]> {
-  const { data, error } = await db()
-    .from('chatbot_entries')
-    .select('id, document_id, kind, question, title, content, page, is_published, created_at, chatbot_documents(title, file_name)')
-    .eq('is_published', true)
-    .limit(5000);
-  if (error) throw friendly(error);
-  return (data || []).map((row: Record<string, unknown>) => {
+  // Supabase returns at most 1000 rows per request: read page by page
+  const PAGE = 1000;
+  const rows: Record<string, unknown>[] = [];
+  for (let from = 0; from < 50000; from += PAGE) {
+    const { data, error } = await db()
+      .from('chatbot_entries')
+      .select('id, document_id, kind, question, title, content, page, is_published, created_at, chatbot_documents(title, file_name)')
+      .eq('is_published', true)
+      .order('id')
+      .range(from, from + PAGE - 1);
+    if (error) throw friendly(error);
+    rows.push(...((data || []) as Record<string, unknown>[]));
+    if (!data || data.length < PAGE) break;
+  }
+  return rows.map((row) => {
     type DocInfo = { title?: string; file_name?: string };
     const raw = row.chatbot_documents as DocInfo | DocInfo[] | null;
     const doc = Array.isArray(raw) ? raw[0] : raw;
@@ -117,13 +125,20 @@ export async function listDocuments(): Promise<ChatbotDocument[]> {
 }
 
 export async function listEntries(): Promise<ChatbotEntry[]> {
-  const { data, error } = await db()
-    .from('chatbot_entries')
-    .select('id, document_id, kind, question, title, content, page, is_published, created_at')
-    .order('created_at', { ascending: false })
-    .limit(5000);
-  if (error) throw friendly(error);
-  return (data || []) as ChatbotEntry[];
+  const PAGE = 1000; // Supabase returns at most 1000 rows per request
+  const rows: ChatbotEntry[] = [];
+  for (let from = 0; from < 50000; from += PAGE) {
+    const { data, error } = await db()
+      .from('chatbot_entries')
+      .select('id, document_id, kind, question, title, content, page, is_published, created_at')
+      .order('created_at', { ascending: false })
+      .order('id')
+      .range(from, from + PAGE - 1);
+    if (error) throw friendly(error);
+    rows.push(...((data || []) as ChatbotEntry[]));
+    if (!data || data.length < PAGE) break;
+  }
+  return rows;
 }
 
 export async function listQuestions(): Promise<ChatbotQuestion[]> {

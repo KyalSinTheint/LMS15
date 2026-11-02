@@ -65,10 +65,17 @@ export function linesToKnowledge(lines: Line[], pageCount: number): PdfKnowledge
 
   let heading = '';
   let section: Line[] = [];
+  const seen = new Set<string>();
   const flushSection = () => {
     const text = section.map((l) => l.text).join(' ').replace(/\s+/g, ' ').trim();
-    if (text.length >= 20) {
+    // Skip scraps (labels from diagrams, page numbers) and repeated text
+    const words = text.split(' ').length;
+    const substantial = text.length >= 40 && (words >= 6 || /[\u1000-\u109F]{15}/.test(text));
+    if (substantial) {
       for (const piece of splitText(text)) {
+        const key = piece.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
         entries.push({ kind: 'section', title: heading || undefined, content: piece, page: section[0].page });
       }
     }
