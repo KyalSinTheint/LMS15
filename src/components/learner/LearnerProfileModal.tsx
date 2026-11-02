@@ -19,6 +19,7 @@ import { uploadImageFile, validateImageFile } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
+import { departmentOptions } from '../../lib/departments';
 
 interface LearnerProfileModalProps {
   isOpen: boolean;
@@ -429,13 +430,22 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Department</label>
-                  <input
-                    type="text"
+                  <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    placeholder="e.g. Underwriting & Policy Issue"
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#176B98]"
-                  />
+                  >
+                    {!department && (
+                      <option value="" disabled>
+                        Select department
+                      </option>
+                    )}
+                    {departmentOptions(department).map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

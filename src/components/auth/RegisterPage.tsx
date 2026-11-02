@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
 import { RegistrationSubmittedPage } from './ApprovalFlowScreens';
+import { DEPARTMENTS } from '../../lib/departments';
 
 interface RegisterPageProps {
   onNavigateToLogin: () => void;
@@ -33,7 +34,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [department, setDepartment] = useState('Alliance Agency Network');
+  const [department, setDepartment] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -45,18 +46,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   // Set after a successful sign-up that did not sign the user in (e.g. email confirmation required)
   const [submitted, setSubmitted] = useState<{ email: string; needsEmailConfirmation: boolean } | null>(null);
 
-  const departmentsList = [
-    'Alliance Agency Network',
-    'Bancassurance Channel',
-    'Corporate & Group Life Solutions',
-    'Underwriting & Policy Issue',
-    'Actuarial & Risk Valuation',
-    'Claims Settlement & Verification',
-    'Customer Experience & Support',
-    'Branch Operations (Regional)',
-    'Information Technology & Security',
-    'Human Resources & Talent Development',
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,7 +238,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Department / Agency
+                  Department
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -258,9 +247,13 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
+                    required
                     className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#176B98]/20 focus:border-[#176B98]"
                   >
-                    {departmentsList.map((dept) => (
+                    <option value="" disabled>
+                      Select your department
+                    </option>
+                    {DEPARTMENTS.map((dept) => (
                       <option key={dept} value={dept}>
                         {dept}
                       </option>

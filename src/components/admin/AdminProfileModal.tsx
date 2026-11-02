@@ -18,6 +18,7 @@ import { uploadImageFile, validateImageFile } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
+import { departmentOptions } from '../../lib/departments';
 
 interface AdminProfileModalProps {
   isOpen: boolean;
@@ -366,12 +367,22 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ isOpen, on
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Department</label>
-                  <input
-                    type="text"
+                  <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
                     className="w-full text-xs bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 focus:ring-2 focus:ring-[#176B98] focus:outline-none"
-                  />
+                  >
+                    {!department && (
+                      <option value="" disabled>
+                        Select department
+                      </option>
+                    )}
+                    {departmentOptions(department).map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
