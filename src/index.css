@@ -693,3 +693,15 @@ html.dark .to-\[\#F3F8FB\] {
 .kbz-editor img { display: block; max-width: 100%; max-height: 320px; margin: 0.8em auto; border-radius: 0.75rem; border: 1px solid #e2e8f0; cursor: pointer; }
 .kbz-editor img.ProseMirror-selectednode { outline: 3px solid #176B98; outline-offset: 2px; }
 .kbz-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #94a3b8; float: left; height: 0; pointer-events: none; }
+
+/* Horizontal tab bars on phones: scroll without a visible scrollbar */
+.scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Phones: data tables keep readable column widths and scroll sideways
+   inside their card instead of squeezing every column. */
+@media (max-width: 639px) {
+  .overflow-x-auto > table {
+    min-width: 680px;
+  }
+}

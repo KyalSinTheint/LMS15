@@ -150,23 +150,27 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
     <div className="min-h-screen bg-[#F3F8FB] dark:bg-[#0B131E] bg-light-blue-pattern text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased max-w-full overflow-x-hidden selection:bg-[#176B98] selection:text-white transition-colors">
       {/* Top Admin Header Bar */}
       <header className="sticky top-0 z-40 bg-[#176B98] dark:bg-[#0E2035] text-white shadow-xs border-b border-[#135A80] dark:border-[#1E426D] transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-16 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
             {/* Left Brand Area */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="h-10 w-10 bg-white rounded-xl p-1 shadow-xs flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white rounded-xl p-1 shadow-xs flex items-center justify-center shrink-0">
                   <img
                     src="/assets/aistudio/KBZ_Logo_28e9d8fb.png"
                     alt="KBZ LIFE"
                     className="h-full w-full object-contain"
                   />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold tracking-tight text-sm">KBZ LIFE Insurance</span>
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-emerald-500 text-white tracking-wider">
-                      ADMIN CONSOLE
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                    <span className="font-extrabold tracking-tight text-sm truncate">
+                      <span className="sm:hidden">KBZ LIFE</span>
+                      <span className="hidden sm:inline">KBZ LIFE Insurance</span>
+                    </span>
+                    <span className="shrink-0 px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-black uppercase bg-emerald-500 text-white tracking-wider">
+                      <span className="sm:hidden">ADMIN</span>
+                      <span className="hidden sm:inline">ADMIN CONSOLE</span>
                     </span>
                   </div>
                   <p className="text-[10px] text-white/80 hidden md:block">
@@ -177,7 +181,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
             </div>
 
             {/* Right Tools & User Dropdown */}
-            <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
               {/* Theme Toggle Button */}
               <button
                 type="button"
@@ -302,9 +306,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
       )}
 
       {/* Admin Sub-navigation Tabs Bar */}
-      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-2xs sticky top-16 z-30 transition-colors">
+      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-2xs sticky top-14 sm:top-16 z-30 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1 overflow-x-auto py-2">
+          <div className="flex items-center gap-1 overflow-x-auto py-2 -mx-3 px-3 sm:mx-0 sm:px-0 scrollbar-none">
             {ADMIN_TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -312,7 +316,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={(e) => {
+                    setActiveTab(tab.id);
+                    // keep the chosen tab visible on narrow screens
+                    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
                     isActive
                       ? 'bg-[#176B98] text-white shadow-xs'

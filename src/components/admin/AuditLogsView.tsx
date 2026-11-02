@@ -88,6 +88,7 @@ export const AuditLogsView: React.FC = () => {
 
       {/* Audit Logs Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+        <p className="sm:hidden px-3 pt-2 text-[10px] font-semibold text-slate-400 text-right">Swipe sideways to see all columns →</p>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700">
             <thead className="bg-[#F3F8FB] text-[#176B98] font-bold text-[11px] uppercase tracking-wider border-b border-slate-200">
