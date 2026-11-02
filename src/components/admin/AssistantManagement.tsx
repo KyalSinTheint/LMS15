@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
-import { extractPdfKnowledge } from '../../lib/chatbotIngest';
+import { extractKnowledge, isDocx } from '../../lib/chatbotIngest';
+import { fixMyanmar } from '../../lib/myanmarFix';
 import {
   answerQuestion,
   ChatbotDocument,
@@ -91,8 +92,8 @@ export const AssistantManagement: React.FC = () => {
     setJobs((prev) => prev.map((j) => (j.name === name ? { ...j, ...patch } : j)));
 
   const ingest = async (files: File[]) => {
-    const pdfs = files.filter((f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
-    if (pdfs.length < files.length) showToast('warning', 'Only PDF files', 'Other file types were skipped.');
+    const pdfs = files.filter((f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name) || isDocx(f));
+    if (pdfs.length < files.length) showToast('warning', 'Only PDF or Word files', 'Other file types were skipped (.doc must be saved as .docx).');
     for (const file of pdfs) {
       if (file.size > 40 * 1024 * 1024) {
         showToast('error', 'File too large', `${file.name} is larger than 40 MB.`);
@@ -101,9 +102,9 @@ export const AssistantManagement: React.FC = () => {
       const existing = documents.find((d) => d.file_name.toLowerCase() === file.name.toLowerCase());
       if (existing && !window.confirm(`"${file.name}" is already in the knowledge base. Replace it with this new version?`)) continue;
 
-      setJobs((prev) => [{ name: file.name, status: 'reading', message: 'Reading the PDF…' }, ...prev.filter((j) => j.name !== file.name)]);
+      setJobs((prev) => [{ name: file.name, status: 'reading', message: isDocx(file) ? 'Reading the Word file…' : 'Reading the PDF…' }, ...prev.filter((j) => j.name !== file.name)]);
       try {
-        const knowledge = await extractPdfKnowledge(file, (page, total) =>
+        const knowledge = await extractKnowledge(file, (page, total) =>
           updateJob(file.name, { message: `Reading page ${page} of ${total}…` })
         );
         if (knowledge.textLength < 30 || knowledge.entries.length === 0) {
@@ -119,7 +120,7 @@ export const AssistantManagement: React.FC = () => {
         const faqs = knowledge.entries.filter((e) => e.kind === 'faq').length;
         updateJob(file.name, {
           status: 'done',
-          message: `${existing ? 'Updated' : 'Added'}: ${faqs} questions & answers and ${knowledge.entries.length - faqs} text sections from ${knowledge.pageCount} pages.`,
+          message: `${existing ? 'Updated' : 'Added'}: ${faqs} questions & answers and ${knowledge.entries.length - faqs} text sections${knowledge.pageCount ? ` from ${knowledge.pageCount} pages` : ''}.`,
         });
       } catch (err) {
         updateJob(file.name, { status: 'error', message: (err as Error).message });
@@ -141,12 +142,14 @@ export const AssistantManagement: React.FC = () => {
 
   const openDocument = async (doc: ChatbotDocument) => {
     const url = await documentUrl(doc);
-    if (url) setViewing({ url, title: doc.title });
+    if (url && /\.docx$/i.test(doc.file_name)) window.open(url, '_blank', 'noopener');
+    else if (url) setViewing({ url, title: doc.title });
     else showToast('error', 'Cannot open', 'The file could not be found.');
   };
 
   // ---- Entries -----------------------------------------------------------
   const docTitle = useMemo(() => new Map(documents.map((d) => [d.id, d.title])), [documents]);
+  const docIsWord = useMemo(() => new Set(documents.filter((d) => /\.docx$/i.test(d.file_name)).map((d) => d.id)), [documents]);
   const visibleEntries = entries.filter(
     (e) =>
       e.kind === tab &&
@@ -190,7 +193,7 @@ export const AssistantManagement: React.FC = () => {
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">Trainer Panda · LMS Assistant</h2>
             <p className="text-xs text-slate-500">
-              Upload policy PDFs and FAQs. Employees ask questions in English from the chat icon in the portal (Myanmar coming later).
+              Upload policy PDFs, Word files and FAQs. Employees ask questions in English or Myanmar from the chat icon in the portal.
             </p>
           </div>
         </div>
@@ -229,11 +232,12 @@ export const AssistantManagement: React.FC = () => {
 
       {/* Upload */}
       <section className={card}>
-        <h3 className="text-sm font-bold text-slate-900 mb-1">Teach the assistant with PDF files</h3>
+        <h3 className="text-sm font-bold text-slate-900 mb-1">Teach the assistant with PDF or Word files</h3>
         <p className="text-xs text-slate-500 mb-4">
           Policy handbooks, product guides, claim procedures, FAQ lists. Text is read automatically:{' '}
           <strong>Q: … / A: …</strong> (or <strong>မေး – … / ဖြေ – …</strong>) become questions & answers, everything else is
-          searchable by section. Uploading a file with the same name again replaces the old version.
+          searchable by section. Myanmar text damaged by PDF → Word conversion (e.g. "ဘပား" for "ပေး") is repaired automatically.
+          Uploading a file with the same name again replaces the old version.
         </p>
         <div
           onDragOver={(e) => {
@@ -251,18 +255,18 @@ export const AssistantManagement: React.FC = () => {
           }`}
         >
           <Upload className="w-7 h-7 text-[#176B98] mx-auto mb-2" />
-          <p className="text-xs text-slate-600 mb-3">Drag PDF files here, or</p>
+          <p className="text-xs text-slate-600 mb-3">Drag PDF or Word (.docx) files here, or</p>
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
             className="px-4 py-2 rounded-xl bg-[#176B98] hover:bg-[#12567a] text-white text-xs font-bold cursor-pointer"
           >
-            Choose PDF files
+            Choose files
           </button>
           <input
             ref={fileRef}
             type="file"
-            accept="application/pdf,.pdf"
+            accept="application/pdf,.pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             multiple
             className="hidden"
             onChange={(e) => {
@@ -311,7 +315,7 @@ export const AssistantManagement: React.FC = () => {
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-slate-900 truncate">{d.title}</p>
                     <p className="text-[11px] text-slate-500">
-                      {d.page_count} pages · {d.entry_count} entries · {d.uploaded_by_name || 'Admin'} · {timeAgo(d.updated_at)}
+                      {/\.docx$/i.test(d.file_name) ? 'Word' : `${d.page_count} pages`} · {d.entry_count} entries · {d.uploaded_by_name || 'Admin'} · {timeAgo(d.updated_at)}
                     </p>
                   </div>
                 </div>
@@ -443,14 +447,14 @@ export const AssistantManagement: React.FC = () => {
               <li key={e.id} className={`px-4 py-3 flex gap-3 ${e.is_published ? '' : 'opacity-50'}`}>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-slate-900">{e.kind === 'faq' ? e.question : e.title || 'Untitled section'}</p>
-                  <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">{stripBrokenMyanmar(e.content)}</p>
-                  {hasBrokenMyanmar(e.content) && (
+                  <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">{stripBrokenMyanmar(fixMyanmar(e.content))}</p>
+                  {hasBrokenMyanmar(fixMyanmar(e.content)) && (
                     <p className="text-[10px] text-amber-700 mt-0.5">
-                      ⚠️ The Myanmar text in this PDF is unreadable (font problem), so it is hidden. The assistant uses the English text.
+                      ⚠️ The Myanmar text here could not be repaired (font problem), so it is hidden. The assistant uses the English text.
                     </p>
                   )}
                   <p className="text-[10px] text-slate-400 mt-1">
-                    {e.document_id ? `${docTitle.get(e.document_id) || 'PDF'}${e.page ? ` · p.${e.page}` : ''}` : 'Added by an admin'}
+                    {e.document_id ? `${docTitle.get(e.document_id) || 'Document'}${e.page ? ` · ${docIsWord.has(e.document_id) ? 'Ch.' : 'p.'}${e.page}` : ''}` : 'Added by an admin'}
                   </p>
                 </div>
                 <div className="flex items-start gap-1 shrink-0">

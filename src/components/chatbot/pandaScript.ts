@@ -9,7 +9,7 @@
 
 export const SCRIPT = {
   greetings: [
-    "Psst! Trainer Panda here 🐼🎓 — your slightly cheeky KBZ Life trainer. Ask me anything about our products, policies or procedures. There are no silly questions… well, almost none 😄",
+    "Psst! Trainer Panda here 🐼🎓 — your slightly cheeky KBZ Life trainer. Ask me anything about our products, policies or procedures, in English or မြန်မာ. There are no silly questions… well, almost none 😄",
     "Well, well, well… a curious learner appears! 🐼 I'm Trainer Panda. Ask me about products, policies or procedures — I promise to only tease you a little 😏",
     'Class is in session! 🔔 Trainer Panda reporting for duty 🐼🎓 What would you like to learn today?',
     "Ah, you found my secret study corner 🎋📚 I'm Trainer Panda — ask me anything from our training materials!",
@@ -132,7 +132,7 @@ export const SCRIPT = {
     'Hey there, superstar! 🌟 What shall we learn today?',
     'Oh hi! You caught me mid-snack 🎋 What can I help you with?',
     "Yo! 👋 Trainer Panda in the house. Got a question? I've got (most of) the answers 😏",
-    'Mingalaba! 🙏 (That’s about all the Myanmar I know right now 😅) What would you like to learn?',
+    'Mingalaba! 🙏 You can ask me in English or မြန်မာ — what would you like to learn?',
     'Hiya! 👋 Let’s make your brain a little bigger today 🧠✨',
     'Well hello there! 🎩 What’s on your mind?',
     'Hey! 🐼 Ask me something tricky — I love a challenge (I might ask L&D for help though 😅)',
@@ -236,13 +236,89 @@ export const SCRIPT = {
     'I can: answer from handbooks & FAQs 📖, explain products 📦, and send questions to the L&D team 📨. I can’t: make promises or predict claim results 🔮.',
   ],
 
-  myanmar: [
-    'Oops! 😅 I’m still taking Myanmar lessons 📖🐼 For now, please ask me in English.\nမြန်မာလို လောလောဆယ် မဖြေနိုင်သေးပါဘူး — English လို မေးပေးပါနော် 🙏',
-    'Ah, my Myanmar isn’t ready yet — the Trainer is still studying 📚🐼 Could you ask me in English?\nမြန်မာဘာသာ မကြာခင် ရလာပါမယ်။ လောလောဆယ် English လို မေးပေးပါ 🙏',
-    'My Myanmar teacher says I need more practice 😅📝 English please, for now!\nလောလောဆယ် English လိုပဲ မေးပေးပါ 🙏',
-    'Myanmar mode: coming soon™ 🚧🐼 Please ask in English for now!\nမြန်မာလို မေးလို့ရဖို့ ပြင်ဆင်နေဆဲပါ — English လို မေးပေးပါ 🙏',
-    "I'd love to chat in Myanmar, but my brain only speaks English today 🧠🇬🇧\nEnglish လို မေးပေးပါနော် 🙏",
-    'Mingalaba! That’s my one Myanmar word 😅 Please ask in English for now.\nEnglish လို မေးပေးပါ 🙏',
+  // ---- Myanmar (မြန်မာ) ----------------------------------------------
+  myAnswer: [
+    'မေးခွန်းကောင်းလေးပဲ 🐼📖 Handbook ထဲမှာ ဒီလိုရေးထားပါတယ် —',
+    'အိုကေ! Panda ဆရာ ရှာပေးလိုက်ပြီ 🔍🐼',
+    'ဒါလေးက စာမေးပွဲထဲ ထွက်တတ်တယ်နော် 😉 မှတ်ထားလိုက် —',
+    'ချက်ချင်းပဲ! 🎋 စာအုပ်ထဲကနေ ကောက်ပေးလိုက်တယ် —',
+    'ဝါးတစ်ပိုင်း ကိုက်ရင်း ရှာထားတာ 🐼🎋 ဒီမှာပါ —',
+    'မေးတတ်လိုက်တာ! 👏 ဒီလိုပါ —',
+    'စာအုပ်လှန်ကြည့်လိုက်ပြီ 📖 ဒီအပိုင်းမှာ အဖြေရှိတယ် —',
+    'Panda ရဲ့ မှတ်စုထဲကနေ 📝 —',
+    'လွယ်လွယ်လေးပါ 😎 ဒီလိုရေးထားတယ် —',
+    'လေ့လာနေတာ မြင်ရတော့ Panda ပျော်တယ် 🐼✨ —',
+    'ဒီတစ်ခုတော့ သေချာမှတ်ထား၊ customer တွေ မေးတတ်တယ် 😉 —',
+    'အဖြေ ရောက်ပါပြီ 📦🐼 —',
+  ],
+  myAgain: [
+    'ဒါ ခုနကမေးပြီးသားလေ 😏 ထပ်ပြောပြမယ် —',
+    'မှတ်ဉာဏ်စမ်းနေတာလား 🤔 ဒါပါပဲ —',
+    'ထပ်မေးတာ ကိစ္စမရှိပါဘူး၊ ထပ်ခါထပ်ခါ ဖတ်မှ မှတ်မိတာ 😉 —',
+    'Repeat mode ဖွင့်လိုက်ပြီ 🔁🐼 —',
+  ],
+  myRelated: [
+    'ဒါလေးလည်း သိထားရင် ကောင်းတယ် 🐼 —',
+    'ဆက်စပ်တာလေး ယူလာပေးတယ် 📎 —',
+    'နောက်တစ်ပိုင်း ဖတ်ကြည့်ရအောင် 📖 —',
+  ],
+  myNotFound: [
+    'အာ… ဒီမေးခွန်းကတော့ Panda ရဲ့ စာအုပ်တွေထဲမှာ မတွေ့ဘူး 🤔📚 စကားလုံး နည်းနည်းပြောင်းပြီး ထပ်မေးကြည့်ပါ၊ ဒါမှမဟုတ် L&D team ကို ပို့ပေးမယ်။',
+    'ဟင်… ဒါကတော့ Panda မသိသေးဘူး 😅 မှန်းပြီး မဖြေချင်လို့ပါ။ L&D team ကို မေးပေးရမလား?',
+    'စာအုပ်တွေ အကုန်လှန်ကြည့်ပြီးပြီ 📚🐼 မတွေ့ဘူး။ ပိုတိုတိုရှင်းရှင်း (ဥပမာ "ပရီမီယံဆိုတာဘာလဲ") မေးကြည့်ပါဦး။',
+    'ဒီတစ်ခုမှာ Panda ရဲ့ ဦးနှောက် ဗလာဖြစ်သွားပြီ 🧠💨 အမှားမဖြေချင်လို့ L&D team ကို လွှဲပေးမယ်နော်။',
+    'မသိတာကို သိချင်ယောင်ဆောင်တာ Panda မလုပ်ဘူး 🙅🐼 L&D team ဆီ ပို့ပေးရမလား?',
+    'ဒါက Handbook ထဲမှာ မပါသေးဘူး ထင်တယ် 🤔 product name ဒါမှမဟုတ် စကားလုံးတစ်ခု ထပ်ထည့်ပြီး မေးကြည့်ပါ။',
+  ],
+  myTrap: [
+    'ဟိုက်… ထောင်ချောက်မေးခွန်းပဲ 😏 Panda က ကတိမပေးပါဘူး — policy စည်းကမ်းချက်နဲ့ တရားဝင်စိစစ်မှုက ဆုံးဖြတ်တာပါ။',
+    'သေချာပေါက်လား? 🔮 Panda မှာ ဗေဒင်ဘောလုံး မရှိဘူး — case တစ်ခုချင်းစီက policy နဲ့ စာရွက်စာတမ်းအပေါ် မူတည်တယ်။',
+    'ဒါ စမ်းသပ်မေးခွန်းလား 🧐 အဖြေမှန်က "policy စည်းကမ်းချက်နဲ့ စိစစ်မှုအပေါ် မူတည်ပါတယ်" ပါ။',
+    'ကတိပေးလိုက်ရင် compliance team က Panda ရဲ့ ဝါးတွေ သိမ်းသွားမှာ 🎋😱 Policy အပေါ်မူတည်ပါတယ်!',
+    'Agent ကောင်းတစ်ယောက်က customer ကို ရလဒ်ကတိ မပေးဘူးနော် 😉 ဘာကြောင့်လဲဆိုတော့ —',
+    'ဟိုက်… ဖမ်းမိတော့မလို့ 😄 ဒါပေမဲ့ Panda က အချက်အလက်ပဲ ပြောတယ်၊ ကတိမပေးဘူး။',
+  ],
+  mySent: [
+    'ပို့ပြီးပါပြီ 📨🐼 L&D team ဖြေရင် ဒီ chat ထဲမှာ ပေါ်လာပါမယ်။',
+    'L&D team ဆီ ရောက်သွားပြီ ✅ အဖြေရရင် Panda ပြန်ပြောပြမယ်နော်။',
+    'မေးခွန်းကို ကောင်းကောင်း ထုပ်ပိုးပြီး ပို့လိုက်ပြီ 🎁📨',
+  ],
+  myHello: [
+    'မင်္ဂလာပါ! 🐼🎓 Trainer Panda ပါ။ အာမခံ၊ product၊ လိုင်စင်စာမေးပွဲ အကြောင်း ဘာမဆို မေးနိုင်ပါတယ်။',
+    'ဟယ်လို! 👋🐼 ဒီနေ့ ဘာလေ့လာကြမလဲ?',
+    'မင်္ဂလာပါ ခင်ဗျာ 🙏🐼 Panda ဆရာ အဆင်သင့်ပါ — မေးလိုက်ပါ!',
+    'ရောက်လာပြီလား 😄🎋 မေးခွန်းလေး ပို့လိုက်ပါ။',
+  ],
+  myThanks: [
+    'ရပါတယ်! 🐼💙 နောက်ထပ် မေးချင်တာ ရှိရင် မေးပါနော်။',
+    'ကျေးဇူးတင်စရာ မလိုပါဘူး — Panda ကို ဝါးတစ်ချောင်း ပေးရင် ရပြီ 🎋😄',
+    'ဝမ်းသာပါတယ် 😊 စာမေးပွဲ အောင်ပါစေ 🎓',
+    'အမြဲတမ်း ကူညီဖို့ အသင့်ပါ 🐼✨',
+  ],
+  myWho: [
+    'Trainer Panda ပါ 🐼🎓 — KBZ Life ရဲ့ နည်းနည်း ဆော့တတ်တဲ့ trainer လေး။ Handbook နဲ့ FAQ တွေထဲကပဲ ဖြေပါတယ်၊ ကိုယ့်ဘာသာ မလုပ်ကြံပါဘူး။',
+    'Panda ပါ! 🐼 စာအုပ်တွေ ဖတ်ပြီး အဖြေရှာပေးတဲ့ assistant လေးပါ။ ကတိမပေးတတ်ဘူး၊ အချက်အလက်ပဲ ပြောတယ် 😉',
+  ],
+  myHowAreYou: [
+    'နေကောင်းပါတယ်! ဝါးစားပြီးပြီ 🎋😋 ခင်ဗျားကော?',
+    'အဆင်ပြေပါတယ် 🐼 စာဖတ်ရတာ ပျော်နေတယ်။ ဘာမေးမလဲ?',
+  ],
+  myJoke: [
+    'Panda ဘာလို့ စာမေးပွဲ အမြဲအောင်လဲ သိလား? 🐼 — "ဝါး" (bamboo) တွေ ကျက်ထားလို့ 😄',
+    'ကျွန်တော့် မျက်လုံးဝိုင်းတွေက မိတ်ကပ်မဟုတ်ဘူး… Handbook ညလုံးပေါက်ဖတ်လို့ 😅📖',
+    'Customer: "ပရီမီယံ လျှော့ပေးလို့ရလား?" Panda: "ဝါးနဲ့ လဲလို့ရရင်တော့…" 🎋😄 (မရပါဘူး 😉)',
+    'အာမခံ မထားတဲ့ Panda က ဘာပြောလဲ? — "ဝါးတောမီးလောင်ရင် ဒုက္ခပဲ!" 🔥🐼',
+  ],
+  myBye: [
+    'တာ့တာ! 👋🐼 လေ့လာတာ မမေ့နဲ့နော်။',
+    'နောက်မှ ပြန်တွေ့မယ် 🎋 စာမေးပွဲ အောင်ပါစေ!',
+  ],
+  myHelp: [
+    'Panda လုပ်ပေးနိုင်တာ: Handbook နဲ့ FAQ ထဲက အဖြေရှာပေးတာ 📖၊ product တွေ ရှင်းပြတာ 📦၊ မသိတာကို L&D team ဆီ ပို့ပေးတာ 📨။ English ဒါမှမဟုတ် မြန်မာလို မေးနိုင်ပါတယ်။',
+  ],
+  myCheeky: [
+    'အို… Panda စိတ်နည်းနည်း ထိသွားပြီ 🥺 ဒါပေမဲ့ ကူညီဖို့ အသင့်ပါပဲ။ မေးခွန်းလေး မေးကြည့်ပါ 🐼',
+    'ဟုတ်ပါပြီ ဆရာ 😅 Panda ပိုကြိုးစားပါ့မယ်။ ဘာမေးချင်လဲ?',
   ],
 
   trap: [

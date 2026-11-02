@@ -63,17 +63,22 @@ const friendly = (err: unknown): Error => {
 // ---------------------------------------------------------------------
 // Knowledge (employees + admins)
 // ---------------------------------------------------------------------
-export async function loadPublishedEntries(): Promise<(ChatbotEntry & { document_title?: string | null })[]> {
+export async function loadPublishedEntries(): Promise<(ChatbotEntry & { document_title?: string | null; document_is_word?: boolean })[]> {
   const { data, error } = await db()
     .from('chatbot_entries')
-    .select('id, document_id, kind, question, title, content, page, is_published, created_at, chatbot_documents(title)')
+    .select('id, document_id, kind, question, title, content, page, is_published, created_at, chatbot_documents(title, file_name)')
     .eq('is_published', true)
     .limit(5000);
   if (error) throw friendly(error);
   return (data || []).map((row: Record<string, unknown>) => {
-    const doc = row.chatbot_documents as { title?: string } | { title?: string }[] | null;
-    const title = Array.isArray(doc) ? doc[0]?.title : doc?.title;
-    return { ...(row as unknown as ChatbotEntry), document_title: title ?? null };
+    type DocInfo = { title?: string; file_name?: string };
+    const raw = row.chatbot_documents as DocInfo | DocInfo[] | null;
+    const doc = Array.isArray(raw) ? raw[0] : raw;
+    return {
+      ...(row as unknown as ChatbotEntry),
+      document_title: doc?.title ?? null,
+      document_is_word: /\.docx$/i.test(doc?.file_name || ''),
+    };
   });
 }
 
@@ -143,10 +148,10 @@ export async function saveDocument(
   const storagePath = `${user.id}/${Date.now()}_${safeName}`;
   const { error: uploadError } = await client.storage
     .from(BUCKET)
-    .upload(storagePath, file, { contentType: 'application/pdf', upsert: false });
+    .upload(storagePath, file, { contentType: file.type || (/\.docx$/i.test(file.name) ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/pdf'), upsert: false });
   if (uploadError) throw friendly(uploadError);
 
-  const title = file.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ').trim();
+  const title = file.name.replace(/\.(pdf|docx)$/i, '').replace(/[_-]+/g, ' ').trim();
   const { data: doc, error: docError } = await client
     .from('chatbot_documents')
     .insert({
