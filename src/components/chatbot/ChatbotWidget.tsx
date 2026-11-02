@@ -240,6 +240,7 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
   const [input, setInput] = useState('');
   const [entries, setEntries] = useState<Awaited<ReturnType<typeof loadPublishedEntries>> | null>(null);
   const [loadingKnowledge, setLoadingKnowledge] = useState(false);
+  const [knowledgeError, setKnowledgeError] = useState(false);
   const [unread, setUnread] = useState(0);
   const [greeting] = useState(() => say('greetings'));
   const listRef = useRef<HTMLDivElement>(null);
@@ -255,7 +256,9 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
     setLoadingKnowledge(true);
     try {
       setEntries(await loadPublishedEntries());
+      setKnowledgeError(false);
     } catch (err) {
+      setKnowledgeError(true);
       console.warn('[KBZLife Assistant] Knowledge base unavailable, using Product Knowledge Hub only:', (err as Error).message);
       setEntries([]);
     } finally {
@@ -387,7 +390,18 @@ export const ChatbotWidget: React.FC<{ onOpenProduct?: (productId: string) => vo
           .map((h) => h.item),
       };
     } else {
-      reply = { id: uid(), role: 'bot', lang, text: say(lang === 'my' ? 'myNotFound' : 'notFound'), askable: question, tone: 'info' };
+      reply = knowledgeError
+        ? {
+            id: uid(),
+            role: 'bot',
+            lang,
+            text:
+              lang === 'my'
+                ? 'အင်တာနက်ကြောင့် Panda စာအုပ်တွေကို ဖွင့်မရဖြစ်နေတယ် 😥 Page ကို refresh လုပ်ပြီး ထပ်မေးကြည့်ပါ။'
+                : 'Panda couldn’t open the handbooks (connection problem) 😥 Please refresh the page and ask again.',
+            tone: 'info',
+          }
+        : { id: uid(), role: 'bot', lang, text: say(lang === 'my' ? 'myNotFound' : 'notFound'), askable: question, tone: 'info' };
     }
     setMessages((prev) => [...prev, userMsg, reply]);
   };
