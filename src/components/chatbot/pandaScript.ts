@@ -207,7 +207,7 @@ export const SCRIPT = {
     'Tough crowd today! 🎤😅 Give me a real question and I’ll prove you wrong.',
     "Wow. I'm telling the L&D team 😤 …nah, I'm not. Ask me something!",
     "That hurt more than stepping on a Lego 🧱😭 Let's learn something instead?",
-    "Bold words for someone talking to a panda with a graduation cap 🎓😏 Ask away!",
+    "Bold words for someone talking to a panda with a headset 🎧😏 Ask away!",
     "I'm going to eat some emotional bamboo now 🎋😢 …okay, I'm back. What's your question?",
     'Challenge accepted 😤 Ask me something from the handbook and let’s see!',
   ],
