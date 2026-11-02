@@ -41,6 +41,7 @@ import { buildKnowledge, hasBrokenMyanmar, stripBrokenMyanmar } from '../../lib/
 import { KnowledgeIndex, minAnswerScore } from '../../lib/chatbotSearch';
 import { MentorMascot } from '../chatbot/MentorMascot';
 import { PdfViewerModal } from '../common/PdfViewerModal';
+import { DocxViewerModal } from '../common/DocxViewerModal';
 
 type UploadJob = { name: string; status: 'reading' | 'saving' | 'done' | 'error'; message: string };
 
@@ -65,7 +66,7 @@ export const AssistantManagement: React.FC = () => {
   const [filter, setFilter] = useState('');
   const [faqModal, setFaqModal] = useState<{ id?: string; question: string; answer: string } | null>(null);
   const [answers, setAnswers] = useState<Record<string, { text: string; addToFaq: boolean }>>({});
-  const [viewing, setViewing] = useState<{ url: string; title: string } | null>(null);
+  const [viewing, setViewing] = useState<{ url: string; title: string; fileName: string } | null>(null);
   const [testQuery, setTestQuery] = useState('');
 
   const refresh = useCallback(async () => {
@@ -142,8 +143,7 @@ export const AssistantManagement: React.FC = () => {
 
   const openDocument = async (doc: ChatbotDocument) => {
     const url = await documentUrl(doc);
-    if (url && /\.docx$/i.test(doc.file_name)) window.open(url, '_blank', 'noopener');
-    else if (url) setViewing({ url, title: doc.title });
+    if (url) setViewing({ url, title: doc.title, fileName: doc.file_name });
     else showToast('error', 'Cannot open', 'The file could not be found.');
   };
 
@@ -563,7 +563,10 @@ export const AssistantManagement: React.FC = () => {
           document.body
         )}
 
-      {viewing && (
+      {viewing && /\.docx$/i.test(viewing.fileName) && (
+        <DocxViewerModal fileUrl={viewing.url} title={viewing.title} fileName={viewing.fileName} onClose={() => setViewing(null)} />
+      )}
+      {viewing && !/\.docx$/i.test(viewing.fileName) && (
         <PdfViewerModal isOpen onClose={() => setViewing(null)} fileUrl={viewing.url} title={viewing.title} />
       )}
     </div>
