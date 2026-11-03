@@ -142,6 +142,12 @@ export const LicenseQuizModal: React.FC<LicenseQuizModalProps> = ({
     setAnswers({});
     setCurrentQuestionIndex(0);
     setResult(null);
+    // A retake gets a new random set of questions from the question bank
+    setLoading(true);
+    getChapterQuiz(chapter.id).then((q) => {
+      setQuiz(q);
+      setLoading(false);
+    });
   };
 
   return (

@@ -141,6 +141,12 @@ export const SkillQuizModal: React.FC<SkillQuizModalProps> = ({
     setAnswers({});
     setCurrentQuestionIndex(0);
     setResult(null);
+    // A retake gets a new random set of questions from the question bank
+    setLoading(true);
+    getSkillQuiz(categoryId, resourceId).then((q) => {
+      setQuiz(q);
+      setLoading(false);
+    });
   };
 
   return (
