@@ -13,14 +13,16 @@
  */
 import { extractLines } from './chatbotIngest';
 import type { GeneratedQuestionItem } from '../components/admin/PdfQuizGeneratorModal';
-import type { SpreadsheetQuizResult } from './quizSpreadsheet';
+import { letterIndex, type SpreadsheetQuizResult } from './quizSpreadsheet';
+import { unicodeTexts } from './zawgyi';
 
-const QUESTION = /^(?:Q(?:uestion)?\s*\.?\s*)?(\d{1,3})\s*[.)\-:]\s*(.+)$/i;
-const OPTION = /^\(?([A-Fa-f])\s*[.)\]]\s*(.+)$/;
-const ANSWER = /^(?:correct\s+)?(?:answer|ans)\s*(?:is)?\s*[:.\-–=]?\s*\(?([A-Fa-f])\b\)?/i;
+const QUESTION = /^(?:Q(?:uestion)?\s*\.?\s*|မေးခွန်း\s*)?([\d၀-၉]{1,3})\s*[.)\-:။]\s*(.+)$/i;
+const OPTION = /^[(（]?([A-Fa-fကခဂဃငစ])\s*[.)）\]။]\s*(.+)$/;
+const ANSWER = /^(?:(?:correct\s+)?(?:answer|ans)|အဖြေမှန်|အဖြေ)\s*(?:is)?\s*[:.\-–=။]?\s*[(（]?([A-Fa-f](?![a-z])|[ကခဂဃငစ])/i;
 const EXPLANATION = /^(?:explanation|reason)\s*[:.\-–]\s*(.+)$/i;
-const KEY_HEADING = /\banswer\s*keys?\b|\banswers\b\s*$/i;
-const KEY_PAIR = /(\d{1,3})\s*[.)\-:=]\s*\(?([A-Fa-f])\b\)?/g;
+const KEY_HEADING = /\banswer\s*keys?\b|\banswers\b\s*$|အဖြေများ|အဖြေလွှာ/i;
+const KEY_PAIR = /([\d၀-၉]{1,3})\s*[.)\-:=။]\s*[(（]?([A-Fa-f](?![a-z])|[ကခဂဃငစ])/g;
+const toNumber = (t: string) => Number(t.replace(/[၀-၉]/g, (d) => String(d.charCodeAt(0) - 0x1040)));
 
 interface Draft {
   n: number;
@@ -32,13 +34,13 @@ interface Draft {
 
 /** "A. one B. two C. three" on one line → ["one", "two", "three"] with their letters */
 function splitInlineOptions(line: string): { letter: number; text: string }[] | null {
-  const parts = line.split(/\s+(?=\(?[B-Fb-f]\s*[.)\]]\s)/);
+  const parts = line.split(/\s+(?=[(（]?(?:[B-Fb-f]|[ခဂဃငစ])\s*[.)）\]။]\s)/);
   if (parts.length < 2) return null;
   const out: { letter: number; text: string }[] = [];
   for (const p of parts) {
     const m = p.trim().match(OPTION);
     if (!m) return null;
-    out.push({ letter: m[1].toUpperCase().charCodeAt(0) - 65, text: m[2].trim() });
+    out.push({ letter: letterIndex(m[1]), text: m[2].trim() });
   }
   return out;
 }
@@ -60,13 +62,13 @@ export function parseQuestionLines(lines: string[]): SpreadsheetQuizResult {
       continue;
     }
     if (inKey) {
-      for (const m of line.matchAll(KEY_PAIR)) key.set(Number(m[1]), m[2].toUpperCase().charCodeAt(0) - 65);
+      for (const m of line.matchAll(KEY_PAIR)) key.set(toNumber(m[1]), letterIndex(m[2]));
       continue;
     }
 
     const ans = line.match(ANSWER);
     if (ans && cur) {
-      cur.answer = ans[1].toUpperCase().charCodeAt(0) - 65;
+      cur.answer = letterIndex(ans[1]);
       lastWasOption = false;
       continue;
     }
@@ -85,14 +87,14 @@ export function parseQuestionLines(lines: string[]): SpreadsheetQuizResult {
     }
     const opt = line.match(OPTION);
     if (opt && cur) {
-      cur.options[opt[1].toUpperCase().charCodeAt(0) - 65] = opt[2].trim();
+      cur.options[letterIndex(opt[1])] = opt[2].trim();
       lastWasOption = true;
       continue;
     }
 
     const q = line.match(QUESTION);
     if (q && (!cur || cur.options.length > 0 || cur.answer !== undefined)) {
-      cur = { n: Number(q[1]), text: q[2].trim(), options: [] };
+      cur = { n: toNumber(q[1]), text: q[2].trim(), options: [] };
       drafts.push(cur);
       lastWasOption = false;
       continue;
@@ -117,7 +119,7 @@ export function parseQuestionLines(lines: string[]): SpreadsheetQuizResult {
       continue;
     }
     if (!all[letter]) {
-      problems.push(`Question ${d.n}: the answer ${String.fromCharCode(65 + letter)} is not one of its options.`);
+      problems.push(`Question ${d.n}: the answer (option ${letter + 1}) is not one of its options.`);
       continue;
     }
     questions.push({
@@ -133,5 +135,6 @@ export function parseQuestionLines(lines: string[]): SpreadsheetQuizResult {
 /** Questions written in a PDF (text PDFs only; scanned pages have no text). */
 export async function readPdfQuestions(file: File): Promise<SpreadsheetQuizResult> {
   const { lines } = await extractLines(file);
-  return parseQuestionLines(lines.map((l) => l.text));
+  // extractLines already repairs damaged Pyidaungsu text; Zawgyi PDFs are converted here
+  return parseQuestionLines(unicodeTexts(lines.map((l) => l.text)).texts);
 }

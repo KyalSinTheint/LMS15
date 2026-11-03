@@ -364,7 +364,7 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
                   </label>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     Excel columns: <strong>Question · Option A · Option B · Option C · Option D · Correct Answer (A–D) · Explanation</strong>, one
-                    question per row.{' '}
+                    question per row. Myanmar works too: options (က) (ခ) (ဂ) (ဃ), answer "ခ" or "အဖြေ - ခ", and Zawgyi text is converted to Unicode automatically.{' '}
                     <button type="button" onClick={downloadTemplate} className="text-[#176B98] font-bold underline cursor-pointer">
                       Download template
                     </button>
