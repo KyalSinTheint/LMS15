@@ -214,6 +214,48 @@ export function matchAnswer(answerRaw: string, all: string[]): number {
   return partial;
 }
 
+const ANSWER_LIKE = new RegExp(
+  `^(?:(?:correct\\s+)?(?:answer|ans)\\s*[:.\\-–=]?\\s*|အဖြေ(?:မှန်)?\\s*[:.\\-–=။]?\\s*)?[(（]?(?:[${LETTERS}]|[1-6၁-၆])[)）]?(?:$|\\s*[.)\\]:\\-။၊]|\\s)`
+);
+
+/**
+ * Column layout from the data alone (files without a recognisable header):
+ * skips a numbering column, the first text column is the question, the
+ * column made of letters (A–D / က–ဃ / 1–4) is the answer, the columns in
+ * between are the options and the next one is the explanation.
+ */
+function inferLayout(rows: string[][]): { qCol: number; optCols: number[]; aCol: number; eCol: number } {
+  const sample = rows.slice(0, 60);
+  const width = Math.max(0, ...sample.map((r) => r.length));
+  const share = (col: number, test: (v: string) => boolean) => {
+    const vals = sample.map((r) => r[col] || '').filter(Boolean);
+    return vals.length ? vals.filter(test).length / vals.length : 0;
+  };
+  const filled = (col: number) => sample.filter((r) => r[col]).length / Math.max(1, sample.length);
+
+  let qCol = 0;
+  while (qCol < width - 1 && (filled(qCol) < 0.3 || share(qCol, (v) => /^[\d၀-၉]{1,4}[.)။]?$/.test(v)) > 0.8)) qCol++;
+
+  let aCol = -1;
+  for (let c = width - 1; c > qCol + 1; c--) {
+    if (filled(c) >= 0.5 && share(c, (v) => ANSWER_LIKE.test(v) || v.length <= 2) >= 0.7) {
+      aCol = c;
+      break;
+    }
+  }
+  if (aCol < 0) aCol = Math.min(qCol + 5, width - 1); // Question, A, B, C, D, Answer
+
+  const optCols: number[] = [];
+  for (let c = qCol + 1; c < aCol; c++) if (filled(c) > 0) optCols.push(c);
+  let eCol = -1;
+  for (let c = aCol + 1; c < width; c++)
+    if (filled(c) > 0) {
+      eCol = c;
+      break;
+    }
+  return { qCol, optCols, aCol, eCol };
+}
+
 export interface SpreadsheetQuizResult {
   questions: GeneratedQuestionItem[];
   /** Rows that could not be used, with the reason ("Row 5: no correct answer") */
@@ -232,7 +274,7 @@ export function rowsToQuestions(rows: string[][]): SpreadsheetQuizResult {
       break;
     }
   }
-  let qCol = 0;
+  let qCol = -1;
   let aCol = -1;
   let eCol = -1;
   let optCols: number[] = [];
@@ -240,19 +282,28 @@ export function rowsToQuestions(rows: string[][]): SpreadsheetQuizResult {
     const opts: { col: number; n: number }[] = [];
     clean[headerRow].forEach((h, col) => {
       const k = headerKind(h);
-      if (k.kind === 'question') qCol = col;
-      else if (k.kind === 'answer') aCol = col;
-      else if (k.kind === 'explanation') eCol = col;
+      if (k.kind === 'question' && qCol < 0) qCol = col;
+      else if (k.kind === 'answer' && aCol < 0) aCol = col;
+      else if (k.kind === 'explanation' && eCol < 0) eCol = col;
       else if (k.kind === 'option') opts.push({ col, n: k.option! });
     });
     optCols = opts.sort((a, b) => a.n - b.n).map((o) => o.col);
+    // Option headers not recognised: the columns between Question and Answer are the options
+    if (optCols.length < 2 && qCol >= 0 && aCol > qCol + 2) {
+      optCols = [];
+      for (let c = qCol + 1; c < aCol; c++) if (c !== eCol) optCols.push(c);
+    }
   }
-  if (headerRow < 0 || optCols.length < 2) {
-    // No usable header: Question, A, B, C, D, Answer, Explanation
-    qCol = 0;
-    optCols = [1, 2, 3, 4];
-    aCol = 5;
-    eCol = 6;
+  const data = clean.slice(headerRow + 1).filter((r) => r.some(Boolean));
+  if (qCol < 0 || aCol < 0 || optCols.length < 2) {
+    // No usable header: work the columns out from the data
+    const layout = inferLayout(data);
+    if (qCol < 0 || optCols.length < 2) {
+      qCol = layout.qCol;
+      optCols = layout.optCols;
+    }
+    if (aCol < 0) aCol = layout.aCol;
+    if (eCol < 0) eCol = layout.eCol;
   }
 
   const questions: GeneratedQuestionItem[] = [];
