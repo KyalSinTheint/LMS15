@@ -151,6 +151,49 @@ function headerKind(h: string): { kind: Col; option?: number } {
   return { kind: null };
 }
 
+const OPTION_LETTER = /^\(?([A-Fa-f])\s*[.)\]:\-]\s*/;
+const stripOptionLetter = (t: string) => t.replace(OPTION_LETTER, '').trim();
+const loose = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
+/**
+ * Which option is correct? Accepts "B", "(b)", "b)", "2", "B. Motor Insurance",
+ * "Answer: B", or the option text itself. Returns the index among the
+ * non-empty options, or -1.
+ */
+export function matchAnswer(answerRaw: string, all: string[]): number {
+  const options = all.filter(Boolean);
+  const toFiltered = (i: number) => (i >= 0 && i < all.length && all[i] ? all.slice(0, i).filter(Boolean).length : -1);
+  const answer = answerRaw.replace(/^(?:correct\s+)?(?:answer|ans)\s*(?:is)?\s*[:.\-–=]?\s*/i, '').trim();
+  if (!answer) return -1;
+
+  // The full text of an option ("Motor Insurance")
+  const byText = options.findIndex((o) => loose(o) === loose(answer));
+  if (byText >= 0) return byText;
+
+  // A letter, alone or followed by the option text ("D", "(d)", "D.Motor Insurance")
+  const m = answer.match(/^\(?([A-Fa-f])\)?(?:\s*[.)\]:\-]\s*|\s+|$)(.*)$/);
+  if (m) {
+    const rest = m[2].trim();
+    if (rest) {
+      const t = options.findIndex((o) => loose(o) === loose(rest));
+      if (t >= 0) return t; // the text decides when letter and text disagree
+    }
+    const byLetter = toFiltered(m[1].toUpperCase().charCodeAt(0) - 65);
+    if (byLetter >= 0) return byLetter;
+  }
+
+  // A number 1–6
+  if (/^[1-6]$/.test(answer)) return toFiltered(Number(answer) - 1);
+
+  // The option text with small differences (extra words, punctuation)
+  const a = loose(answer);
+  const partial = options.findIndex((o) => {
+    const b = loose(o);
+    return b.length > 3 && (a.includes(b) || b.includes(a));
+  });
+  return partial;
+}
+
 export interface SpreadsheetQuizResult {
   questions: GeneratedQuestionItem[];
   /** Rows that could not be used, with the reason ("Row 5: no correct answer") */
@@ -202,20 +245,16 @@ export function rowsToQuestions(rows: string[][]): SpreadsheetQuizResult {
       problems.push(`${label}: the question is empty.`);
       continue;
     }
-    // Keep each option's column position, so "C" still means column C when B is empty
-    const all = optCols.map((c) => row[c] || '');
+    // Keep each option's column position, so "C" still means column C when B is empty.
+    // Option cells may start with their letter ("A. Life insurance") — drop it.
+    const all = optCols.map((c) => stripOptionLetter(row[c] || ''));
     const options = all.filter(Boolean);
     if (options.length < 2) {
       problems.push(`${label}: needs at least 2 answer options.`);
       continue;
     }
-    const toFiltered = (i: number) => (i >= 0 && i < all.length && all[i] ? all.slice(0, i).filter(Boolean).length : -1);
     const answer = (aCol >= 0 ? row[aCol] : '') || '';
-    let correct = -1;
-    const letter = answer.match(/^\(?([A-Fa-f])[).]?$/);
-    if (letter) correct = toFiltered(letter[1].toUpperCase().charCodeAt(0) - 65);
-    else if (/^[1-6]$/.test(answer)) correct = toFiltered(Number(answer) - 1);
-    else if (answer) correct = options.findIndex((o) => o.toLowerCase() === answer.toLowerCase());
+    const correct = matchAnswer(answer, all);
     if (correct < 0 || correct >= options.length) {
       problems.push(`${label}: the correct answer "${answer || '(empty)'}" does not match an option (use A, B, C… or the option text).`);
       continue;
