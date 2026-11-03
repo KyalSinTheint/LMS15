@@ -50,6 +50,7 @@ const ProductKnowledgeRichEditor = lazy(() =>
 import { getProductRichContent } from '../../lib/productKnowledgeUtils';
 import { PdfQuizGeneratorModal, GeneratedQuestionItem } from './PdfQuizGeneratorModal';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
+import { QuestionsPerAttemptInput, DEFAULT_QUESTIONS_PER_ATTEMPT } from './QuestionsPerAttemptInput';
 
 export const ProductManagement: React.FC = () => {
   const {
@@ -104,6 +105,7 @@ export const ProductManagement: React.FC = () => {
     passing_score: number;
     max_attempts: number;
     is_published: boolean;
+    questions_per_attempt: number;
     questions: Array<{
       id: string;
       question_text: string;
@@ -117,6 +119,7 @@ export const ProductManagement: React.FC = () => {
     passing_score: 80,
     max_attempts: 0,
     is_published: true,
+    questions_per_attempt: DEFAULT_QUESTIONS_PER_ATTEMPT,
     questions: [],
   });
 
@@ -338,6 +341,7 @@ export const ProductManagement: React.FC = () => {
         passing_score: existing.passing_score || 80,
         max_attempts: existing.max_attempts || 0,
         is_published: existing.is_published ?? true,
+        questions_per_attempt: existing.questions_per_attempt || DEFAULT_QUESTIONS_PER_ATTEMPT,
         questions: existing.questions.map((q) => ({
           id: q.id,
           question_text: q.question_text,
@@ -354,6 +358,7 @@ export const ProductManagement: React.FC = () => {
         passing_score: 80,
         max_attempts: 0,
         is_published: true,
+        questions_per_attempt: DEFAULT_QUESTIONS_PER_ATTEMPT,
         questions: [
           {
             id: `q_${Date.now()}_1`,
@@ -492,6 +497,7 @@ export const ProductManagement: React.FC = () => {
       passing_score: Number(quizForm.passing_score) || 80,
       max_attempts: Number(quizForm.max_attempts) || 0,
       is_published: quizForm.is_published,
+      questions_per_attempt: quizForm.questions_per_attempt,
       questions: formattedQuestions,
     });
 
@@ -1132,6 +1138,14 @@ export const ProductManagement: React.FC = () => {
                       value={quizForm.passing_score}
                       onChange={(e) => setQuizForm({ ...quizForm, passing_score: parseInt(e.target.value) || 80 })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-[#176B98]/20"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <QuestionsPerAttemptInput
+                      value={quizForm.questions_per_attempt}
+                      onChange={(n) => setQuizForm({ ...quizForm, questions_per_attempt: n })}
+                      bankSize={quizForm.questions.length}
                     />
                   </div>
 

@@ -53,6 +53,7 @@ import {
 import { PdfThumbnail } from '../common/PdfThumbnail';
 import { PdfQuizGeneratorModal, GeneratedQuestionItem } from './PdfQuizGeneratorModal';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
+import { QuestionsPerAttemptInput, DEFAULT_QUESTIONS_PER_ATTEMPT } from './QuestionsPerAttemptInput';
 
 export const LICENSE_CATEGORIES = [
   'Regulatory Accreditation',
@@ -166,6 +167,7 @@ export const LicenseTrainingManagement: React.FC = () => {
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<LicenseQuizQuestion[]>([]);
   const [quizPassingScore, setQuizPassingScore] = useState<number>(80);
+  const [quizPerAttempt, setQuizPerAttempt] = useState<number>(DEFAULT_QUESTIONS_PER_ATTEMPT);
   const [isQuizSaving, setIsQuizSaving] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [quizSubTab, setQuizSubTab] = useState<'editor' | 'attempts'>('editor');
@@ -223,9 +225,11 @@ export const LicenseTrainingManagement: React.FC = () => {
         setCurrentQuiz(quiz);
         setQuizQuestions(quiz.questions || []);
         setQuizPassingScore(quiz.passing_score || targetChapter?.passing_score || 80);
+        setQuizPerAttempt(quiz.questions_per_attempt || DEFAULT_QUESTIONS_PER_ATTEMPT);
       } else {
         setCurrentQuiz(null);
         setQuizQuestions([]);
+        setQuizPerAttempt(DEFAULT_QUESTIONS_PER_ATTEMPT);
       }
       setIsLoadingQuiz(false);
     });
@@ -728,6 +732,7 @@ export const LicenseTrainingManagement: React.FC = () => {
         title: `${targetChapter.title} Assessment`,
         description: `Official statutory assessment for Chapter ${targetChapter.chapter_number}. Score ${quizPassingScore}% or higher to unlock the next chapter.`,
         passingScore: Number(quizPassingScore) || 80,
+        questionsPerAttempt: quizPerAttempt,
         questions: quizQuestions.map((q, idx) => ({
           id: q.id,
           quiz_id: currentQuiz?.id || `quiz_${selectedQuizChapterId}`,
@@ -1407,6 +1412,7 @@ export const LicenseTrainingManagement: React.FC = () => {
                       (Learners must score this or higher to unlock the next chapter)
                     </span>
                   </div>
+                  <QuestionsPerAttemptInput value={quizPerAttempt} onChange={setQuizPerAttempt} bankSize={quizQuestions.length} />
 
                   {/* PDF Generator and Manual Add Buttons */}
                   <div className="flex items-center gap-2">

@@ -191,6 +191,8 @@ export interface LicenseQuiz {
   description?: string;
   passing_score: number; // e.g. 80
   questions: LicenseQuizQuestion[];
+  /** Questions each learner gets per attempt, picked at random from the bank (default 10) */
+  questions_per_attempt?: number;
   is_published?: boolean;
   created_at: string;
   updated_at: string;
@@ -532,6 +534,8 @@ export interface SkillQuiz {
   description?: string;
   passing_score: number; // default 80%
   questions: SkillQuizQuestion[];
+  /** Questions each learner gets per attempt, picked at random from the bank (default 10) */
+  questions_per_attempt?: number;
   is_published?: boolean;
   created_at: string;
   updated_at: string;
@@ -617,6 +621,8 @@ export interface ProductQuiz {
   max_attempts?: number; // 0 for unlimited
   is_published: boolean;
   questions: ProductQuizQuestion[];
+  /** Questions each learner gets per attempt, picked at random from the bank (default 10) */
+  questions_per_attempt?: number;
   created_at: string;
   updated_at: string;
 }

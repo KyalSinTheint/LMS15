@@ -19,7 +19,7 @@ import { linesToKnowledge, type Line, type PdfKnowledge } from './chatbotEntries
 export type { ExtractedEntry, PdfKnowledge } from './chatbotEntries';
 
 /** Reads every page's text, rebuilding lines from the text positions. */
-async function extractLines(file: File, onProgress?: (page: number, total: number) => void): Promise<{ lines: Line[]; pageCount: number }> {
+export async function extractLines(file: File, onProgress?: (page: number, total: number) => void): Promise<{ lines: Line[]; pageCount: number }> {
   const doc = await loadPdfFromData(await file.arrayBuffer());
   const lines: Line[] = [];
   try {
