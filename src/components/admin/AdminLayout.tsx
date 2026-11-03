@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -14,6 +14,7 @@ import {
   Sparkles,
   ExternalLink,
   KeyRound,
+  Building,
   Bot,
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
@@ -37,12 +38,15 @@ import { AdminLoginModal } from './AdminLoginModal';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 import { useClickOutside } from '../../lib/closeOnOutside';
 import { PasswordResetRequestsPanel } from './PasswordResetRequestsPanel';
+import { DepartmentRequestsPanel } from './DepartmentRequestsPanel';
+import { countPendingDepartmentRequests } from '../../lib/departmentRequests';
 import { AssistantManagement } from './AssistantManagement';
 
 export type AdminTabId =
   | 'dashboard'
   | 'users'
   | 'password-resets'
+  | 'dept-requests'
   | 'assistant'
   | 'access'
   | 'bulletin'
@@ -63,6 +67,17 @@ interface AdminLayoutProps {
 export const AdminLayout: React.FC<AdminLayoutProps> = () => {
   const { currentUser, isSupabaseLive, refreshData, isLoading, signOut, theme, toggleTheme, passwordResetRequests } = useLms();
   const pendingResetCount = passwordResetRequests.filter((r) => r.status === 'pending').length;
+  // Open department change requests: checked now and every minute
+  const [pendingDeptCount, setPendingDeptCount] = useState(0);
+  const refreshDeptCount = useCallback(() => {
+    countPendingDepartmentRequests().then(setPendingDeptCount).catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    if (currentUser.role !== 'admin') return;
+    refreshDeptCount();
+    const timer = window.setInterval(refreshDeptCount, 60000);
+    return () => window.clearInterval(timer);
+  }, [currentUser.role, refreshDeptCount]);
   const [activeTab, setActiveTab] = useState<AdminTabId>('dashboard');
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -132,6 +147,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'users', label: 'User Management & Approvals', icon: Users },
     { id: 'password-resets', label: 'Password Resets', icon: KeyRound },
+    { id: 'dept-requests', label: 'Dept Changes', icon: Building },
     { id: 'access', label: 'User Permissions & Access', icon: ShieldCheck },
     { id: 'bulletin', label: 'Company Bulletin', icon: Bell },
     { id: 'products', label: 'Product Knowledge Hub', icon: Package },
@@ -332,6 +348,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
                 >
                   <Icon className="w-4 h-4" />
                   <span>{tab.label}</span>
+                  {tab.id === 'dept-requests' && pendingDeptCount > 0 && (
+                    <span
+                      className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center"
+                      aria-label={`${pendingDeptCount} pending`}
+                    >
+                      {pendingDeptCount}
+                    </span>
+                  )}
                   {tab.id === 'password-resets' && pendingResetCount > 0 && (
                     <span
                       className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center"
@@ -359,6 +383,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
         )}
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'password-resets' && <PasswordResetRequestsPanel />}
+        {activeTab === 'dept-requests' && <DepartmentRequestsPanel onChanged={refreshDeptCount} />}
         {activeTab === 'assistant' && <AssistantManagement />}
         {activeTab === 'access' && <AccessManagement />}
         {activeTab === 'bulletin' && <CompanyBulletinManagement />}

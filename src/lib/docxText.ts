@@ -11,14 +11,14 @@ export interface DocxParagraph {
 
 async function inflateRaw(data: Uint8Array): Promise<Uint8Array> {
   if (typeof DecompressionStream === 'undefined') {
-    throw new Error('This browser cannot open .docx files. Please use a recent Chrome, Edge, Safari or Firefox.');
+    throw new Error('This browser cannot open Word / Excel files. Please use a recent Chrome, Edge, Safari or Firefox.');
   }
   const stream = new Blob([data as BlobPart]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
 /** Returns one file from a ZIP archive, or null when it is not there. */
-async function readZipEntry(buf: ArrayBuffer, wanted: string): Promise<Uint8Array | null> {
+export async function readZipEntry(buf: ArrayBuffer, wanted: string): Promise<Uint8Array | null> {
   const view = new DataView(buf);
   const bytes = new Uint8Array(buf);
   // End of central directory record: search backwards for its signature
@@ -29,7 +29,7 @@ async function readZipEntry(buf: ArrayBuffer, wanted: string): Promise<Uint8Arra
       break;
     }
   }
-  if (eocd < 0) throw new Error('This file is not a valid .docx (Word) document.');
+  if (eocd < 0) throw new Error('This file is not a valid Word (.docx) or Excel (.xlsx) file.');
   const count = view.getUint16(eocd + 10, true);
   let p = view.getUint32(eocd + 16, true);
   const decoder = new TextDecoder();

@@ -1417,7 +1417,7 @@ export const LicenseTrainingManagement: React.FC = () => {
                       title="Upload a PDF handbook to automatically generate multiple-choice questions"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-amber-100" />
-                      <span>✨ Auto-Generate from PDF</span>
+                      <span>✨ Auto-Generate from PDF / Excel</span>
                     </button>
 
                     <button
@@ -1460,7 +1460,7 @@ export const LicenseTrainingManagement: React.FC = () => {
                         className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer"
                       >
                         <Sparkles className="w-4 h-4 text-amber-200" />
-                        <span>✨ Upload PDF to Auto-Generate Quiz</span>
+                        <span>✨ Upload PDF or Excel to Create Quiz</span>
                       </button>
 
                       <button
@@ -1564,7 +1564,7 @@ export const LicenseTrainingManagement: React.FC = () => {
                         className="px-4 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold hover:bg-amber-100 cursor-pointer flex items-center gap-1.5"
                       >
                         <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Add More Questions from PDF</span>
+                        <span>Add More Questions from PDF / Excel</span>
                       </button>
 
                       <button

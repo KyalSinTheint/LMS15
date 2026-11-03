@@ -1177,7 +1177,7 @@ export const ProductManagement: React.FC = () => {
                       className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-[#176B98] hover:from-sky-600 hover:to-[#135A80] text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                      <span>Upload PDF & Generate Quiz (AI)</span>
+                      <span>Generate Quiz from PDF / Excel</span>
                     </button>
                     <button
                       type="button"
