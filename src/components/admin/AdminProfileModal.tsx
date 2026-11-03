@@ -19,6 +19,8 @@ import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
 import { departmentOptions } from '../../lib/departments';
+import { validatePassword } from '../../lib/passwordValidation';
+import { PasswordRequirementsDisplay } from '../common/PasswordRequirementsDisplay';
 
 interface AdminProfileModalProps {
   isOpen: boolean;
@@ -149,7 +151,6 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ isOpen, on
     setProfileErrorMsg(null);
 
     const res = await updateProfile(currentUser.id, {
-      full_name: fullName,
       username,
       email,
       department,
@@ -181,8 +182,9 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ isOpen, on
       return;
     }
 
-    if (newPassword.length < 6) {
-      setPasswordStatus({ type: 'error', message: 'Password must be at least 6 characters long.' });
+    const pw = validatePassword(newPassword);
+    if (!pw.isValid) {
+      setPasswordStatus({ type: 'error', message: pw.firstErrorMessage || 'Please choose a stronger password.' });
       return;
     }
 
@@ -346,12 +348,12 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ isOpen, on
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Display Name</label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full text-xs bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 focus:ring-2 focus:ring-[#176B98] focus:outline-none"
-                />
+                <input type="text" value={fullName} disabled title="Names cannot be changed" className="w-full text-xs bg-slate-100 dark:bg-slate-800/50 text-[#737373] dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 cursor-not-allowed" />
+                  {currentUser.user_code && (
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                      User ID: <span className="font-mono font-bold text-[#176B98]">{currentUser.user_code}</span>
+                    </p>
+                  )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -516,6 +518,7 @@ export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ isOpen, on
                     className="w-full text-xs pl-9 pr-3 py-2 bg-slate-50 dark:bg-[#122842] text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-[#1E426D] rounded-lg focus:ring-2 focus:ring-[#176B98] focus:outline-none"
                   />
                 </div>
+                <PasswordRequirementsDisplay password={newPassword} showAlways={false} />
               </div>
 
               <div>

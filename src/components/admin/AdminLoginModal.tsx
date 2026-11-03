@@ -16,6 +16,8 @@ import {
 import { useLms } from '../../context/LmsContext';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
+import { validatePassword } from '../../lib/passwordValidation';
+import { PasswordRequirementsDisplay } from '../common/PasswordRequirementsDisplay';
 
 interface AdminLoginModalProps {
   isOpen: boolean;
@@ -73,8 +75,9 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
     e.preventDefault();
     setErrorMessage(null);
 
-    if (newPassword.length < 6) {
-      setErrorMessage('New password must be at least 6 characters long.');
+    const pw = validatePassword(newPassword);
+    if (!pw.isValid) {
+      setErrorMessage(pw.firstErrorMessage);
       return;
     }
 
@@ -256,6 +259,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                     className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#176B98]/20 focus:border-[#176B98]"
                   />
                 </div>
+                <PasswordRequirementsDisplay password={newPassword} showAlways={false} />
               </div>
 
               <div>

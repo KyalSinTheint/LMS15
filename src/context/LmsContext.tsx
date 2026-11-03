@@ -103,7 +103,7 @@ interface LmsContextType {
   /** Leave the reset-password screen (e.g. expired link) and go back to the normal app / sign-in */
   exitPasswordRecovery: () => void;
   loginWithCredentials: (identifier: string, password: string) => Promise<{ success: boolean; message: string; mustChangePassword?: boolean; account_status?: AccountStatus; role?: UserRole }>;
-  registerUser: (data: { full_name: string; username: string; email: string; password: string; department?: string; employee_id?: string }) => Promise<{ success: boolean; user?: Profile; message: string; needsEmailConfirmation?: boolean }>;
+  registerUser: (data: { full_name: string; username: string; email: string; password: string; department?: string; employee_id?: string; employment_type?: 'internal' | 'external' }) => Promise<{ success: boolean; user?: Profile; message: string; needsEmailConfirmation?: boolean }>;
   checkUserApprovalStatus: (userId?: string) => Promise<AccountStatus>;
   approveUser: (userId: string) => Promise<boolean>;
   rejectUser: (userId: string, reason: string) => Promise<boolean>;
@@ -1117,6 +1117,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     password: string;
     department?: string;
     employee_id?: string;
+    employment_type?: 'internal' | 'external';
   }): Promise<{ success: boolean; user?: Profile; message: string; needsEmailConfirmation?: boolean }> => {
     try {
       const client = db();
@@ -1149,6 +1150,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             full_name: data.full_name.trim(),
             department: data.department?.trim() || undefined,
             employee_id: data.employee_id?.trim() || undefined,
+            employment_type: data.employment_type || undefined,
           },
         },
       });

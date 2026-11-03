@@ -16,8 +16,8 @@ export const PasswordRequirementsDisplay: React.FC<PasswordRequirementsDisplayPr
   const { requirements } = validatePassword(password);
 
   return (
-    <div className="mt-2 p-3 bg-slate-50 border border-slate-200/90 rounded-xl text-left">
-      <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">
+    <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/90 dark:border-slate-700 rounded-xl text-left">
+      <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
         Password requirements
       </p>
       <ul className="space-y-1.5">
@@ -25,7 +25,7 @@ export const PasswordRequirementsDisplay: React.FC<PasswordRequirementsDisplayPr
           <li
             key={req.id}
             className={`flex items-center gap-2 text-xs transition-colors duration-150 ${
-              req.met ? 'text-emerald-700 font-medium' : 'text-slate-500'
+              req.met ? 'text-emerald-700 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-400'
             }`}
           >
             <span

@@ -17,7 +17,9 @@ import {
 } from 'lucide-react';
 import { useLms } from '../../context/LmsContext';
 import { RegistrationSubmittedPage } from './ApprovalFlowScreens';
-import { DEPARTMENTS } from '../../lib/departments';
+import { DEPARTMENTS, hasEmploymentType, userCodePrefix } from '../../lib/departments';
+import { validatePassword } from '../../lib/passwordValidation';
+import { PasswordRequirementsDisplay } from '../common/PasswordRequirementsDisplay';
 
 interface RegisterPageProps {
   onNavigateToLogin: () => void;
@@ -35,6 +37,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [department, setDepartment] = useState('');
+  const [employmentType, setEmploymentType] = useState<'internal' | 'external' | ''>('');
   const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -69,8 +72,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters.');
+    if (hasEmploymentType(department) && !employmentType) {
+      setErrorMessage('Please choose Internal or External.');
+      return;
+    }
+
+    const pw = validatePassword(password);
+    if (!pw.isValid) {
+      setErrorMessage(pw.firstErrorMessage);
       return;
     }
 
@@ -93,6 +102,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
         password,
         department,
         employee_id: employeeId.trim() || undefined,
+        employment_type: hasEmploymentType(department) && employmentType ? employmentType : undefined,
       });
 
       if (result.success) {
@@ -192,6 +202,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                     className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#176B98]/20 focus:border-[#176B98]"
                   />
                 </div>
+                <p className="mt-1 text-[10px] text-amber-700">Your name cannot be changed later — please type it carefully.</p>
               </div>
 
               <div>
@@ -246,7 +257,10 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                   </div>
                   <select
                     value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
+                    onChange={(e) => {
+                      setDepartment(e.target.value);
+                      if (!hasEmploymentType(e.target.value)) setEmploymentType('');
+                    }}
                     required
                     className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 text-slate-900 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#176B98]/20 focus:border-[#176B98]"
                   >
@@ -281,11 +295,47 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
               </div>
             </div>
 
+            {/* Internal / External (Agency, Bancassurance, Corporate Direct Sales) */}
+            {hasEmploymentType(department) && (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Internal or External? <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Internal or External">
+                  {(['internal', 'external'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      role="radio"
+                      aria-checked={employmentType === t}
+                      onClick={() => setEmploymentType(t)}
+                      className={`px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
+                        employmentType === t
+                          ? 'border-[#176B98] bg-[#176B98] text-white'
+                          : 'border-slate-200 bg-slate-50/50 text-slate-700 hover:border-[#176B98]'
+                      }`}
+                    >
+                      {t === 'internal' ? 'Internal (staff)' : 'External'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {department && (
+              <p className="text-[11px] text-slate-500 -mt-1">
+                Your User ID will be given automatically, e.g.{' '}
+                <span className="font-mono font-bold text-[#176B98]">
+                  {userCodePrefix(department, employmentType || 'external')}-001
+                </span>
+                {hasEmploymentType(department) && !employmentType ? ' (choose Internal or External)' : ''}.
+              </p>
+            )}
+
             {/* Password & Confirm Password */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Password (min 6 chars) <span className="text-red-500">*</span>
+                  Password (strong, min 6) <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -307,6 +357,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
                     {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
+                <PasswordRequirementsDisplay password={password} showAlways={false} />
               </div>
 
               <div>

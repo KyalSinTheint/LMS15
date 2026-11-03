@@ -20,6 +20,8 @@ import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
 import { departmentOptions } from '../../lib/departments';
+import { validatePassword } from '../../lib/passwordValidation';
+import { PasswordRequirementsDisplay } from '../common/PasswordRequirementsDisplay';
 
 interface LearnerProfileModalProps {
   isOpen: boolean;
@@ -152,10 +154,9 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
     setIsSavingProfile(true);
     setProfileFeedback(null);
 
+    // Name and department are fixed (the User ID depends on them)
     const res = await updateProfile(currentUser.id, {
-      full_name: fullName.trim(),
-      department: department.trim(),
-      avatar_url: avatarUrl.trim() || undefined,
+      avatar_url: avatarUrl.trim(),
     });
 
     setIsSavingProfile(false);
@@ -184,11 +185,9 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
     e.preventDefault();
     setPasswordFeedback(null);
 
-    if (!newPassword || newPassword.length < 6) {
-      setPasswordFeedback({
-        type: 'error',
-        text: 'New password must be at least 6 characters long.',
-      });
+    const pw = validatePassword(newPassword);
+    if (!pw.isValid) {
+      setPasswordFeedback({ type: 'error', text: pw.firstErrorMessage || 'Please choose a stronger password.' });
       return;
     }
 
@@ -383,14 +382,10 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Full Name */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#176B98]"
-                  />
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Full Name <span className="text-[10px] text-[#737373] dark:text-slate-400 font-normal">(cannot be changed)</span>
+                  </label>
+                  <input type="text" value={fullName} disabled className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 text-[#737373] dark:text-slate-400 cursor-not-allowed" />
                 </div>
 
                 {/* Username (Read Only) */}
@@ -405,6 +400,12 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 text-[#737373] dark:text-slate-400 cursor-not-allowed font-mono"
                   />
                 </div>
+              </div>
+
+              {/* User ID (given automatically, never changes) */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">User ID</label>
+                <input type="text" value={currentUser.user_code || 'Assigned after the database update'} disabled className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 text-[#737373] dark:text-slate-400 cursor-not-allowed font-mono font-bold" />
               </div>
 
               {/* Email (Read Only - requires auth verification to change) */}
@@ -429,23 +430,15 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
               {/* Department & Employee ID */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Department</label>
-                  <select
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#176B98]"
-                  >
-                    {!department && (
-                      <option value="" disabled>
-                        Select department
-                      </option>
-                    )}
-                    {departmentOptions(department).map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Department <span className="text-[10px] text-[#737373] dark:text-slate-400 font-normal">(contact admin to change)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={`${department || '—'}${currentUser.employment_type ? ` · ${currentUser.employment_type === 'internal' ? 'Internal' : 'External'}` : ''}`}
+                    disabled
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 text-[#737373] dark:text-slate-400 cursor-not-allowed"
+                  />
                 </div>
 
                 <div>
@@ -586,6 +579,7 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <PasswordRequirementsDisplay password={newPassword} showAlways={false} />
               </div>
 
               {/* Confirm Password */}

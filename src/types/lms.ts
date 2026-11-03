@@ -10,6 +10,10 @@ export interface Profile {
   account_status: AccountStatus;
   employee_id?: string;
   department?: string;
+  /** Agency / Bancassurance / Corporate Direct Sales only */
+  employment_type?: 'internal' | 'external' | null;
+  /** Given automatically, never changes: AE-001, AI-001, HR-001 … */
+  user_code?: string | null;
   avatar_url?: string;
   must_change_password?: boolean;
   /** Set while the account uses an admin-issued temporary password */
