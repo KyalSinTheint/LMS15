@@ -81,6 +81,7 @@ export const UserManagement: React.FC = () => {
       user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (user.user_code && user.user_code.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (user.department && user.department.toLowerCase().includes(searchQuery.toLowerCase()));
 
     let matchesStatus = true;
@@ -217,7 +218,7 @@ export const UserManagement: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name, email, username, or department..."
+            placeholder="Search by name, User ID, email, username, or department..."
             className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#176B98]/20 focus:border-[#176B98] bg-slate-50/50"
           />
         </div>
@@ -280,7 +281,14 @@ export const UserManagement: React.FC = () => {
                             className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
                           />
                           <div>
-                            <div className="font-bold text-slate-900">{user.full_name}</div>
+                            <div className="font-bold text-slate-900">
+                              {user.full_name}
+                              {user.user_code && (
+                                <span className="ml-1.5 px-1.5 py-0.5 rounded bg-sky-50 text-[#176B98] text-[10px] font-mono font-bold align-middle">
+                                  {user.user_code}
+                                </span>
+                              )}
+                            </div>
                             <div className="text-[11px] text-slate-500">
                               {user.email} ·{' '}
                               <span className="font-mono text-[10px]">@{user.username || user.email.split('@')[0]}</span>
@@ -491,12 +499,19 @@ export const UserManagement: React.FC = () => {
                   <span className="font-mono font-bold text-slate-800 dark:text-slate-200">@{selectedUser.username || selectedUser.email.split('@')[0]}</span>
                 </div>
                 <div>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase block">User ID</span>
+                  <span className="font-mono font-bold text-[#176B98]">{selectedUser.user_code || '—'}</span>
+                </div>
+                <div>
                   <span className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase block">Employee ID</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{selectedUser.employee_id || 'KBZ-EMP-000'}</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{selectedUser.employee_id || '—'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase block">Department</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">{selectedUser.department || 'General'}</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+                    {selectedUser.department || 'General'}
+                    {selectedUser.employment_type ? ` · ${selectedUser.employment_type === 'internal' ? 'Internal' : 'External'}` : ''}
+                  </span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase block">Registered On</span>
