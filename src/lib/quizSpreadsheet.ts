@@ -64,7 +64,7 @@ const colIndex = (ref: string) => {
 };
 
 /** The first worksheet of an .xlsx file as rows of text. */
-async function readXlsx(file: File): Promise<string[][]> {
+async function readXlsx(file: File, sheetIndex = 0): Promise<string[][]> {
   const buf = await file.arrayBuffer();
   const decode = (b: Uint8Array | null) => (b ? new TextDecoder().decode(b) : '');
   const parse = (xml: string) => new DOMParser().parseFromString(xml, 'application/xml');
@@ -83,13 +83,13 @@ async function readXlsx(file: File): Promise<string[][]> {
     }
   }
 
-  // First sheet in workbook order
-  let sheetPath = 'xl/worksheets/sheet1.xml';
+  // The chosen sheet, in workbook order (first sheet by default)
+  let sheetPath = `xl/worksheets/sheet${sheetIndex + 1}.xml`;
   const wb = decode(await readZipEntry(buf, 'xl/workbook.xml'));
   const rels = decode(await readZipEntry(buf, 'xl/_rels/workbook.xml.rels'));
   if (wb && rels) {
-    const first = parse(wb).getElementsByTagName('sheet')[0];
-    const rid = first?.getAttribute('r:id') || first?.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+    const sheet = parse(wb).getElementsByTagName('sheet')[sheetIndex];
+    const rid = sheet?.getAttribute('r:id') || sheet?.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
     const relList = parse(rels).getElementsByTagName('Relationship');
     for (let i = 0; i < relList.length; i++) {
       if (relList[i].getAttribute('Id') === rid) {
@@ -126,11 +126,20 @@ async function readXlsx(file: File): Promise<string[][]> {
   return rows;
 }
 
-export async function readSpreadsheetRows(file: File): Promise<string[][]> {
+/** Sheet names of an .xlsx file, in workbook order ([] for CSV). */
+export async function listSheets(file: File): Promise<string[]> {
+  if (!/\.(xlsx|xlsm)$/i.test(file.name)) return [];
+  const wb = await readZipEntry(await file.arrayBuffer(), 'xl/workbook.xml');
+  if (!wb) return [];
+  const sheets = new DOMParser().parseFromString(new TextDecoder().decode(wb), 'application/xml').getElementsByTagName('sheet');
+  return Array.from(sheets).map((el, i) => el.getAttribute('name') || `Sheet ${i + 1}`);
+}
+
+export async function readSpreadsheetRows(file: File, sheetIndex = 0): Promise<string[][]> {
   if (/\.xls$/i.test(file.name)) {
     throw new Error('Old Excel files (.xls) cannot be read. In Excel choose File → Save As → "Excel Workbook (.xlsx)" and upload that file.');
   }
-  const rows = /\.csv$/i.test(file.name) ? parseCsv(await file.text()) : await readXlsx(file);
+  const rows = /\.csv$/i.test(file.name) ? parseCsv(await file.text()) : await readXlsx(file, sheetIndex);
   // Zawgyi-font Myanmar text → Unicode
   const flat = rows.flat();
   const { texts, converted } = unicodeTexts(flat);
@@ -152,7 +161,7 @@ function headerKind(h: string): { kind: Col; option?: number } {
   if (/explan|reason|rationale|ရှင်းလင်း/.test(t)) return { kind: 'explanation' };
   if (/correct|answer|key|အဖြေ/.test(t)) return { kind: 'answer' };
   if (/question|မေးခွန်း/.test(t)) return { kind: 'question' };
-  const m = t.match(/^(?:option|choice|opt\.?|ans(?:wer)?\s*option|ရွေးချယ်(?:စရာ|ရန်)?)?\s*[\s_-]*[(（]?([a-fကခဂဃငစ]|[1-6၁-၆])[)）]?$/);
+  const m = t.match(/^(?:options?|choices?|opt\.?|ans(?:wer)?\s*options?|ရွေးချယ်(?:စရာ|ရန်)?)?\s*[\s_:.#-]*[(（]?([a-fကခဂဃငစ]|[1-6၁-၆])[)）]?[\s:.]*$/);
   if (m) return { kind: 'option', option: /[1-6၁-၆]/.test(m[1]) ? digitValue(m[1]) - 1 : letterIndex(m[1]) };
   return { kind: null };
 }
@@ -335,8 +344,8 @@ export function rowsToQuestions(rows: string[][]): SpreadsheetQuizResult {
   return { questions, problems };
 }
 
-export async function readQuizSpreadsheet(file: File): Promise<SpreadsheetQuizResult> {
-  return rowsToQuestions(await readSpreadsheetRows(file));
+export async function readQuizSpreadsheet(file: File, sheetIndex = 0): Promise<SpreadsheetQuizResult> {
+  return rowsToQuestions(await readSpreadsheetRows(file, sheetIndex));
 }
 
 /** A ready-to-fill template that opens in Excel (CSV with a UTF-8 mark so Myanmar text shows correctly). */

@@ -19,7 +19,7 @@ import { useLms } from '../../context/LmsContext';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { formatBytes } from '../../lib/storageUtils';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
-import { isSpreadsheet, quizTemplateCsv, readQuizSpreadsheet } from '../../lib/quizSpreadsheet';
+import { isSpreadsheet, listSheets, quizTemplateCsv, readQuizSpreadsheet } from '../../lib/quizSpreadsheet';
 import { readPdfQuestions } from '../../lib/quizPdf';
 
 export interface GeneratedQuestionItem {
@@ -72,6 +72,10 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
   const [importMode, setImportMode] = useState<'replace' | 'append'>('replace');
   /** Rows of an Excel / CSV file that could not be imported */
   const [sheetProblems, setSheetProblems] = useState<string[]>([]);
+  /** Excel workbooks with several sheets: which one is imported */
+  const [sheetFile, setSheetFile] = useState<File | null>(null);
+  const [sheetNames, setSheetNames] = useState<string[]>([]);
+  const [sheetIndex, setSheetIndex] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   useBodyScrollLock(isOpen);
@@ -79,15 +83,37 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
   if (!isOpen) return null;
 
   /** Excel / CSV: the questions are already written, so import them directly */
-  const importSpreadsheet = async (file: File) => {
+  const importSpreadsheet = async (file: File, chosenSheet?: number) => {
     setGenerationError(null);
     setIsScannedPdf(false);
     setIsGenerating(true);
     setProgressStep('Reading questions from the spreadsheet...');
     try {
-      const { questions, problems } = await readQuizSpreadsheet(file);
+      // Several sheets (e.g. Mock Q-1 … Chapter-1 …): use the chosen one, or the
+      // sheet named after this chapter ("Chapter-1" for "Chapter 1: …"), or the first
+      let index = chosenSheet ?? 0;
+      if (chosenSheet === undefined) {
+        const names = await listSheets(file);
+        setSheetNames(names);
+        setSheetFile(file);
+        const ch = contextTitle.match(/chapter\s*[-:]?\s*(\d+)/i)?.[1];
+        const match = ch ? names.findIndex((n) => new RegExp(`chapter\\s*[-_ ]?\\s*0*${ch}\\b`, 'i').test(n)) : -1;
+        index = match >= 0 ? match : 0;
+        // No chapter match: the first sheet that has questions
+        if (match < 0 && names.length > 1) {
+          for (let i = 0; i < names.length; i++) {
+            if ((await readQuizSpreadsheet(file, i)).questions.length > 0) {
+              index = i;
+              break;
+            }
+          }
+        }
+      }
+      setSheetIndex(index);
+      const { questions, problems } = await readQuizSpreadsheet(file, index);
       setSheetProblems(problems);
       if (questions.length === 0) {
+        setGeneratedQuestions([]);
         setGenerationError(
           problems.length
             ? `No questions could be imported. ${problems.slice(0, 3).join(' ')}`
@@ -119,6 +145,8 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
     e.target.value = '';
     if (!file) return;
 
+    setSheetFile(null);
+    setSheetNames([]);
     if (isSpreadsheet(file)) {
       setSelectedFile(null);
       setFileBase64(null);
@@ -317,6 +345,25 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
 
         {/* Content Area */}
         <div className="p-6 overflow-y-auto flex-1 space-y-6">
+          {sheetFile && sheetNames.length > 1 && (
+            <div className="flex flex-wrap items-center gap-2 p-3 rounded-2xl bg-sky-50 dark:bg-[#153252] border border-sky-200 dark:border-[#1E426D] text-xs">
+              <span className="font-bold text-slate-700 dark:text-slate-200">Sheet in {sheetFile.name}:</span>
+              <select
+                value={sheetIndex}
+                disabled={isGenerating}
+                onChange={(e) => void importSpreadsheet(sheetFile, Number(e.target.value))}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold"
+              >
+                {sheetNames.map((n, i) => (
+                  <option key={i} value={i}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+              <span className="text-slate-500 dark:text-slate-400">({sheetNames.length} sheets — choose the one for this quiz)</span>
+            </div>
+          )}
+
           {/* STEP 1: When questions have not yet been generated */}
           {generatedQuestions.length === 0 ? (
             <div className="space-y-5">
@@ -724,6 +771,8 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
                   setSelectedFile(null);
                   setFileBase64(null);
                   setSheetProblems([]);
+                  setSheetFile(null);
+                  setSheetNames([]);
                 }}
                 className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-xl cursor-pointer"
               >
