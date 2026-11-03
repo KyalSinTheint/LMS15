@@ -141,6 +141,12 @@ export const ProductQuizModal: React.FC<ProductQuizModalProps> = ({
     setAnswers({});
     setCurrentQuestionIndex(0);
     setResult(null);
+    // A retake gets a new random set of questions from the question bank
+    setLoading(true);
+    getProductQuiz(product.id).then((q) => {
+      setQuiz(q);
+      setLoading(false);
+    });
   };
 
   return (
