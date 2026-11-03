@@ -19,7 +19,7 @@ import { uploadImageFile, validateImageFile } from '../../lib/storageUtils';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
-import { departmentOptions } from '../../lib/departments';
+import { DepartmentChangeRequestBox } from './DepartmentChangeRequestBox';
 import { validatePassword } from '../../lib/passwordValidation';
 import { PasswordRequirementsDisplay } from '../common/PasswordRequirementsDisplay';
 
@@ -431,7 +431,7 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Department <span className="text-[10px] text-[#737373] dark:text-slate-400 font-normal">(contact admin to change)</span>
+                    Department <span className="text-[10px] text-[#737373] dark:text-slate-400 font-normal">(changed by admin approval)</span>
                   </label>
                   <input
                     type="text"
@@ -454,6 +454,9 @@ export const LearnerProfileModal: React.FC<LearnerProfileModalProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Department change goes through admin approval */}
+              <DepartmentChangeRequestBox user={currentUser} />
 
               {/* Read Only RBAC Security Safeguard Display */}
               <div className="p-3 bg-[#F3F8FB] dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 space-y-1">

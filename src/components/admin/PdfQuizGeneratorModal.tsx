@@ -19,6 +19,7 @@ import { useLms } from '../../context/LmsContext';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { formatBytes } from '../../lib/storageUtils';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
+import { isSpreadsheet, quizTemplateCsv, readQuizSpreadsheet } from '../../lib/quizSpreadsheet';
 
 export interface GeneratedQuestionItem {
   question_text: string;
@@ -68,18 +69,64 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
   const [extractedMeta, setExtractedMeta] = useState<{ fileName: string; numPages?: number } | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [importMode, setImportMode] = useState<'replace' | 'append'>('replace');
+  /** Rows of an Excel / CSV file that could not be imported */
+  const [sheetProblems, setSheetProblems] = useState<string[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   useBodyScrollLock(isOpen);
 
   if (!isOpen) return null;
 
+  /** Excel / CSV: the questions are already written, so import them directly */
+  const importSpreadsheet = async (file: File) => {
+    setGenerationError(null);
+    setIsScannedPdf(false);
+    setIsGenerating(true);
+    setProgressStep('Reading questions from the spreadsheet...');
+    try {
+      const { questions, problems } = await readQuizSpreadsheet(file);
+      setSheetProblems(problems);
+      if (questions.length === 0) {
+        setGenerationError(
+          problems.length
+            ? `No questions could be imported. ${problems.slice(0, 3).join(' ')}`
+            : 'The spreadsheet has no questions. Use the template: Question, Option A–D, Correct Answer, Explanation.'
+        );
+        return;
+      }
+      setGeneratedQuestions(questions);
+      setExtractedMeta({ fileName: file.name });
+    } catch (err) {
+      setGenerationError((err as Error).message);
+    } finally {
+      setIsGenerating(false);
+      setProgressStep('');
+    }
+  };
+
+  const downloadTemplate = () => {
+    const url = URL.createObjectURL(quizTemplateCsv());
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'quiz-questions-template.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
 
+    if (isSpreadsheet(file)) {
+      setSelectedFile(null);
+      setFileBase64(null);
+      void importSpreadsheet(file);
+      return;
+    }
+
     if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
-      showToast('error', 'Invalid File Type', 'Please upload a PDF document (.pdf).');
+      showToast('error', 'Invalid File Type', 'Please upload a PDF (.pdf) or an Excel / CSV file of questions (.xlsx, .csv).');
       return;
     }
 
@@ -213,13 +260,13 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <span>AI PDF Quiz Generator</span>
+                <span>Quiz Generator · PDF / Excel</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#176B98]/10 dark:bg-[#176B98]/30 text-[#176B98] dark:text-[#38BDF8] uppercase">
                   Automatic
                 </span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
-                Generate questions, answer options, and correct answers from training PDFs
+                Generate questions from a training PDF, or import questions written in Excel
               </p>
             </div>
           </div>
@@ -281,12 +328,19 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
               {sourceType === 'upload' ? (
                 <div className="space-y-2">
                   <label className="block text-xs font-bold text-slate-700">
-                    PDF Training Handbook or Regulatory Manual <span className="text-red-500">*</span>
+                    PDF handbook, or Excel / CSV file of questions <span className="text-red-500">*</span>
                   </label>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Excel columns: <strong>Question · Option A · Option B · Option C · Option D · Correct Answer (A–D) · Explanation</strong>, one
+                    question per row.{' '}
+                    <button type="button" onClick={downloadTemplate} className="text-[#176B98] font-bold underline cursor-pointer">
+                      Download template
+                    </button>
+                  </p>
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf,application/pdf"
+                    accept=".pdf,application/pdf,.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
                     onChange={handleFileChange}
                     className="hidden"
                   />
@@ -328,10 +382,10 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
                         <Upload className="w-6 h-6" />
                       </div>
                       <span className="text-xs font-bold text-slate-700 group-hover:text-[#176B98]">
-                        Click or drag a digital PDF here to extract quiz questions
+                        Choose a PDF to generate questions, or an Excel file with your questions
                       </span>
                       <span className="text-[11px] text-slate-400">
-                        Supports statutory handbooks, syllabi, and guidelines (up to 100 MB)
+                        PDF up to 100 MB · Excel (.xlsx) or CSV: all questions are imported at once
                       </span>
                     </button>
                   )}
@@ -425,15 +479,24 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
           ) : (
             /* STEP 2: Review & Edit Generated Questions */
             <div className="space-y-4">
+              {sheetProblems.length > 0 && (
+                <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] space-y-0.5">
+                  <p className="font-bold">{sheetProblems.length} row(s) were skipped:</p>
+                  {sheetProblems.slice(0, 6).map((p, i) => (
+                    <p key={i}>• {p}</p>
+                  ))}
+                  {sheetProblems.length > 6 && <p>• …and {sheetProblems.length - 6} more</p>}
+                </div>
+              )}
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                   <div>
                     <h4 className="text-xs font-extrabold text-emerald-900">
-                      Successfully Extracted {generatedQuestions.length} Quiz Questions
+                      {/\.(xlsx|csv)$/i.test(extractedMeta?.fileName || '') ? 'Imported' : 'Successfully Extracted'} {generatedQuestions.length} Quiz Questions
                     </h4>
                     <p className="text-[11px] text-emerald-700">
-                      Extracted from {extractedMeta?.fileName || 'PDF'}
+                      From {extractedMeta?.fileName || 'PDF'}
                       {extractedMeta?.numPages ? ` (${extractedMeta.numPages} pages analyzed)` : ''}.
                       Review and edit questions below before importing.
                     </p>
@@ -624,10 +687,11 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
                   setGeneratedQuestions([]);
                   setSelectedFile(null);
                   setFileBase64(null);
+                  setSheetProblems([]);
                 }}
                 className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-xl cursor-pointer"
               >
-                Regenerate / Pick Another PDF
+                Pick Another File
               </button>
               <button
                 type="button"
