@@ -55,6 +55,7 @@ import { SkillVideoPlayerModal } from '../learner/SkillVideoPlayerModal';
 import { ExternalLinkModal } from '../learner/ExternalLinkModal';
 import { PdfQuizGeneratorModal, GeneratedQuestionItem } from './PdfQuizGeneratorModal';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
+import { QuestionsPerAttemptInput, DEFAULT_QUESTIONS_PER_ATTEMPT } from './QuestionsPerAttemptInput';
 
 interface ResourceFormData {
   id?: string;
@@ -173,6 +174,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
   const [isLoadingQuiz, setIsLoadingQuiz] = useState<boolean>(false);
   const [quizQuestions, setQuizQuestions] = useState<SkillQuizQuestion[]>([]);
   const [quizPassingScore, setQuizPassingScore] = useState<number>(80);
+  const [quizPerAttempt, setQuizPerAttempt] = useState<number>(DEFAULT_QUESTIONS_PER_ATTEMPT);
   const [isQuizSaving, setIsQuizSaving] = useState<boolean>(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
 
@@ -287,9 +289,11 @@ export const SkillDevelopmentManagement: React.FC = () => {
         if (q) {
           setQuizQuestions(q.questions || []);
           setQuizPassingScore(q.passing_score ?? 80);
+          setQuizPerAttempt(q.questions_per_attempt || DEFAULT_QUESTIONS_PER_ATTEMPT);
         } else {
           setQuizQuestions([]);
           setQuizPassingScore(80);
+          setQuizPerAttempt(DEFAULT_QUESTIONS_PER_ATTEMPT);
         }
         setIsLoadingQuiz(false);
       }
@@ -456,6 +460,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
         description: `Comprehensive skills proficiency assessment for ${selectedCategory.name}. Score ${quizPassingScore}% or higher to pass.`,
         passing_score: Number(quizPassingScore) || 80,
         is_published: true,
+        questions_per_attempt: quizPerAttempt,
         questions: quizQuestions.map((q, idx) => ({
           id: q.id,
           quiz_id: currentQuiz?.id || `sq_${selectedQuizCategoryId}`,
@@ -1416,6 +1421,7 @@ export const SkillDevelopmentManagement: React.FC = () => {
                   (Learners must score this or higher to receive verified passing completion)
                 </span>
               </div>
+              <QuestionsPerAttemptInput value={quizPerAttempt} onChange={setQuizPerAttempt} bankSize={quizQuestions.length} />
 
               {/* PDF Generator and Manual Add Buttons */}
               <div className="flex items-center gap-2.5 flex-wrap">

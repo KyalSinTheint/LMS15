@@ -20,6 +20,7 @@ import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { formatBytes } from '../../lib/storageUtils';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
 import { isSpreadsheet, quizTemplateCsv, readQuizSpreadsheet } from '../../lib/quizSpreadsheet';
+import { readPdfQuestions } from '../../lib/quizPdf';
 
 export interface GeneratedQuestionItem {
   question_text: string;
@@ -151,6 +152,37 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
     setGenerationError(null);
     setIsScannedPdf(false);
     setIsGenerating(true);
+    setProgressStep('Uploading and reading PDF document structure...');
+
+    // 1. A PDF that already contains questions (a question bank): import them as written
+    try {
+      setProgressStep('Looking for written questions in the PDF...');
+      let pdfFile: File | null = sourceType === 'upload' ? selectedFile : null;
+      if (sourceType === 'existing' && selectedExistingUrl) {
+        const res = await fetch(selectedExistingUrl);
+        if (res.ok) pdfFile = new File([await res.blob()], 'lesson.pdf', { type: 'application/pdf' });
+      }
+      if (pdfFile) {
+        const { questions, problems } = await readPdfQuestions(pdfFile);
+        if (questions.length > 0) {
+          setSheetProblems(problems);
+          setGeneratedQuestions(questions);
+          setExtractedMeta({
+            fileName:
+              sourceType === 'upload'
+                ? pdfFile.name
+                : existingPdfs.find((x) => x.url === selectedExistingUrl)?.file_name || 'lesson.pdf',
+          });
+          setIsGenerating(false);
+          setProgressStep('');
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('[Quiz] Could not read written questions from the PDF:', (err as Error).message);
+    }
+
+    // 2. No written questions: generate them from the PDF's content
     setProgressStep('Uploading and reading PDF document structure...');
 
     try {
@@ -415,6 +447,10 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                   Number of Questions to Generate Automatically
                 </label>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+                  If the PDF already has written questions (1. … A. … B. … Answer: B, or an Answer Key), they are all imported as
+                  they are and this number is not used.
+                </p>
                 <div className="grid grid-cols-4 gap-2">
                   {[3, 5, 8, 10].map((num) => (
                     <button
@@ -493,7 +529,7 @@ export const PdfQuizGeneratorModal: React.FC<PdfQuizGeneratorModalProps> = ({
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                   <div>
                     <h4 className="text-xs font-extrabold text-emerald-900">
-                      {/\.(xlsx|csv)$/i.test(extractedMeta?.fileName || '') ? 'Imported' : 'Successfully Extracted'} {generatedQuestions.length} Quiz Questions
+                      Imported {generatedQuestions.length} Quiz Questions
                     </h4>
                     <p className="text-[11px] text-emerald-700">
                       From {extractedMeta?.fileName || 'PDF'}

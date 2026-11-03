@@ -264,6 +264,7 @@ interface LmsContextType {
       description?: string;
       passingScore: number;
       questions: LicenseQuizQuestion[];
+      questionsPerAttempt?: number;
     }
   ) => Promise<boolean>;
   submitChapterQuiz: (
@@ -330,7 +331,7 @@ interface LmsContextType {
   updateProduct: (id: string, updates: Partial<ProductKnowledgeItem>) => Promise<boolean>;
   deleteProduct: (id: string) => Promise<boolean>;
   getProductQuiz: (productId: string) => Promise<ProductQuiz | null>;
-  saveProductQuiz: (productId: string, data: { title: string; description?: string; passing_score: number; max_attempts?: number; is_published: boolean; questions: ProductQuizQuestion[] }) => Promise<boolean>;
+  saveProductQuiz: (productId: string, data: { title: string; description?: string; passing_score: number; max_attempts?: number; is_published: boolean; questions: ProductQuizQuestion[]; questions_per_attempt?: number }) => Promise<boolean>;
   submitProductQuizAttempt: (productId: string, quizId: string, answers: Record<string, number>) => Promise<{
     success: boolean;
     score?: number;
@@ -380,6 +381,7 @@ interface LmsContextType {
     passing_score: number;
     is_published?: boolean;
     questions: SkillQuizQuestion[];
+    questions_per_attempt?: number;
   }) => Promise<boolean>;
   deleteSkillQuiz: (quizId: string) => Promise<boolean>;
   submitSkillQuiz: (
@@ -2496,7 +2498,18 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         console.warn(`[KBZLife LMS] Could not load quiz from ${table}:`, error.message);
         return null;
       }
-      return (data as T) || null;
+      if (!data) return null;
+      // Learners get their own random set of questions from the quiz's
+      // question bank (same set until they submit; a retake gets a new one)
+      if (!isAdmin && (data as { id?: string }).id) {
+        const { data: drawn, error: drawError } = await client.rpc('draw_quiz_questions', {
+          p_quiz_table: table,
+          p_quiz_id: (data as { id: string }).id,
+        });
+        if (!drawError && Array.isArray(drawn)) return { ...(data as object), questions: drawn } as T;
+        if (drawError) console.warn('[KBZLife LMS] Question bank draw not available, showing all questions:', drawError.message);
+      }
+      return data as T;
     },
     [isAdmin]
   );
@@ -2543,7 +2556,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const saveLicenseQuiz = async (
     match: { chapter_id?: string; lesson_id?: string },
-    data: { title: string; description?: string; passingScore: number; questions: LicenseQuizQuestion[] }
+    data: { title: string; description?: string; passingScore: number; questions: LicenseQuizQuestion[]; questionsPerAttempt?: number }
   ): Promise<boolean> => {
     if (!requireAdmin('configure quizzes')) return false;
     const existing = licenseQuizzes.find((q) =>
@@ -2561,6 +2574,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         passing_score: data.passingScore,
         is_published: true,
         questions: normalizeQuestions(data.questions, quizId),
+        ...(data.questionsPerAttempt ? { questions_per_attempt: data.questionsPerAttempt } : {}),
       },
       'lic_quiz'
     );
@@ -2573,7 +2587,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const saveChapterQuiz = async (
     chapterId: string,
-    data: { title: string; description?: string; passingScore: number; questions: LicenseQuizQuestion[] }
+    data: { title: string; description?: string; passingScore: number; questions: LicenseQuizQuestion[]; questionsPerAttempt?: number }
   ): Promise<boolean> => saveLicenseQuiz({ chapter_id: chapterId }, data);
 
   const saveQuiz = async (
@@ -2798,6 +2812,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       max_attempts?: number;
       is_published: boolean;
       questions: ProductQuizQuestion[];
+      questions_per_attempt?: number;
     }
   ): Promise<boolean> => {
     if (!requireAdmin('configure product quizzes')) return false;
@@ -2815,6 +2830,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         max_attempts: data.max_attempts ?? 0,
         is_published: data.is_published,
         questions: normalizeQuestions(data.questions, quizId),
+        ...(data.questions_per_attempt ? { questions_per_attempt: data.questions_per_attempt } : {}),
       },
       'prod_quiz'
     );
@@ -2927,6 +2943,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     passing_score: number;
     is_published?: boolean;
     questions: SkillQuizQuestion[];
+    questions_per_attempt?: number;
   }): Promise<boolean> => {
     if (!requireAdmin('configure skill quizzes')) return false;
     const existing = skillQuizzes.find(
@@ -2945,6 +2962,7 @@ export const LmsProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         passing_score: data.passing_score,
         is_published: data.is_published ?? true,
         questions: normalizeQuestions(data.questions, quizId),
+        ...(data.questions_per_attempt ? { questions_per_attempt: data.questions_per_attempt } : {}),
       },
       'skill_quiz'
     );
