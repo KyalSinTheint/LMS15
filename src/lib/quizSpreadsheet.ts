@@ -10,6 +10,7 @@
  * Without a header row the columns are read in the order above.
  */
 import { readZipEntry } from './docxText';
+import { unicodeTexts } from './zawgyi';
 import type { GeneratedQuestionItem } from '../components/admin/PdfQuizGeneratorModal';
 
 export const isSpreadsheet = (file: File) => /\.(xlsx|xlsm|csv|xls)$/i.test(file.name);
@@ -129,8 +130,13 @@ export async function readSpreadsheetRows(file: File): Promise<string[][]> {
   if (/\.xls$/i.test(file.name)) {
     throw new Error('Old Excel files (.xls) cannot be read. In Excel choose File → Save As → "Excel Workbook (.xlsx)" and upload that file.');
   }
-  if (/\.csv$/i.test(file.name)) return parseCsv(await file.text());
-  return readXlsx(file);
+  const rows = /\.csv$/i.test(file.name) ? parseCsv(await file.text()) : await readXlsx(file);
+  // Zawgyi-font Myanmar text → Unicode
+  const flat = rows.flat();
+  const { texts, converted } = unicodeTexts(flat);
+  if (!converted) return rows;
+  let i = 0;
+  return rows.map((r) => r.map(() => texts[i++]));
 }
 
 // ---------------------------------------------------------------------------
@@ -146,14 +152,25 @@ function headerKind(h: string): { kind: Col; option?: number } {
   if (/explan|reason|rationale|ရှင်းလင်း/.test(t)) return { kind: 'explanation' };
   if (/correct|answer|key|အဖြေ/.test(t)) return { kind: 'answer' };
   if (/question|မေးခွန်း/.test(t)) return { kind: 'question' };
-  const m = t.match(/^(?:option|choice|opt\.?|ans(?:wer)?\s*option)?\s*[\s_-]*([a-f]|[1-6])\)?$/);
-  if (m) return { kind: 'option', option: /[a-f]/.test(m[1]) ? m[1].charCodeAt(0) - 97 : Number(m[1]) - 1 };
+  const m = t.match(/^(?:option|choice|opt\.?|ans(?:wer)?\s*option|ရွေးချယ်(?:စရာ|ရန်)?)?\s*[\s_-]*[(（]?([a-fကခဂဃငစ]|[1-6၁-၆])[)）]?$/);
+  if (m) return { kind: 'option', option: /[1-6၁-၆]/.test(m[1]) ? digitValue(m[1]) - 1 : letterIndex(m[1]) };
   return { kind: null };
 }
 
-const OPTION_LETTER = /^\(?([A-Fa-f])\s*[.)\]:\-]\s*/;
+/** Option letters: A–F, or the Myanmar က ခ ဂ ဃ င စ */
+export const LETTERS = 'A-Fa-fကခဂဃငစ';
+const MM_LETTERS = 'ကခဂဃငစ';
+/** 0 for A / a / က, 1 for B / ခ … */
+export const letterIndex = (ch: string) => {
+  const mm = MM_LETTERS.indexOf(ch);
+  return mm >= 0 ? mm : ch.toUpperCase().charCodeAt(0) - 65;
+};
+/** "2" or the Myanmar "၂" → 2 */
+export const digitValue = (t: string) => Number(t.replace(/[၀-၉]/g, (d) => String(d.charCodeAt(0) - 0x1040)));
+
+const OPTION_LETTER = new RegExp(`^[(（]?([${LETTERS}])\\s*[.)）\\]:\\-။၊]\\s*`);
 const stripOptionLetter = (t: string) => t.replace(OPTION_LETTER, '').trim();
-const loose = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+const loose = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{M}\p{N}]+/gu, ' ').trim();
 
 /**
  * Which option is correct? Accepts "B", "(b)", "b)", "2", "B. Motor Insurance",
@@ -163,7 +180,10 @@ const loose = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').tr
 export function matchAnswer(answerRaw: string, all: string[]): number {
   const options = all.filter(Boolean);
   const toFiltered = (i: number) => (i >= 0 && i < all.length && all[i] ? all.slice(0, i).filter(Boolean).length : -1);
-  const answer = answerRaw.replace(/^(?:correct\s+)?(?:answer|ans)\s*(?:is)?\s*[:.\-–=]?\s*/i, '').trim();
+  const answer = answerRaw
+    .replace(/^(?:correct\s+)?(?:answer|ans)\s*(?:is)?\s*[:.\-–=]?\s*/i, '')
+    .replace(/^(?:အဖြေမှန်|အဖြေ)\s*[:.\-–=။]?\s*/, '')
+    .trim();
   if (!answer) return -1;
 
   // The full text of an option ("Motor Insurance")
@@ -171,19 +191,19 @@ export function matchAnswer(answerRaw: string, all: string[]): number {
   if (byText >= 0) return byText;
 
   // A letter, alone or followed by the option text ("D", "(d)", "D.Motor Insurance")
-  const m = answer.match(/^\(?([A-Fa-f])\)?(?:\s*[.)\]:\-]\s*|\s+|$)(.*)$/);
+  const m = answer.match(new RegExp(`^[(（]?([${LETTERS}])[)）]?(?:\\s*[.)\\]:\\-။၊]\\s*|\\s+|$)(.*)$`));
   if (m) {
     const rest = m[2].trim();
     if (rest) {
       const t = options.findIndex((o) => loose(o) === loose(rest));
       if (t >= 0) return t; // the text decides when letter and text disagree
     }
-    const byLetter = toFiltered(m[1].toUpperCase().charCodeAt(0) - 65);
+    const byLetter = toFiltered(letterIndex(m[1]));
     if (byLetter >= 0) return byLetter;
   }
 
   // A number 1–6
-  if (/^[1-6]$/.test(answer)) return toFiltered(Number(answer) - 1);
+  if (/^[1-6၁-၆]$/.test(answer)) return toFiltered(digitValue(answer) - 1);
 
   // The option text with small differences (extra words, punctuation)
   const a = loose(answer);
