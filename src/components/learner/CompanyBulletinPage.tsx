@@ -19,8 +19,6 @@ import {
 import { useLms } from '../../context/LmsContext';
 import { CompanyBulletinItem, BulletinCategory } from '../../types/lms';
 import { PdfViewerModal } from '../common/PdfViewerModal';
-import { BulletinArt } from '../../lib/bulletinArt';
-import { resolveBulletinVisual } from '../../lib/bulletinScenes';
 
 // Helper for formatting time ago
 function formatTimeAgo(isoString: string): string {
@@ -47,106 +45,6 @@ function formatTimeAgo(isoString: string): string {
     return 'Recently';
   }
 }
-
-/** One bulletin: a picture that matches the title on top (or on the left when featured), then the details. */
-const BulletinCard: React.FC<{
-  bulletin: CompanyBulletinItem;
-  featured?: boolean;
-  onOpen: (b: CompanyBulletinItem) => void;
-}> = ({ bulletin, featured = false, onOpen }) => {
-  const { scene, subject } = resolveBulletinVisual(bulletin);
-  // Category first, then the bulletin's own tags, without repeats
-  const tags = [...new Set([bulletin.category, ...(bulletin.tags || [])].filter(Boolean).map((t) => t.toLowerCase()))];
-  return (
-    <article
-      onClick={() => onOpen(bulletin)}
-      className={`group bg-white dark:bg-[#10243C] rounded-3xl border border-slate-100 dark:border-[#1E426D] shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden cursor-pointer text-left flex ${
-        featured ? 'flex-col md:flex-row' : 'flex-col'
-      }`}
-    >
-      {/* Picture */}
-      <div className={`relative isolate overflow-hidden shrink-0 ${featured ? 'h-48 sm:h-56 md:h-auto md:w-[42%] md:min-h-[280px]' : 'h-40'}`}>
-        <BulletinArt scene={scene} subject={subject} className="-z-10 transition-transform duration-500 group-hover:scale-[1.04]" />
-        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
-        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
-          <span className="px-2.5 py-1 rounded-full bg-white/90 text-[#0f3b57] text-[10px] font-black uppercase tracking-wider shadow-sm">
-            {bulletin.category}
-          </span>
-          {featured && (
-            <span className="px-2.5 py-1 rounded-full bg-sky-200 text-[#0f3b57] text-[10px] font-black uppercase tracking-wider shadow-sm">
-              Latest
-            </span>
-          )}
-          {bulletin.priority && bulletin.priority !== 'normal' && (
-            <span className="px-2.5 py-1 rounded-full bg-red-500 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
-              {bulletin.priority}
-            </span>
-          )}
-        </div>
-        <span className="absolute bottom-3 left-3 text-[11px] font-semibold text-white/90 flex items-center gap-1">
-          <Calendar className="w-3.5 h-3.5" /> {formatTimeAgo(bulletin.published_at)}
-        </span>
-      </div>
-
-      {/* Details */}
-      <div className={`flex-1 flex flex-col ${featured ? 'p-6 sm:p-8' : 'p-5'}`}>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
-          {bulletin.verified !== false && (
-            <span className="flex items-center gap-1 font-semibold text-[#25A9D2]">
-              <CheckCircle2 className="w-3.5 h-3.5 fill-[#25A9D2] text-white shrink-0" />
-              Verified Notice
-            </span>
-          )}
-          {bulletin.department && (
-            <span className="flex items-center gap-1 text-slate-400 dark:text-slate-500">
-              <Building2 className="w-3.5 h-3.5" /> {bulletin.department}
-            </span>
-          )}
-        </div>
-        <h3
-          className={`mt-2 font-extrabold text-slate-900 dark:text-slate-100 group-hover:text-[#176B98] dark:group-hover:text-[#38BDF8] transition-colors leading-snug ${
-            featured ? 'text-xl sm:text-2xl line-clamp-3' : 'text-base line-clamp-2'
-          }`}
-        >
-          {bulletin.title}
-        </h3>
-        <p
-          className={`mt-2 text-slate-600 dark:text-slate-300 leading-relaxed ${
-            featured ? 'text-sm line-clamp-4' : 'text-xs sm:text-[13px] line-clamp-3'
-          }`}
-        >
-          {bulletin.description}
-        </p>
-
-        <div className="mt-auto pt-4 flex flex-wrap items-end justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {tags.slice(0, featured ? 5 : 3).map((tag, idx) => (
-              <span
-                key={idx}
-                className="inline-flex items-center gap-1 bg-[#F0EFFE] dark:bg-[#1E2545] text-[#7B78B8] dark:text-[#A5B4FC] text-[11px] font-semibold px-2.5 py-0.5 rounded-lg border border-[#E5E3FB] dark:border-[#3730A3] lowercase"
-              >
-                <Tag className="w-3 h-3" />
-                {tag}
-              </span>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpen(bulletin);
-            }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#176B98] hover:bg-[#12567a] text-white text-xs font-bold transition-all cursor-pointer shadow-2xs"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Read</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </button>
-        </div>
-      </div>
-    </article>
-  );
-};
 
 export const CompanyBulletinPage: React.FC = () => {
   const { companyBulletins, currentUser } = useLms();
@@ -183,14 +81,8 @@ export const CompanyBulletinPage: React.FC = () => {
         value: 'Notice',
         count: publishedBulletins.filter((b) => b.category === 'Notice').length,
       },
-      {
-        label: 'Incentives',
-        value: 'Incentive',
-        count: publishedBulletins.filter((b) => b.category === 'Incentive').length,
-      },
     ];
-    // Hide empty categories (except "All")
-    return list.filter((c) => c.value === 'All' || c.count > 0);
+    return list;
   }, [publishedBulletins]);
 
   // Filtered bulletins according to search query and category
@@ -298,7 +190,7 @@ export const CompanyBulletinPage: React.FC = () => {
             3. ANNOUNCEMENT CARDS LIST (Clean Corporate Bulletin Layout)
             ===================================================================== */}
         {filteredBulletins.length === 0 ? (
-          <div className="bg-white dark:bg-[#10243C] rounded-3xl p-12 text-center border border-slate-200/70 dark:border-[#1E426D] shadow-xs space-y-3">
+          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/70 shadow-xs space-y-3">
             <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
               <FileText className="w-7 h-7" />
             </div>
@@ -319,16 +211,95 @@ export const CompanyBulletinPage: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Latest bulletin, shown large */}
-            <BulletinCard bulletin={filteredBulletins[0]} featured onOpen={setActivePdfBulletin} />
-            {filteredBulletins.length > 1 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {filteredBulletins.slice(1).map((bulletin) => (
-                  <BulletinCard key={bulletin.id} bulletin={bulletin} onOpen={setActivePdfBulletin} />
-                ))}
+          <div className="space-y-4 sm:space-y-5">
+            {filteredBulletins.map((bulletin) => (
+              <div
+                key={bulletin.id}
+                onClick={() => setActivePdfBulletin(bulletin)}
+                className="bg-white rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 p-6 sm:p-7 relative group cursor-pointer text-left"
+              >
+                {/* Top Section: Title/Meta + Right Category Indicator */}
+                <div className="flex items-start justify-between gap-4">
+                  {/* Left: Title & Meta */}
+                  <div className="min-w-0 flex-1 space-y-1">
+                    {/* Announcement Title */}
+                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-slate-900 group-hover:text-[#176B98] transition-colors leading-snug line-clamp-2">
+                      {bulletin.title}
+                    </h3>
+
+                    {/* Sub-meta Row: Verified Notice Badge + Time Ago */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs pt-0.5">
+                      {bulletin.verified !== false && (
+                        <span className="flex items-center gap-1 font-semibold text-[#25A9D2]">
+                          <CheckCircle2 className="w-3.5 h-3.5 fill-[#25A9D2] text-white shrink-0" />
+                          <span>Verified Notice</span>
+                        </span>
+                      )}
+
+                      <span className="text-slate-400 font-medium">
+                        {formatTimeAgo(bulletin.published_at)}
+                      </span>
+
+                      {bulletin.department && (
+                        <span className="text-slate-400 hidden sm:inline-block">
+                          • {bulletin.department}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Section: Highlighted Category (No Reference Numbers) */}
+                  <div className="shrink-0 text-right space-y-0.5">
+                    <div className="text-xs sm:text-sm font-extrabold text-slate-800 tracking-tight">
+                      {bulletin.category}
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-medium">
+                      Official Notice
+                    </div>
+                  </div>
+                </div>
+
+                {/* Middle Section: Short Multi-line Description */}
+                <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mt-4 line-clamp-2 sm:line-clamp-3">
+                  {bulletin.description}
+                </p>
+
+                {/* Bottom Section: Tag Pills + View PDF Action Button */}
+                <div className="mt-5 pt-2 flex flex-wrap items-center justify-between gap-3">
+                  {/* Lavender / Periwinkle Tag Pills */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Default category tag */}
+                    <span className="bg-[#F0EFFE] dark:bg-[#1E2545] text-[#7B78B8] dark:text-[#A5B4FC] text-xs font-semibold px-3 py-1 rounded-xl border border-[#E5E3FB] dark:border-[#3730A3] lowercase">
+                      {bulletin.category.toLowerCase()}
+                    </span>
+
+                    {/* Additional tags */}
+                    {bulletin.tags &&
+                      bulletin.tags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-[#F0EFFE] dark:bg-[#1E2545] text-[#7B78B8] dark:text-[#A5B4FC] text-xs font-semibold px-3 py-1 rounded-xl border border-[#E5E3FB] dark:border-[#3730A3] lowercase"
+                        >
+                          {tag.toLowerCase()}
+                        </span>
+                      ))}
+                  </div>
+
+                  {/* View Document Button (View-Only, No Download Option) */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActivePdfBulletin(bulletin);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#176B98]/10 hover:bg-[#176B98] text-[#176B98] hover:text-white text-xs font-bold transition-all cursor-pointer shadow-2xs group-hover:bg-[#176B98] group-hover:text-white"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>View Document</span>
+                  </button>
+                </div>
               </div>
-            )}
+            ))}
           </div>
         )}
       </div>
