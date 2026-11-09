@@ -17,7 +17,7 @@ import { ProductKnowledgeItem } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
 import { normalizeProductTheme } from '../../lib/productVisuals';
 import { ProductScene } from '../../lib/productScenes';
-import { Product3D } from '../../lib/product3d';
+import { Product3D } from '../../lib/productArt';
 import { ProductDetailPage } from './ProductDetailPage';
 
 export const ProductKnowledgeHubPage: React.FC<{
@@ -44,6 +44,11 @@ export const ProductKnowledgeHubPage: React.FC<{
   }, [products]);
 
   // Filtered products list
+  const openProduct = (id: string) => {
+    setSelectedProductId(id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchCat =
@@ -256,7 +261,17 @@ export const ProductKnowledgeHubPage: React.FC<{
             return (
               <div
                 key={product.id}
-                className={`${theme.bg} rounded-[28px] p-6 sm:p-7 shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between min-h-[340px] relative overflow-hidden group isolate`}
+                role="button"
+                tabIndex={0}
+                aria-label={`Open ${product.title}`}
+                onClick={() => openProduct(product.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openProduct(product.id);
+                  }
+                }}
+                className={`cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-300 ${theme.bg} rounded-[28px] p-6 sm:p-7 shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between min-h-[340px] relative overflow-hidden group isolate`}
               >
                 {/* Clean brand background */}
                 <ProductScene product={product} className="-z-10" />
@@ -304,9 +319,9 @@ export const ProductKnowledgeHubPage: React.FC<{
                 <div className="pt-6 flex items-end justify-between gap-4 z-10">
                   {/* Explore Product Button */}
                   <button
-                    onClick={() => {
-                      setSelectedProductId(product.id);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openProduct(product.id);
                     }}
                     className={`px-5 py-2.5 rounded-2xl ${theme.btnBg} font-black text-xs sm:text-sm tracking-wide shadow-md transition-all transform active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0`}
                   >
