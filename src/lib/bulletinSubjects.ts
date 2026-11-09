@@ -24,18 +24,18 @@ export interface Palette {
 }
 
 export const SUBJECT_PALETTES: Record<string, Palette> = {
-  sunny: { from: '#f7b733', to: '#fc4a1a', accent: '#fff3b0' },
-  love: { from: '#ff5f6d', to: '#c2185b', accent: '#ffd6e0' },
-  fresh: { from: '#11998e', to: '#38ef7d', accent: '#fff3b0' },
-  ocean: { from: '#0061ff', to: '#60efff', accent: '#ffe066' },
-  tech: { from: '#4776e6', to: '#8e54e9', accent: '#7ee8fa' },
-  night: { from: '#0f2027', to: '#2c5364', accent: '#7ee8fa' },
-  royal: { from: '#3a1c71', to: '#176B98', accent: '#7ee8fa' },
-  gold: { from: '#f7971e', to: '#c2410c', accent: '#fff3b0' },
-  party: { from: '#ee0979', to: '#7f00ff', accent: '#ffe66d' },
-  care: { from: '#00b09b', to: '#0f766e', accent: '#ff6b81' },
-  fire: { from: '#ff7a18', to: '#af002d', accent: '#ffd166' },
-  sky: { from: '#2193b0', to: '#6dd5ed', accent: '#ffd166' },
+  sunny: { from: '#8a5b2e', to: '#3e2a1a', accent: '#e8c27a' },
+  love: { from: '#7a3346', to: '#371b26', accent: '#e9b4c2' },
+  fresh: { from: '#2f6a55', to: '#163329', accent: '#a9d6c3' },
+  ocean: { from: '#1f5279', to: '#0e2638', accent: '#9fc8e6' },
+  tech: { from: '#3a4a78', to: '#1a2140', accent: '#b1bde6' },
+  night: { from: '#334455', to: '#141c25', accent: '#a8bccf' },
+  royal: { from: '#176b98', to: '#0d2a40', accent: '#9fd0ec' },
+  gold: { from: '#86682e', to: '#3a2e17', accent: '#e8c87a' },
+  party: { from: '#5c3c6c', to: '#261a33', accent: '#d6bde6' },
+  care: { from: '#256663', to: '#11302f', accent: '#a6d8d3' },
+  fire: { from: '#86412f', to: '#371a15', accent: '#eeb59f' },
+  sky: { from: '#2e6380', to: '#14303e', accent: '#a9d3e6' },
 };
 
 export interface Subject {
