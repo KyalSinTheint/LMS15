@@ -33,6 +33,7 @@ import { PdfViewerModal } from '../common/PdfViewerModal';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
 import { BulletinArt } from '../../lib/bulletinArt';
 import { autoBulletinScene, BULLETIN_ART_OPTIONS } from '../../lib/bulletinScenes';
+import { findSubject } from '../../lib/bulletinSubjects';
 import type { SceneKey } from '../../lib/productScenes';
 
 const AVAILABLE_SAMPLE_PDFS = [
@@ -653,18 +654,15 @@ export const CompanyBulletinManagement: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Card Picture</label>
                 <p className="text-[11px] text-slate-500 mb-2">
-                  "Auto" picks a picture from the title, tags and category. Choose one if it doesn't match.
+                  "Auto" draws what the title is about (e.g. Smile Campaign → smiling face, Blood Donation → blood drop). Choose a picture only if it doesn't match.
                 </p>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {[{ key: '', label: 'Auto' }, ...BULLETIN_ART_OPTIONS].map((o) => {
+                    const formTags = formTagsString.split(',').map((t) => t.trim()).filter(Boolean);
                     const scene = o.key
                       ? (o.key as SceneKey)
-                      : autoBulletinScene({
-                          title: formTitle,
-                          description: formDescription,
-                          category: formCategory,
-                          tags: formTagsString.split(',').map((t) => t.trim()).filter(Boolean),
-                        });
+                      : autoBulletinScene({ title: formTitle, description: formDescription, category: formCategory, tags: formTags });
+                    const subject = o.key ? null : findSubject(formTitle, formTags, formDescription);
                     const active = formArt === o.key;
                     return (
                       <button
@@ -677,10 +675,10 @@ export const CompanyBulletinManagement: React.FC = () => {
                         title={o.label}
                       >
                         <div className="relative h-14">
-                          <BulletinArt scene={scene} />
+                          <BulletinArt scene={scene} subject={subject} />
                         </div>
                         <p className={`px-1.5 py-1 text-[10px] font-bold truncate ${active ? 'text-[#176B98]' : 'text-slate-600'}`}>
-                          {o.key ? o.label : `Auto (${BULLETIN_ART_OPTIONS.find((x) => x.key === scene)?.label.split(' /')[0] || 'Notice'})`}
+                          {o.key ? o.label : `Auto (${subject?.label || BULLETIN_ART_OPTIONS.find((x) => x.key === scene)?.label.split(' /')[0] || 'Notice'})`}
                         </p>
                       </button>
                     );

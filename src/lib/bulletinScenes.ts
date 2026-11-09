@@ -5,6 +5,7 @@
  */
 import type { CompanyBulletinItem } from '../types/lms';
 import type { SceneKey } from './productScenes';
+import { findSubject, type Subject } from './bulletinSubjects';
 
 const RULES: [RegExp, SceneKey][] = [
   [/award|winner|top performer|champion|reward|incentive|bonus|prize|recogni|congrat|ဆု/i, 'award'],
@@ -60,4 +61,17 @@ export function autoBulletinScene(b: Pick<CompanyBulletinItem, 'title' | 'descri
   if (byTitle) return byTitle;
   if (BY_CATEGORY[b.category]) return BY_CATEGORY[b.category];
   return RULES.find(([re]) => re.test(b.description || ''))?.[1] || 'notice';
+}
+
+/**
+ * What to draw for a bulletin: the admin's chosen picture, otherwise the
+ * subject named in the title ("Smile Campaign" → smiling face), otherwise a
+ * picture for its category.
+ */
+export function resolveBulletinVisual(
+  b: Pick<CompanyBulletinItem, 'title' | 'description' | 'category' | 'tags'> & { color_theme?: string | null }
+): { scene: SceneKey; subject: Subject | null } {
+  if (b.color_theme && ART_KEYS.has(b.color_theme)) return { scene: b.color_theme as SceneKey, subject: null };
+  const subject = findSubject(b.title || '', b.tags || [], b.description || '');
+  return { scene: autoBulletinScene(b), subject };
 }

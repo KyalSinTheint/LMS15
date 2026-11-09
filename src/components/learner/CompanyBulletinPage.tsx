@@ -20,7 +20,7 @@ import { useLms } from '../../context/LmsContext';
 import { CompanyBulletinItem, BulletinCategory } from '../../types/lms';
 import { PdfViewerModal } from '../common/PdfViewerModal';
 import { BulletinArt } from '../../lib/bulletinArt';
-import { resolveBulletinScene } from '../../lib/bulletinScenes';
+import { resolveBulletinVisual } from '../../lib/bulletinScenes';
 
 // Helper for formatting time ago
 function formatTimeAgo(isoString: string): string {
@@ -54,7 +54,7 @@ const BulletinCard: React.FC<{
   featured?: boolean;
   onOpen: (b: CompanyBulletinItem) => void;
 }> = ({ bulletin, featured = false, onOpen }) => {
-  const scene = resolveBulletinScene(bulletin);
+  const { scene, subject } = resolveBulletinVisual(bulletin);
   // Category first, then the bulletin's own tags, without repeats
   const tags = [...new Set([bulletin.category, ...(bulletin.tags || [])].filter(Boolean).map((t) => t.toLowerCase()))];
   return (
@@ -66,7 +66,7 @@ const BulletinCard: React.FC<{
     >
       {/* Picture */}
       <div className={`relative isolate overflow-hidden shrink-0 ${featured ? 'h-48 sm:h-56 md:h-auto md:w-[42%] md:min-h-[280px]' : 'h-40'}`}>
-        <BulletinArt scene={scene} className="-z-10 transition-transform duration-500 group-hover:scale-[1.04]" />
+        <BulletinArt scene={scene} subject={subject} className="-z-10 transition-transform duration-500 group-hover:scale-[1.04]" />
         <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
         <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
           <span className="px-2.5 py-1 rounded-full bg-white/90 text-[#0f3b57] text-[10px] font-black uppercase tracking-wider shadow-sm">

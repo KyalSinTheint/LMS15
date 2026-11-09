@@ -5,6 +5,8 @@
  */
 import React from 'react';
 import type { SceneKey } from './productScenes';
+import type { Subject } from './bulletinSubjects';
+import { SUBJECT_PALETTES } from './bulletinSubjects';
 
 interface Palette {
   from: string;
@@ -163,9 +165,13 @@ const iconKey = (scene: SceneKey) => (ICONS[scene] ? scene : scene === 'home' ||
 let counter = 0;
 
 /** Sharp modern illustration filling its parent (parent: relative, sized). */
-export const BulletinArt: React.FC<{ scene: SceneKey; className?: string }> = ({ scene, className = '' }) => {
+export const BulletinArt: React.FC<{ scene?: SceneKey; subject?: Subject | null; className?: string }> = ({
+  scene = 'notice',
+  subject,
+  className = '',
+}) => {
   const key = iconKey(scene);
-  const p = PALETTES[key] || PALETTES.notice;
+  const p = subject ? SUBJECT_PALETTES[subject.palette] : PALETTES[key] || PALETTES.notice;
   const [id] = React.useState(() => `ba${++counter}`);
   return (
     <svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice" className={`absolute inset-0 w-full h-full ${className}`} aria-hidden="true">
@@ -213,9 +219,22 @@ export const BulletinArt: React.FC<{ scene: SceneKey; className?: string }> = ({
       <g filter={`url(#${id}-shadow)`}>
         <rect x="216" y="38" width="168" height="164" rx="34" fill={`url(#${id}-glass)`} stroke="#ffffff" strokeOpacity="0.45" strokeWidth="1.5" />
       </g>
-      <g transform="translate(300 122) scale(0.98)" filter={`url(#${id}-shadow)`}>
-        {ICONS[key](p, id)}
-      </g>
+      {subject ? (
+        <g filter={`url(#${id}-shadow)`}>
+          <circle cx="300" cy="120" r="56" fill="#ffffff" opacity="0.95" />
+          <subject.Icon x={256} y={76} width={88} height={88} color={p.to} strokeWidth={1.9} />
+          {subject.Accent && (
+            <>
+              <circle cx="352" cy="66" r="22" fill={p.accent} stroke="#ffffff" strokeWidth="3" />
+              <subject.Accent x={340} y={54} width={24} height={24} color={p.to} strokeWidth={2.4} />
+            </>
+          )}
+        </g>
+      ) : (
+        <g transform="translate(300 122) scale(0.98)" filter={`url(#${id}-shadow)`}>
+          {ICONS[key](p, id)}
+        </g>
+      )}
     </svg>
   );
 };
