@@ -18,7 +18,13 @@ export type SceneKey =
   | 'travel'
   | 'home'
   | 'city'
-  | 'shield';
+  | 'shield'
+  | 'campaign'
+  | 'announce'
+  | 'policy'
+  | 'notice'
+  | 'award'
+  | 'celebrate';
 
 export const SCENE_LABELS: Record<SceneKey, string> = {
   universe: 'Universe & Earth',
@@ -31,6 +37,12 @@ export const SCENE_LABELS: Record<SceneKey, string> = {
   home: 'Home & property',
   city: 'Business city',
   shield: 'Protection',
+  campaign: 'Campaign',
+  announce: 'Announcement',
+  policy: 'Policy & compliance',
+  notice: 'Notice',
+  award: 'Award & incentive',
+  celebrate: 'Celebration',
 };
 
 type ProductLike = Pick<ProductKnowledgeItem, 'title' | 'subtitle' | 'category'> & { icon_key?: string | null };
@@ -336,15 +348,159 @@ const SCENES: Record<SceneKey, () => React.ReactElement> = {
       <path d="M272 135 l20 20 l38 -42" stroke="#176B98" strokeWidth="10" fill="none" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
+  campaign: () => (
+    <>
+      <defs>
+        <linearGradient id="cp-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#7c2d12" />
+          <stop offset="0.5" stopColor="#ea580c" />
+          <stop offset="1" stopColor="#facc15" />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="300" fill="url(#cp-bg)" />
+      {dots(60, 13).map((d, i) => (
+        <rect key={i} x={d.x} y={d.y} width={4 + d.s * 6} height={8 + d.s * 6} rx="1.5" fill={['#fef08a', '#ffffff', '#38bdf8', '#f472b6'][i % 4]} opacity={0.55 + d.s * 0.4} transform={`rotate(${d.s * 180} ${d.x} ${d.y})`} />
+      ))}
+      {/* target with arrow */}
+      <circle cx="285" cy="160" r="78" fill="#fff7ed" />
+      <circle cx="285" cy="160" r="56" fill="#dc2626" />
+      <circle cx="285" cy="160" r="36" fill="#fff7ed" />
+      <circle cx="285" cy="160" r="16" fill="#dc2626" />
+      <line x1="285" y1="160" x2="365" y2="90" stroke="#1e293b" strokeWidth="6" strokeLinecap="round" />
+      <path d="M365 90 l18 -6 l-6 18z M365 90 l8 -20 l6 12z" fill="#1e293b" />
+      <polyline points="30,250 90,215 140,228 200,170" fill="none" stroke="#ffffff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
+    </>
+  ),
+  announce: () => (
+    <>
+      <defs>
+        <linearGradient id="an-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#0c4a6e" />
+          <stop offset="1" stopColor="#0ea5e9" />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="300" fill="url(#an-bg)" />
+      {[0, 1, 2].map((i) => (
+        <path key={i} d={`M${300 + i * 22} ${110 - i * 18} q${30 + i * 8} ${40 + i * 18} 0 ${80 + i * 36}`} fill="none" stroke="#e0f2fe" strokeWidth="6" strokeLinecap="round" opacity={0.8 - i * 0.2} />
+      ))}
+      {/* megaphone */}
+      <path d="M110 125 L270 70 V230 L110 175z" fill="#f8fafc" />
+      <rect x="80" y="122" width="38" height="56" rx="10" fill="#fbbf24" />
+      <path d="M130 178 l18 52 h26 l-14 -46z" fill="#e2e8f0" />
+      <rect x="262" y="66" width="18" height="168" rx="9" fill="#cbd5e1" />
+    </>
+  ),
+  policy: () => (
+    <>
+      <defs>
+        <linearGradient id="po-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#1e1b4b" />
+          <stop offset="1" stopColor="#334155" />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="300" fill="url(#po-bg)" />
+      <g transform="rotate(-6 170 160)">
+        <rect x="95" y="60" width="150" height="190" rx="10" fill="#f8fafc" />
+        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+          <rect key={i} x="115" y={90 + i * 20} width={i === 0 ? 90 : 110 - (i % 3) * 18} height="7" rx="3.5" fill={i === 0 ? '#176B98' : '#cbd5e1'} />
+        ))}
+      </g>
+      <path d="M300 95 L350 115 V160 C350 195 326 218 300 230 C274 218 250 195 250 160 V115z" fill="#38bdf8" />
+      <path d="M278 160 l16 16 l30 -34" stroke="#0f172a" strokeWidth="9" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  notice: () => (
+    <>
+      <defs>
+        <linearGradient id="no-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#134e4a" />
+          <stop offset="1" stopColor="#14b8a6" />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="300" fill="url(#no-bg)" />
+      {dots(14, 17).map((d, i) => (
+        <circle key={i} cx={d.x} cy={d.y} r={8 + d.s * 26} fill="#ccfbf1" opacity={0.06 + d.s * 0.12} />
+      ))}
+      {/* bell */}
+      <path d="M200 60 c-46 0 -70 36 -70 80 v40 l-22 30 h184 l-22 -30 v-40 c0 -44 -24 -80 -70 -80z" fill="#fef3c7" />
+      <circle cx="200" cy="232" r="18" fill="#fbbf24" />
+      <circle cx="200" cy="52" r="10" fill="#fef3c7" />
+      <circle cx="285" cy="80" r="22" fill="#ef4444" />
+      <text x="285" y="88" textAnchor="middle" fontSize="24" fontWeight="900" fill="#fff" fontFamily="Arial">!</text>
+    </>
+  ),
+  award: () => (
+    <>
+      <defs>
+        <linearGradient id="aw-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#1f2937" />
+          <stop offset="1" stopColor="#92400e" />
+        </linearGradient>
+        <linearGradient id="aw-gold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fde68a" />
+          <stop offset="1" stopColor="#d97706" />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="300" fill="url(#aw-bg)" />
+      {dots(40, 23).map((d, i) => (
+        <circle key={i} cx={d.x} cy={d.y} r={1 + d.s * 2.5} fill="#fde68a" opacity={0.4 + d.s * 0.6} />
+      ))}
+      {/* trophy */}
+      <path d="M150 60 h100 v40 c0 40 -22 66 -50 70 c-28 -4 -50 -30 -50 -70z" fill="url(#aw-gold)" />
+      <path d="M150 75 h-28 c0 34 16 50 34 52 M250 75 h28 c0 34 -16 50 -34 52" fill="none" stroke="#f59e0b" strokeWidth="8" />
+      <rect x="188" y="168" width="24" height="40" fill="#d97706" />
+      <rect x="160" y="206" width="80" height="22" rx="4" fill="url(#aw-gold)" />
+      <path d="M200 82 l7 15 l16 2 l-12 11 l3 16 l-14 -8 l-14 8 l3 -16 l-12 -11 l16 -2z" fill="#fff7ed" />
+    </>
+  ),
+  celebrate: () => (
+    <>
+      <defs>
+        <linearGradient id="ce-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#581c87" />
+          <stop offset="1" stopColor="#db2777" />
+        </linearGradient>
+      </defs>
+      <rect width="400" height="300" fill="url(#ce-bg)" />
+      {[
+        [90, 90, '#fde047'],
+        [300, 70, '#38bdf8'],
+        [210, 130, '#f472b6'],
+      ].map(([x, y, c], i) => (
+        <g key={i}>
+          {Array.from({ length: 12 }, (_, k) => {
+            const a = (k / 12) * Math.PI * 2;
+            return <line key={k} x1={Number(x)} y1={Number(y)} x2={Number(x) + Math.cos(a) * 46} y2={Number(y) + Math.sin(a) * 46} stroke={String(c)} strokeWidth="4" strokeLinecap="round" opacity="0.85" />;
+          })}
+          <circle cx={Number(x)} cy={Number(y)} r="7" fill="#fff" />
+        </g>
+      ))}
+      {[[70, 230, '#fde047'], [150, 250, '#38bdf8'], [330, 220, '#a7f3d0']].map(([x, y, c], i) => (
+        <g key={i}>
+          <ellipse cx={Number(x)} cy={Number(y)} rx="24" ry="30" fill={String(c)} />
+          <path d={`M${x} ${Number(y) + 30} q6 20 -4 40`} stroke="#fff" strokeWidth="2" fill="none" />
+        </g>
+      ))}
+    </>
+  ),
 };
 
 /**
  * Full-size blurred picture for the back of a product card. Put it as the
  * first child of a `relative overflow-hidden` element.
  */
-export const ProductScene: React.FC<{ product: ProductLike; blur?: number; className?: string }> = ({ product, blur = 5, className = '' }) => {
-  const key = resolveProductScene(product);
-  const Scene = SCENES[key];
+export const ProductScene: React.FC<{ product: ProductLike; blur?: number; className?: string }> = ({ product, blur = 5, className = '' }) => (
+  <SceneBackground scene={resolveProductScene(product)} blur={blur} className={className} />
+);
+
+/** A blurred scene by name (used by product cards and Company Bulletin). */
+export const SceneBackground: React.FC<{ scene: SceneKey; blur?: number; className?: string; overlay?: boolean }> = ({
+  scene,
+  blur = 5,
+  className = '',
+  overlay = true,
+}) => {
+  const Scene = SCENES[scene] || SCENES.shield;
   return (
     <div className={`absolute inset-0 pointer-events-none ${className}`} aria-hidden="true">
       <svg
@@ -356,7 +512,7 @@ export const ProductScene: React.FC<{ product: ProductLike; blur?: number; class
         <Scene />
       </svg>
       {/* keeps the white text readable */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-black/20" />
+      {overlay && <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-black/20" />}
     </div>
   );
 };
