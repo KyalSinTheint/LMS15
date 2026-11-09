@@ -1,104 +1,71 @@
 /**
- * Clean, modern illustrations for Company Bulletin cards (no blur):
- * a deep muted gradient, fine line texture, a faint watermark of the
- * subject and a coloured line icon on a white badge. Original SVG artwork.
+ * Company Bulletin pictures in the same glossy 3D style as the products:
+ * a clean brand-blue background with a 3D illustration of what the bulletin
+ * is about (Smile Campaign → smiling face, Blood Donation → blood drop …).
+ * Subjects without their own illustration get their icon as a raised 3D
+ * clay icon on a tile. Original SVG artwork.
  */
 import React from 'react';
-import {
-  Bell, Building2, FileText, GraduationCap, HeartPulse, Megaphone, PartyPopper,
-  Plane, ShieldCheck, Target, TrendingUp, Trophy, type LucideIcon,
-} from 'lucide-react';
 import type { SceneKey } from './productScenes';
 import type { Subject } from './bulletinSubjects';
-import { SUBJECT_PALETTES } from './bulletinSubjects';
+import { Product3DArt } from './product3d';
 
-interface Palette {
-  from: string;
-  to: string;
-  accent: string;
-}
-
-const PALETTES: Record<string, Palette> = {
-  campaign: SUBJECT_PALETTES.fire,
-  policy: SUBJECT_PALETTES.royal,
-  announce: SUBJECT_PALETTES.ocean,
-  notice: SUBJECT_PALETTES.care,
-  award: SUBJECT_PALETTES.gold,
-  celebrate: SUBJECT_PALETTES.party,
-  education: SUBJECT_PALETTES.tech,
-  health: SUBJECT_PALETTES.care,
-  savings: SUBJECT_PALETTES.fresh,
-  city: SUBJECT_PALETTES.night,
-  travel: SUBJECT_PALETTES.sky,
-  shield: SUBJECT_PALETTES.royal,
+/** Bulletin subject → 3D illustration. */
+const SUBJECT_ART: Record<string, string> = {
+  smile: 'smile', laugh: 'smile',
+  love: 'heartcare', thanks: 'protect', charity: 'protect', support: 'protect',
+  blood: 'blood',
+  nature: 'tree', sprout: 'tree', flower: 'tree',
+  birthday: 'cake',
+  megaphone: 'megaphone', launch: 'megaphone',
+  trophy: 'trophy', award: 'trophy', medal: 'trophy',
+  bell: 'bell',
+  calendar: 'calendar', holiday: 'calendar', time: 'calendar',
+  app: 'phone', chat: 'phone',
+  security: 'lock',
+  gift: 'gift', bonus: 'gift', christmas: 'gift', newyear: 'gift', festival: 'gift',
+  target: 'target', growth: 'target',
+  health: 'health', activity: 'heartcare', fitness: 'heartcare', mind: 'heartcare',
+  hospital: 'hospital', medicine: 'medicine', vaccine: 'medicine',
+  accident: 'accident',
+  rain: 'rainy', umbrella: 'rainy', thingyan: 'rainy',
+  family: 'family', baby: 'family',
+  team: 'group', partner: 'group', welcome: 'group', job: 'group',
+  money: 'savings', savings: 'savings', discount: 'wallet', shopping: 'wallet', card: 'wallet', premium: 'wallet', claim: 'document',
+  policy: 'document', law: 'document', tax: 'document',
+  graduation: 'education', training: 'education', reading: 'education',
+  travel: 'plane', ship: 'plane',
+  car: 'travel', bike: 'travel', bus: 'travel', truck: 'travel',
+  home: 'home', fire: 'home',
+  office: 'city', store: 'city',
+  globe: 'universe',
 };
 
-const SCENE_ICONS: Record<string, LucideIcon> = {
-  campaign: Target,
-  policy: FileText,
-  announce: Megaphone,
-  notice: Bell,
-  award: Trophy,
-  celebrate: PartyPopper,
-  education: GraduationCap,
-  health: HeartPulse,
-  savings: TrendingUp,
-  city: Building2,
-  travel: Plane,
-  shield: ShieldCheck,
+/** Admin-chosen / category scene → 3D illustration. */
+const SCENE_ART: Record<string, string> = {
+  campaign: 'target', policy: 'document', announce: 'megaphone', notice: 'bell', award: 'trophy', celebrate: 'gift',
+  education: 'education', health: 'health', savings: 'savings', city: 'city', travel: 'plane', shield: 'shield',
+  home: 'home', universe: 'universe', family: 'family', retirement: 'retirement',
 };
 
-const sceneKey = (scene: SceneKey) =>
-  SCENE_ICONS[scene] ? scene : scene === 'retirement' ? 'savings' : scene === 'home' || scene === 'universe' || scene === 'family' ? 'shield' : 'notice';
-
-let counter = 0;
-
-/** Illustration filling its parent (parent: relative, sized). */
+/** Picture filling its parent (parent: relative, sized). */
 export const BulletinArt: React.FC<{ scene?: SceneKey; subject?: Subject | null; className?: string }> = ({
   scene = 'notice',
   subject,
   className = '',
 }) => {
-  const key = sceneKey(scene);
-  const p = subject ? SUBJECT_PALETTES[subject.palette] : PALETTES[key] || PALETTES.notice;
-  const Icon = subject?.Icon || SCENE_ICONS[key];
-  const [id] = React.useState(() => `ba${++counter}`);
+  const art = subject ? SUBJECT_ART[subject.key] || 'icon' : SCENE_ART[scene] || 'bell';
   return (
-    <svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice" className={`absolute inset-0 w-full h-full ${className}`} aria-hidden="true">
-      <defs>
-        <linearGradient id={`${id}-bg`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor={p.from} />
-          <stop offset="1" stopColor={p.to} />
-        </linearGradient>
-        <pattern id={`${id}-lines`} width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
-          <line x1="0" y1="0" x2="0" y2="14" stroke="#ffffff" strokeOpacity="0.06" strokeWidth="1" />
-        </pattern>
-        <linearGradient id={`${id}-fade`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#000" stopOpacity="0.22" />
-          <stop offset="0.6" stopColor="#000" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-
-      <rect width="400" height="240" fill={`url(#${id}-bg)`} />
-      <rect width="400" height="240" fill={`url(#${id}-lines)`} />
-      {/* faint watermark of the subject */}
-      <Icon x={150} y={-40} width={300} height={300} color="#ffffff" strokeWidth={0.6} opacity={0.12} />
-      {/* darker left side keeps the title readable */}
-      <rect width="400" height="240" fill={`url(#${id}-fade)`} />
-      {/* thin accent rule */}
-      <rect x="0" y="236" width="400" height="4" fill={p.accent} opacity="0.55" />
-
-      {/* the subject: coloured line icon on a crisp white badge */}
-      <circle cx="300" cy="104" r="72" fill="none" stroke="#ffffff" strokeOpacity="0.25" strokeWidth="1.2" />
-      <circle cx="300" cy="108" r="56" fill="#000000" opacity="0.12" />
-      <circle cx="300" cy="104" r="56" fill="#ffffff" />
-      <Icon x={266} y={70} width={68} height={68} color={p.to} strokeWidth={1.7} />
-      {subject?.Accent && (
-        <>
-          <circle cx="347" cy="62" r="18" fill={p.from} stroke="#ffffff" strokeWidth="3" />
-          <subject.Accent x={337} y={52} width={20} height={20} color="#ffffff" strokeWidth={2} />
-        </>
-      )}
-    </svg>
+    <div className={`absolute inset-0 overflow-hidden ${className}`} aria-hidden="true">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1f8ccb] via-[#176b98] to-[#0d3b66]" />
+      <div className="absolute -right-10 -top-16 w-48 h-48 rounded-full bg-white/10" />
+      <div className="absolute -left-10 -bottom-20 w-44 h-44 rounded-full bg-black/10" />
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-sky-300/15" />
+      <Product3DArt
+        scene={art}
+        icon={subject?.Icon}
+        className="absolute left-1/2 top-[54%] -translate-x-1/2 -translate-y-1/2 h-[88%] max-h-56 w-auto aspect-square"
+      />
+    </div>
   );
 };

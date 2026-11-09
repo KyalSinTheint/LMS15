@@ -6,6 +6,7 @@
  * sharp at any size.
  */
 import React from 'react';
+import type { LucideIcon } from 'lucide-react';
 import type { ProductKnowledgeItem } from '../types/lms';
 
 type M = 'blue' | 'light' | 'orange' | 'coral' | 'cream' | 'gold' | 'green' | 'navy' | 'grey' | 'skin';
@@ -350,6 +351,141 @@ const SCENES: Record<string, (g: Draw) => React.ReactNode> = {
       ))}
     </>
   ),
+  // ---- Company Bulletin subjects ----
+  smile: ({ C, S }) => (
+    <>
+      {C(el(120, 116, 72), 'gold', 9)}
+      <path d={el(84, 132, 10, 7)} fill="#ec5a3f" opacity="0.45" />
+      <path d={el(156, 132, 10, 7)} fill="#ec5a3f" opacity="0.45" />
+      {C(el(96, 98, 8, 12), 'navy', 2)}
+      {C(el(144, 98, 8, 12), 'navy', 2)}
+      {S('M86 130Q120 168 154 130', 'navy', 9, 2)}
+      {C(star(198, 50, 13), 'cream', 3, 3)}
+    </>
+  ),
+  blood: ({ C }) => (
+    <>
+      {C('M116 30C92 70 66 102 66 140a50 50 0 0 0 100 0C166 102 140 70 116 30z', 'coral', 9, 4)}
+      <path d="M90 136a26 26 0 0 0 14 26" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="7" fill="none" strokeLinecap="round" />
+      {C(el(170, 172, 26), 'cream', 6)}
+      {C(plus(170, 172, 28, 10), 'coral', 0)}
+    </>
+  ),
+  cake: ({ C }) => (
+    <>
+      {C(el(120, 198, 84, 12), 'cream', 4)}
+      {C(rr(48, 136, 144, 60, 16), 'coral', 7)}
+      {C('M48 150Q48 136 64 136H176Q192 136 192 150Q182 164 171 150Q160 164 149 150Q138 164 127 150Q116 164 105 150Q94 164 83 150Q72 164 61 150Q54 160 48 150z', 'cream', 0)}
+      {C(rr(70, 92, 100, 46, 14), 'light', 6)}
+      {C('M70 104Q70 92 84 92H156Q170 92 170 104Q161 114 152 104Q143 114 134 104Q125 114 116 104Q107 114 98 104Q89 114 80 104Q75 112 70 104z', 'cream', 0)}
+      {[96, 120, 144].map((x, i) => (
+        <React.Fragment key={x}>
+          {C(rr(x - 5, 58 - (i === 1 ? 6 : 0), 10, 36 + (i === 1 ? 6 : 0), 4), i === 1 ? 'blue' : 'orange', 3)}
+          {C(DROP(x, 36 - (i === 1 ? 6 : 0), 0.85), 'gold', 0)}
+        </React.Fragment>
+      ))}
+    </>
+  ),
+  tree: ({ C }) => (
+    <>
+      {C(rr(108, 136, 24, 68, 9), 'orange', 5)}
+      {C(el(82, 122, 36), 'green', 6)}
+      {C(el(158, 122, 36), 'green', 6)}
+      {C(el(120, 96, 58, 50), 'green', 8)}
+      {C(el(120, 64, 36), 'green', 6)}
+      {C(el(96, 90, 7), 'coral', 2)}
+      {C(el(150, 112, 7), 'coral', 2)}
+      {C(el(126, 54, 6), 'coral', 2)}
+    </>
+  ),
+  megaphone: ({ C, S }) => (
+    <>
+      {C(rr(72, 130, 22, 50, 9), 'navy', 4)}
+      {C('M62 98L150 52V180L62 134z', 'coral', 8, 8)}
+      {C(el(152, 116, 18, 64), 'cream', 6)}
+      {C(rr(40, 94, 30, 44, 12), 'blue', 5)}
+      {S('M186 92Q200 116 186 140', 'gold', 7, 3)}
+      {S('M202 74Q226 116 202 158', 'gold', 7, 3)}
+    </>
+  ),
+  trophy: ({ C, S }) => (
+    <>
+      {S('M76 62H56Q46 62 48 78Q52 106 84 112', 'gold', 9, 4)}
+      {S('M164 62H184Q194 62 192 78Q188 106 156 112', 'gold', 9, 4)}
+      {C('M72 46H168V88C168 124 148 144 120 148C92 144 72 124 72 88z', 'gold', 8, 6)}
+      {C(star(120, 92, 20), 'cream', 0)}
+      {C(rr(108, 146, 24, 24, 4), 'gold', 4)}
+      {C(rr(78, 168, 84, 24, 9), 'navy', 6)}
+      {C(rr(98, 175, 44, 10, 4), 'gold', 0)}
+    </>
+  ),
+  bell: ({ C }) => (
+    <>
+      {C(el(120, 174, 15), 'orange', 4)}
+      {C('M120 46C88 46 72 72 72 102V138L56 160H184L168 138V102C168 72 152 46 120 46z', 'gold', 9, 6)}
+      {C(rr(50, 154, 140, 14, 7), 'orange', 5)}
+      {C(el(120, 40, 9), 'gold', 3)}
+      {C(el(172, 62, 20), 'coral', 5)}
+      <path d={rr(168, 50, 8, 16, 4)} fill="#fff" />
+      <path d={el(172, 72, 4)} fill="#fff" />
+    </>
+  ),
+  calendar: ({ C, S }) => (
+    <>
+      {C(rr(50, 58, 140, 138, 18), 'cream', 8)}
+      {C('M68 58H172Q190 58 190 76V100H50V76Q50 58 68 58z', 'coral', 0)}
+      {S('M90 44V72', 'navy', 9, 3)}
+      {S('M150 44V72', 'navy', 9, 3)}
+      {[0, 1, 2].map((r) =>
+        [0, 1, 2, 3].map((c) => (r === 2 && c === 3 ? null : <path key={`${r}${c}`} d={rr(66 + c * 29, 114 + r * 24, 20, 14, 4)} fill="#cfe3f3" />))
+      )}
+      {C(el(162, 168, 24), 'blue', 5)}
+      {S('M151 168l8 8l14-15', 'cream', 6, 0)}
+    </>
+  ),
+  phone: ({ C }) => (
+    <>
+      {C(rr(70, 30, 90, 176, 22), 'navy', 9)}
+      {C(rr(79, 46, 72, 142, 12), 'light', 0)}
+      <path d={rr(103, 36, 24, 5, 2.5)} fill="#152a49" />
+      {(['gold', 'coral', 'green', 'cream', 'blue', 'orange'] as M[]).map((m, i) => (
+        <React.Fragment key={i}>{C(rr(89 + (i % 2) * 30, 62 + Math.floor(i / 2) * 30, 22, 22, 7), m, 2)}</React.Fragment>
+      ))}
+      {C(rr(146, 66, 64, 42, 14), 'coral', 6)}
+      {C('M156 104L152 120L170 106z', 'coral', 0)}
+      {[164, 178, 192].map((x) => <path key={x} d={el(x, 87, 4)} fill="#fff" />)}
+    </>
+  ),
+  lock: ({ C, S }) => (
+    <>
+      {S('M86 108V84Q86 48 120 48Q154 48 154 84V108', 'grey', 18, 5)}
+      {C(rr(62, 100, 116, 100, 24), 'gold', 9)}
+      {C(el(120, 138, 13), 'navy', 0)}
+      {C(rr(114, 140, 12, 28, 6), 'navy', 0)}
+      {C('M180 128L204 138V156C204 172 194 182 180 188C166 182 156 172 156 156V138z', 'blue', 5, 4)}
+    </>
+  ),
+  gift: ({ C, S }) => (
+    <>
+      {S('M120 92Q94 52 78 72Q70 92 120 92', 'gold', 10, 3)}
+      {S('M120 92Q146 52 162 72Q170 92 120 92', 'gold', 10, 3)}
+      {C(rr(62, 114, 116, 86, 10), 'coral', 8)}
+      {C(rr(52, 90, 136, 30, 10), 'coral', 6)}
+      {C(rr(110, 90, 20, 110, 3), 'gold', 0)}
+      {C(el(120, 92, 9), 'gold', 3)}
+    </>
+  ),
+  target: ({ C, S }) => (
+    <>
+      {C(el(116, 128, 74), 'cream', 9)}
+      {C(el(116, 128, 58), 'coral', 0)}
+      {C(el(116, 128, 42), 'cream', 0)}
+      {C(el(116, 128, 26), 'coral', 0)}
+      {C(el(116, 128, 10), 'cream', 0)}
+      {S('M116 128L190 54', 'navy', 7, 3)}
+      {C('M184 44L206 34L198 60z', 'light', 3)}
+    </>
+  ),
   shield: ({ C, S }) => (
     <>
       {C('M120 34L184 58V110C184 158 156 186 120 204C84 186 56 158 56 110V58z', 'blue', 9, 8)}
@@ -361,9 +497,19 @@ const SCENES: Record<string, (g: Draw) => React.ReactNode> = {
   ),
 };
 
-export const Product3DArt: React.FC<{ scene: string; className?: string }> = ({ scene, className = '' }) => {
+export const Product3DArt: React.FC<{ scene: string; icon?: LucideIcon; className?: string }> = ({ scene, icon: Icon, className = '' }) => {
   const [id] = React.useState(key);
-  const draw = SCENES[scene] || SCENES.shield;
+  const draw: (g: Draw) => React.ReactNode =
+    SCENES[scene] ||
+    (Icon
+      ? ({ C }) => (
+          <>
+            {C(rr(48, 46, 144, 144, 36), 'cream', 10)}
+            <Icon x={72} y={73} width={96} height={96} color={MAT.blue.side} strokeWidth={2.8} />
+            <Icon x={72} y={70} width={96} height={96} color={`url(#${id}-blue)`} strokeWidth={2.8} />
+          </>
+        )
+      : SCENES.shield);
   const C: Draw['C'] = (d, m, depth = 6, round = 0) => (
     <g key={key()}>
       {depth > 0 && (
