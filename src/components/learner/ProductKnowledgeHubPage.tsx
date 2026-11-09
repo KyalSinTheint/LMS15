@@ -16,6 +16,7 @@ import {
 import { ProductKnowledgeItem } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
 import { normalizeProductTheme, ProductIcon } from '../../lib/productVisuals';
+import { ProductScene } from '../../lib/productScenes';
 import { ProductDetailPage } from './ProductDetailPage';
 
 export const ProductKnowledgeHubPage: React.FC<{
@@ -254,8 +255,10 @@ export const ProductKnowledgeHubPage: React.FC<{
             return (
               <div
                 key={product.id}
-                className={`${theme.bg} rounded-[28px] p-6 sm:p-7 shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between min-h-[340px] relative overflow-hidden group`}
+                className={`${theme.bg} rounded-[28px] p-6 sm:p-7 shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between min-h-[340px] relative overflow-hidden group isolate`}
               >
+                {/* Blurred picture that matches the product (e.g. Universal Life → space & Earth) */}
+                <ProductScene product={product} className="-z-10" />
                 {/* Top Kicker & Certification Tag */}
                 <div className="space-y-3 z-10">
                   <div className="flex items-center justify-between gap-2">
@@ -316,8 +319,6 @@ export const ProductKnowledgeHubPage: React.FC<{
                   </div>
                 </div>
 
-                {/* Ambient background blur pattern */}
-                <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-white/10 pointer-events-none blur-xl" />
               </div>
             );
           })}

@@ -14,6 +14,7 @@ import { ProductKnowledgeItem, ProductQuizAttempt } from '../../types/lms';
 import { ProductRichTextRenderer } from '../common/ProductRichTextRenderer';
 import { buildPamphletPages, PamphletContentPage, PamphletSection } from '../../lib/pamphlet';
 import { ProductIcon } from '../../lib/productVisuals';
+import { ProductScene } from '../../lib/productScenes';
 
 // ---------------------------------------------------------------------
 // Types
@@ -273,9 +274,10 @@ export const ProductPamphletViewer: React.FC<ProductPamphletViewerProps> = ({
         />
       ) : (
         <div
-          className="absolute inset-0 flex flex-col text-white p-[8%]"
+          className="absolute inset-0 flex flex-col text-white p-[8%] overflow-hidden isolate"
           style={{ background: `linear-gradient(160deg, ${theme.from} 0%, ${theme.to} 100%)` }}
         >
+          <ProductScene product={product} blur={4} className="-z-10" />
           <div className="flex items-center gap-2">
             <img
               src="/assets/aistudio/KBZ_Logo_28e9d8fb.png"
