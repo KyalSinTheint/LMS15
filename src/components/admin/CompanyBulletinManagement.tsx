@@ -31,6 +31,10 @@ import {
 import { uploadLargeFileChunked, formatBytes } from '../../lib/storageUtils';
 import { PdfViewerModal } from '../common/PdfViewerModal';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
+import { BulletinArt } from '../../lib/bulletinArt';
+import { autoBulletinScene, BULLETIN_ART_OPTIONS } from '../../lib/bulletinScenes';
+import { findSubject } from '../../lib/bulletinSubjects';
+import type { SceneKey } from '../../lib/productScenes';
 
 const AVAILABLE_SAMPLE_PDFS = [
   {
@@ -84,6 +88,8 @@ export const CompanyBulletinManagement: React.FC = () => {
   const [formPriority, setFormPriority] = useState<'normal' | 'high' | 'urgent'>('normal');
   const [formTagsString, setFormTagsString] = useState('');
   const [formIsPublished, setFormIsPublished] = useState(true);
+  /** Picture for the card; '' = chosen automatically from the title */
+  const [formArt, setFormArt] = useState('');
 
   // Upload progress state
   const [isUploading, setIsUploading] = useState(false);
@@ -127,6 +133,7 @@ export const CompanyBulletinManagement: React.FC = () => {
     setFormPriority('normal');
     setFormTagsString('announcement, company memo, all staff');
     setFormIsPublished(true);
+    setFormArt('');
     setUploadError(null);
     setIsEditorOpen(true);
   };
@@ -145,6 +152,7 @@ export const CompanyBulletinManagement: React.FC = () => {
     setFormPriority(item.priority || 'normal');
     setFormTagsString(item.tags ? item.tags.join(', ') : '');
     setFormIsPublished(item.published || item.status === 'published');
+    setFormArt(BULLETIN_ART_OPTIONS.some((o) => o.key === item.color_theme) ? String(item.color_theme) : '');
     setUploadError(null);
     setIsEditorOpen(true);
   };
@@ -221,6 +229,7 @@ export const CompanyBulletinManagement: React.FC = () => {
         department: formDepartment.trim(),
         priority: formPriority,
         tags: tagsArray,
+        color_theme: formArt || null,
         published: formIsPublished,
         status: formIsPublished ? 'published' : 'draft',
       });
@@ -237,6 +246,7 @@ export const CompanyBulletinManagement: React.FC = () => {
         department: formDepartment.trim() || 'Corporate Communications',
         priority: formPriority,
         tags: tagsArray,
+        color_theme: formArt || null,
         published: formIsPublished,
         status: formIsPublished ? 'published' : 'draft',
         published_at: new Date().toISOString(),
@@ -638,6 +648,42 @@ export const CompanyBulletinManagement: React.FC = () => {
                   placeholder="e.g. campaign, q4 target, bancassurance, incentives"
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#176B98]/20"
                 />
+              </div>
+
+              {/* Picture shown on the bulletin card */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Card Picture</label>
+                <p className="text-[11px] text-slate-500 mb-2">
+                  "Auto" draws what the title is about (e.g. Smile Campaign → smiling face, Blood Donation → blood drop). Choose a picture only if it doesn't match.
+                </p>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {[{ key: '', label: 'Auto' }, ...BULLETIN_ART_OPTIONS].map((o) => {
+                    const formTags = formTagsString.split(',').map((t) => t.trim()).filter(Boolean);
+                    const scene = o.key
+                      ? (o.key as SceneKey)
+                      : autoBulletinScene({ title: formTitle, description: formDescription, category: formCategory, tags: formTags });
+                    const subject = o.key ? null : findSubject(formTitle, formTags, formDescription);
+                    const active = formArt === o.key;
+                    return (
+                      <button
+                        key={o.key || 'auto'}
+                        type="button"
+                        onClick={() => setFormArt(o.key)}
+                        className={`rounded-xl overflow-hidden border-2 text-left cursor-pointer transition-all ${
+                          active ? 'border-[#176B98] ring-2 ring-[#176B98]/30' : 'border-transparent hover:border-slate-300'
+                        }`}
+                        title={o.label}
+                      >
+                        <div className="relative h-14">
+                          <BulletinArt scene={scene} subject={subject} />
+                        </div>
+                        <p className={`px-1.5 py-1 text-[10px] font-bold truncate ${active ? 'text-[#176B98]' : 'text-slate-600'}`}>
+                          {o.key ? o.label : `Auto (${subject?.label || BULLETIN_ART_OPTIONS.find((x) => x.key === scene)?.label.split(' /')[0] || 'Notice'})`}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* =====================================================================

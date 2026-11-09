@@ -672,5 +672,6 @@ export interface CompanyBulletinItem {
   reference_no?: string; // e.g. "KBZ-2026-CMP04"
   priority?: 'normal' | 'high' | 'urgent';
   verified?: boolean; // Verified badge matching reference image
-  color_theme?: BulletinColorTheme; // Geometric dual-tone circular avatar theme
+  /** Picture chosen by an admin (src/lib/bulletinScenes.ts); empty = automatic */
+  color_theme?: BulletinColorTheme | string | null;
 }

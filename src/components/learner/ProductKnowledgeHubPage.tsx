@@ -15,8 +15,9 @@ import {
 } from 'lucide-react';
 import { ProductKnowledgeItem } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
-import { normalizeProductTheme, ProductIcon } from '../../lib/productVisuals';
+import { normalizeProductTheme } from '../../lib/productVisuals';
 import { ProductScene } from '../../lib/productScenes';
+import { Product3D } from '../../lib/product3d';
 import { ProductDetailPage } from './ProductDetailPage';
 
 export const ProductKnowledgeHubPage: React.FC<{
@@ -257,7 +258,7 @@ export const ProductKnowledgeHubPage: React.FC<{
                 key={product.id}
                 className={`${theme.bg} rounded-[28px] p-6 sm:p-7 shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between min-h-[340px] relative overflow-hidden group isolate`}
               >
-                {/* Blurred picture that matches the product (e.g. Universal Life → space & Earth) */}
+                {/* Clean brand background */}
                 <ProductScene product={product} className="-z-10" />
                 {/* Top Kicker & Certification Tag */}
                 <div className="space-y-3 z-10">
@@ -313,10 +314,11 @@ export const ProductKnowledgeHubPage: React.FC<{
                     <ChevronRight className="w-4 h-4" />
                   </button>
 
-                  {/* Insurance icon chosen by the administrator */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/15 backdrop-blur-xs border border-white/25 shadow-md shrink-0 flex items-center justify-center text-white transform group-hover:scale-105 transition-transform duration-300">
-                    <ProductIcon product={product} className="w-10 h-10 sm:w-12 sm:h-12" />
-                  </div>
+                  {/* 3D illustration that matches the product */}
+                  <Product3D
+                    product={product}
+                    className="w-32 h-32 sm:w-36 sm:h-36 -mr-3 -mb-3 shrink-0 transform group-hover:scale-105 group-hover:-rotate-2 transition-transform duration-300"
+                  />
                 </div>
 
               </div>

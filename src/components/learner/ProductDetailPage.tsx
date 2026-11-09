@@ -10,6 +10,7 @@ import { ProductPamphletViewer } from './ProductPamphletViewer';
 import { getProductRichContent } from '../../lib/productKnowledgeUtils';
 import { normalizeProductTheme } from '../../lib/productVisuals';
 import { ProductScene } from '../../lib/productScenes';
+import { Product3D } from '../../lib/product3d';
 
 interface ProductDetailPageProps {
   product: ProductKnowledgeItem;
@@ -159,12 +160,15 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           )}
         </div>
 
-        {/* Last quiz result (the quiz itself is on the pamphlet's last page) */}
-        {latestAttempt && (
-          <span className="shrink-0 z-10 text-xs text-white/85 font-semibold">
-            Last scored {latestAttempt.percentage}% ({latestAttempt.passed ? 'Passed' : 'Needs retry'})
-          </span>
-        )}
+        <div className="flex items-center gap-4 shrink-0 z-10">
+          {/* Last quiz result (the quiz itself is on the pamphlet's last page) */}
+          {latestAttempt && (
+            <span className="text-xs text-white/85 font-semibold">
+              Last scored {latestAttempt.percentage}% ({latestAttempt.passed ? 'Passed' : 'Needs retry'})
+            </span>
+          )}
+          <Product3D product={product} className="hidden sm:block w-24 h-24 -my-3" />
+        </div>
 
         {/* Decorative background shape */}
         <div className="absolute -right-10 -bottom-16 w-64 h-64 rounded-full bg-white/5 pointer-events-none blur-2xl" />

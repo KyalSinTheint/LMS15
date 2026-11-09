@@ -13,8 +13,8 @@ import {
 import { ProductKnowledgeItem, ProductQuizAttempt } from '../../types/lms';
 import { ProductRichTextRenderer } from '../common/ProductRichTextRenderer';
 import { buildPamphletPages, PamphletContentPage, PamphletSection } from '../../lib/pamphlet';
-import { ProductIcon } from '../../lib/productVisuals';
 import { ProductScene } from '../../lib/productScenes';
+import { Product3D } from '../../lib/product3d';
 
 // ---------------------------------------------------------------------
 // Types
@@ -304,9 +304,7 @@ export const ProductPamphletViewer: React.FC<ProductPamphletViewerProps> = ({
           </div>
 
           <div className="flex-1 flex items-center justify-center py-[6%] min-h-0">
-            <div className="w-[46%] aspect-square rounded-[28%] bg-white/12 border border-white/25 shadow-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)' }}>
-              <ProductIcon product={product} className="w-[58%] h-[58%] text-white" strokeWidth={1.5} />
-            </div>
+            <Product3D product={product} className="w-[62%] h-auto max-h-full" />
           </div>
 
           <div className="flex items-end justify-between text-[10px] text-white/75 font-semibold uppercase tracking-wider">

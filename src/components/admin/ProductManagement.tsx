@@ -42,7 +42,8 @@ import {
   ProductIconOption,
   resolveProductIconKey,
 } from '../../lib/productVisuals';
-import { ProductScene, resolveProductScene, SCENE_LABELS } from '../../lib/productScenes';
+import { resolveProductScene, SCENE_LABELS } from '../../lib/productScenes';
+import { Product3D } from '../../lib/product3d';
 import { uploadImageFile } from '../../lib/storageUtils';
 // The visual editor is only needed by admins: load it on demand
 const ProductKnowledgeRichEditor = lazy(() =>
@@ -638,8 +639,10 @@ export const ProductManagement: React.FC = () => {
                           </td>
 
                           <td className="px-4 py-4">
-                            <span className="relative isolate inline-flex items-center h-7 px-2.5 rounded-md overflow-hidden text-[10px] font-black uppercase text-white shadow-2xs">
-                              <ProductScene product={product} blur={2} className="-z-10" />
+                            <span className="inline-flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                              <span className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#1f8ccb] to-[#0d3b66] flex items-center justify-center shrink-0">
+                                <Product3D product={product} className="w-9 h-9" />
+                              </span>
                               {SCENE_LABELS[resolveProductScene(product)]}
                             </span>
                           </td>
