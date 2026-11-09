@@ -14,6 +14,7 @@ import {
   Sparkles,
   ExternalLink,
   KeyRound,
+  BarChart3,
   Building,
   Bot,
 } from 'lucide-react';
@@ -39,12 +40,14 @@ import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 import { useClickOutside } from '../../lib/closeOnOutside';
 import { PasswordResetRequestsPanel } from './PasswordResetRequestsPanel';
 import { DepartmentRequestsPanel } from './DepartmentRequestsPanel';
+import { LearningProgressPanel } from './LearningProgressPanel';
 import { countPendingDepartmentRequests } from '../../lib/departmentRequests';
 import { AssistantManagement } from './AssistantManagement';
 
 export type AdminTabId =
   | 'dashboard'
   | 'users'
+  | 'progress'
   | 'password-resets'
   | 'dept-requests'
   | 'assistant'
@@ -146,6 +149,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
   const ADMIN_TABS: { id: AdminTabId; label: string; icon: React.ElementType }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'users', label: 'User Management & Approvals', icon: Users },
+    { id: 'progress', label: 'Learning Progress', icon: BarChart3 },
     { id: 'password-resets', label: 'Password Resets', icon: KeyRound },
     { id: 'dept-requests', label: 'Dept Changes', icon: Building },
     { id: 'access', label: 'User Permissions & Access', icon: ShieldCheck },
@@ -382,6 +386,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
           />
         )}
         {activeTab === 'users' && <UserManagement />}
+        {activeTab === 'progress' && <LearningProgressPanel />}
         {activeTab === 'password-resets' && <PasswordResetRequestsPanel />}
         {activeTab === 'dept-requests' && <DepartmentRequestsPanel onChanged={refreshDeptCount} />}
         {activeTab === 'assistant' && <AssistantManagement />}

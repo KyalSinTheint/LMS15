@@ -9,6 +9,7 @@ import {
   Settings,
   UserPlus,
 } from 'lucide-react';
+import { CeoContentCard } from './CeoContentCard';
 import { useLms } from '../../context/LmsContext';
 import type { AppSettings } from '../../types/lms';
 
@@ -304,6 +305,7 @@ export const AdminSettingsView: React.FC = () => {
         </div>
       </form>
 
+      <CeoContentCard />
     </div>
   );
 };
