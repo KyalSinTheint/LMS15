@@ -1,0 +1,37 @@
+/**
+ * Picture for a Company Bulletin item, chosen from its title, description,
+ * tags and category (e.g. "Q4 Sales Campaign" → campaign target and
+ * confetti, "Compliance memo" → policy document and shield).
+ */
+import type { CompanyBulletinItem } from '../types/lms';
+import type { SceneKey } from './productScenes';
+
+const RULES: [RegExp, SceneKey][] = [
+  [/award|winner|top performer|champion|reward|incentive|bonus|prize|recogni|congrat|ဆု/i, 'award'],
+  [/campaign|contest|competition|challenge|target|sales drive|promotion|kpi|ပြိုင်ပွဲ|ကမ်ပိန်း/i, 'campaign'],
+  [/holiday|festival|thingyan|new year|celebrat|anniversary|party|christmas|diwali|eid|ပွဲတော်|နှစ်သစ်|သင်္ကြန်/i, 'celebrate'],
+  [/policy|memo|compliance|regulat|guideline|sop|procedure|circular|directive|rule|ifrs|aml|kyc|audit|မူဝါဒ|စည်းကမ်း|ညွှန်ကြား/i, 'policy'],
+  [/training|course|exam|license|learning|workshop|seminar|webinar|သင်တန်း|စာမေးပွဲ/i, 'education'],
+  [/health|medical|hospital|covid|wellness|vaccine|ကျန်းမာ/i, 'health'],
+  [/claim|payout|premium|saving|finance|payment|budget|investment/i, 'savings'],
+  [/office|branch|system|it |digital|app|portal|maintenance|relocat|opening/i, 'city'],
+  [/travel|trip|transport/i, 'travel'],
+  [/launch|announce|introduc|welcome|new product|ကြေညာ/i, 'announce'],
+  [/notice|reminder|deadline|urgent|alert|attention|update|အသိပေး/i, 'notice'],
+];
+
+const BY_CATEGORY: Record<string, SceneKey> = {
+  Campaign: 'campaign',
+  Announcement: 'announce',
+  Notice: 'notice',
+  'Policy Memo': 'policy',
+  Incentive: 'award',
+};
+
+export function resolveBulletinScene(b: Pick<CompanyBulletinItem, 'title' | 'description' | 'category' | 'tags'>): SceneKey {
+  const head = `${b.title || ''} ${(b.tags || []).join(' ')}`;
+  const byTitle = RULES.find(([re]) => re.test(head))?.[1];
+  if (byTitle) return byTitle;
+  if (BY_CATEGORY[b.category]) return BY_CATEGORY[b.category];
+  return RULES.find(([re]) => re.test(b.description || ''))?.[1] || 'notice';
+}
