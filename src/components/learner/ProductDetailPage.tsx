@@ -9,6 +9,7 @@ import { ProductQuizModal } from './ProductQuizModal';
 import { ProductPamphletViewer } from './ProductPamphletViewer';
 import { getProductRichContent } from '../../lib/productKnowledgeUtils';
 import { normalizeProductTheme } from '../../lib/productVisuals';
+import { ProductScene } from '../../lib/productScenes';
 
 interface ProductDetailPageProps {
   product: ProductKnowledgeItem;
@@ -138,8 +139,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
       {/* Hero Banner Header (compact) */}
       <div
-        className={`${theme.bg} rounded-2xl px-5 py-4 sm:px-7 sm:py-5 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4`}
+        className={`${theme.bg} rounded-2xl px-5 py-4 sm:px-7 sm:py-5 text-white shadow-md relative overflow-hidden isolate flex flex-col md:flex-row md:items-center justify-between gap-4`}
       >
+        <ProductScene product={product} className="-z-10" />
         <div className="space-y-1.5 min-w-0 z-10">
           <div className="flex flex-wrap items-center gap-2">
             <span
