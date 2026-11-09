@@ -42,6 +42,7 @@ import {
   ProductIconOption,
   resolveProductIconKey,
 } from '../../lib/productVisuals';
+import { ProductScene, resolveProductScene, SCENE_LABELS } from '../../lib/productScenes';
 import { uploadImageFile } from '../../lib/storageUtils';
 // The visual editor is only needed by admins: load it on demand
 const ProductKnowledgeRichEditor = lazy(() =>
@@ -187,15 +188,6 @@ export const ProductManagement: React.FC = () => {
   ];
 
   // Available Themes
-  const THEMES: { id: ProductColorTheme; label: string; bg: string }[] = [
-    { id: 'navy', label: 'KBZ Navy', bg: 'bg-[#176B98]' },
-    { id: 'emerald', label: 'Emerald Green', bg: 'bg-emerald-600' },
-    { id: 'indigo', label: 'Indigo / Violet', bg: 'bg-indigo-600' },
-    { id: 'teal', label: 'Deep Teal', bg: 'bg-teal-600' },
-    { id: 'sky', label: 'Sky Blue', bg: 'bg-sky-600' },
-    { id: 'slate', label: 'Slate Gray', bg: 'bg-slate-600' },
-  ];
-
   // Filter products
   const filteredProducts = products.filter((p) => {
     const matchCat = categoryFilter === 'All' || p.category === categoryFilter;
@@ -601,7 +593,7 @@ export const ProductManagement: React.FC = () => {
                   <tr>
                     <th className="px-5 py-3.5">Product</th>
                     <th className="px-4 py-3.5">Category</th>
-                    <th className="px-4 py-3.5">Theme</th>
+                    <th className="px-4 py-3.5">Background</th>
                     <th className="px-4 py-3.5">Status</th>
                     <th className="px-4 py-3.5">Product Quiz</th>
                     <th className="px-5 py-3.5 text-right">Actions</th>
@@ -646,12 +638,9 @@ export const ProductManagement: React.FC = () => {
                           </td>
 
                           <td className="px-4 py-4">
-                            <span
-                              className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase text-white shadow-2xs ${
-                                THEMES.find((t) => t.id === normalizeProductTheme(product.card_color_theme))?.bg || 'bg-[#176B98]'
-                              }`}
-                            >
-                              {normalizeProductTheme(product.card_color_theme)}
+                            <span className="relative isolate inline-flex items-center h-7 px-2.5 rounded-md overflow-hidden text-[10px] font-black uppercase text-white shadow-2xs">
+                              <ProductScene product={product} blur={2} className="-z-10" />
+                              {SCENE_LABELS[resolveProductScene(product)]}
                             </span>
                           </td>
 
@@ -881,33 +870,14 @@ export const ProductManagement: React.FC = () => {
                     />
                   </div>
 
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Card Color Theme
-                    </label>
-                    <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                      {THEMES.map((t) => (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => setProductForm({ ...productForm, card_color_theme: t.id })}
-                          className={`p-2 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                            productForm.card_color_theme === t.id
-                              ? 'border-[#176B98] ring-2 ring-[#176B98]/30 bg-sky-50'
-                              : 'border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          <span className={`w-3.5 h-3.5 rounded-full ${t.bg} shrink-0 shadow-2xs`} />
-                          <span className="text-[10px] font-bold text-slate-700 truncate">{t.label.split(' ')[0]}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
                 {/* Insurance Icon (replaces the product image) */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Product Icon</label>
+                  <p className="text-[11px] text-slate-500 mb-2">
+                    The card's background picture follows the product name and this icon (e.g. Universal → space &amp; Earth, Health icon → medical).
+                  </p>
                   <p className="text-[11px] text-slate-500 mb-2">
                     Shown on the product card and pamphlet cover. "Automatic" picks an icon from the product name.
                   </p>
