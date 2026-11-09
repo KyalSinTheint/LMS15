@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { loadSiteContent, type SiteContent } from './lib/siteContent';
 import {
   PortalHeader,
   NavTabId,
@@ -126,12 +127,31 @@ function AppContent() {
     setIsPlaceholderMode(true);
   };
 
+  // CEO photo / name / title changed by admins (Admin → Settings → Our Company · CEO)
+  const [siteContent, setSiteContent] = useState<SiteContent>({});
+  useEffect(() => {
+    loadSiteContent().then(setSiteContent);
+  }, [currentUser.id]);
+
   // Active content based on mode or user edits
-  const activeContent: CompanyContentData = customContent
+  const baseContent: CompanyContentData = customContent
     ? customContent
     : isPlaceholderMode
     ? defaultCompanyContent
     : samplePreviewCompanyContent;
+  const activeContent: CompanyContentData = {
+    ...baseContent,
+    ceoMotto: {
+      ...baseContent.ceoMotto,
+      photoUrl: siteContent.ceo_photo_url || baseContent.ceoMotto.photoUrl,
+      ceoName: siteContent.ceo_name || baseContent.ceoMotto.ceoName,
+      ceoTitle: siteContent.ceo_title || baseContent.ceoMotto.ceoTitle,
+      photoCaption:
+        siteContent.ceo_name || siteContent.ceo_title
+          ? `${siteContent.ceo_name || baseContent.ceoMotto.ceoName}, ${siteContent.ceo_title || baseContent.ceoMotto.ceoTitle}`
+          : baseContent.ceoMotto.photoCaption,
+    },
+  };
 
   // 0. Supabase is required: no local fallback storage
   if (!isSupabaseConfigured()) {
