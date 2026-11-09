@@ -20,6 +20,7 @@ import {
   BookOpen,
   ArrowUpRight,
   Loader2,
+  Image as ImageIcon,
   Globe,
   Lock,
 } from 'lucide-react';
@@ -28,11 +29,11 @@ import {
   CompanyBulletinItem,
   BulletinCategory,
 } from '../../types/lms';
-import { uploadLargeFileChunked, formatBytes } from '../../lib/storageUtils';
+import { uploadLargeFileChunked, formatBytes, uploadImageFile } from '../../lib/storageUtils';
 import { PdfViewerModal } from '../common/PdfViewerModal';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
 import { BulletinArt } from '../../lib/bulletinArt';
-import { autoBulletinScene, BULLETIN_ART_OPTIONS } from '../../lib/bulletinScenes';
+import { autoBulletinScene, BULLETIN_ART_OPTIONS, bulletinPhotoUrl } from '../../lib/bulletinScenes';
 import { findSubject } from '../../lib/bulletinSubjects';
 import type { SceneKey } from '../../lib/productScenes';
 
@@ -90,6 +91,28 @@ export const CompanyBulletinManagement: React.FC = () => {
   const [formIsPublished, setFormIsPublished] = useState(true);
   /** Picture for the card; '' = chosen automatically from the title */
   const [formArt, setFormArt] = useState('');
+  /** Real photo for the card (uploaded); wins over the 3D picture */
+  const [formPhoto, setFormPhoto] = useState('');
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setPhotoError(null);
+    setPhotoUploading(true);
+    try {
+      const res = await uploadImageFile(file, 'company-news');
+      if (res.success && res.url) setFormPhoto(res.url);
+      else setPhotoError(res.error || 'Photo upload failed. Please try again.');
+    } catch (err: unknown) {
+      setPhotoError(err instanceof Error ? err.message : 'Photo upload failed.');
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
 
   // Upload progress state
   const [isUploading, setIsUploading] = useState(false);
@@ -134,6 +157,8 @@ export const CompanyBulletinManagement: React.FC = () => {
     setFormTagsString('announcement, company memo, all staff');
     setFormIsPublished(true);
     setFormArt('');
+    setFormPhoto('');
+    setPhotoError(null);
     setUploadError(null);
     setIsEditorOpen(true);
   };
@@ -153,6 +178,8 @@ export const CompanyBulletinManagement: React.FC = () => {
     setFormTagsString(item.tags ? item.tags.join(', ') : '');
     setFormIsPublished(item.published || item.status === 'published');
     setFormArt(BULLETIN_ART_OPTIONS.some((o) => o.key === item.color_theme) ? String(item.color_theme) : '');
+    setFormPhoto(bulletinPhotoUrl(item) || '');
+    setPhotoError(null);
     setUploadError(null);
     setIsEditorOpen(true);
   };
@@ -229,7 +256,7 @@ export const CompanyBulletinManagement: React.FC = () => {
         department: formDepartment.trim(),
         priority: formPriority,
         tags: tagsArray,
-        color_theme: formArt || null,
+        color_theme: formPhoto || formArt || null,
         published: formIsPublished,
         status: formIsPublished ? 'published' : 'draft',
       });
@@ -246,7 +273,7 @@ export const CompanyBulletinManagement: React.FC = () => {
         department: formDepartment.trim() || 'Corporate Communications',
         priority: formPriority,
         tags: tagsArray,
-        color_theme: formArt || null,
+        color_theme: formPhoto || formArt || null,
         published: formIsPublished,
         status: formIsPublished ? 'published' : 'draft',
         published_at: new Date().toISOString(),
@@ -654,8 +681,45 @@ export const CompanyBulletinManagement: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Card Picture</label>
                 <p className="text-[11px] text-slate-500 mb-2">
-                  "Auto" draws what the title is about (e.g. Smile Campaign → smiling face, Blood Donation → blood drop). Choose a picture only if it doesn't match.
+                  Upload a real photo (e.g. from the event), or let "Auto" draw a 3D picture of what the title is about (Smile Campaign → smiling face, Blood Donation → blood drop).
                 </p>
+
+                {/* Real photo */}
+                <div className="flex items-center gap-3 mb-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="relative w-28 h-16 rounded-lg overflow-hidden bg-slate-200 shrink-0 flex items-center justify-center">
+                    {formPhoto ? (
+                      <img src={formPhoto} alt="Card photo" className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-xs font-bold text-slate-800">{formPhoto ? 'Real photo is used on the card' : 'No photo — 3D picture is used'}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => photoInputRef.current?.click()}
+                        disabled={photoUploading}
+                        className="px-3 py-1.5 rounded-lg bg-[#176B98] hover:bg-[#12567a] text-white text-[11px] font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                      >
+                        {photoUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                        <span>{photoUploading ? 'Uploading…' : formPhoto ? 'Change Photo' : 'Upload Photo'}</span>
+                      </button>
+                      {formPhoto && (
+                        <button
+                          type="button"
+                          onClick={() => setFormPhoto('')}
+                          className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-[11px] font-bold cursor-pointer"
+                        >
+                          Remove Photo
+                        </button>
+                      )}
+                    </div>
+                    {photoError && <p className="text-[11px] text-red-600 font-semibold">{photoError}</p>}
+                  </div>
+                  <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+                </div>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">{formPhoto ? '3D picture (used if the photo is removed)' : '3D picture'}</p>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {[{ key: '', label: 'Auto' }, ...BULLETIN_ART_OPTIONS].map((o) => {
                     const formTags = formTagsString.split(',').map((t) => t.trim()).filter(Boolean);

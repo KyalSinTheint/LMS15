@@ -1,5 +1,6 @@
 /**
- * Company Bulletin pictures in the same glossy 3D style as the products:
+ * Company Bulletin pictures: a real photo when the admin uploaded one,
+ * otherwise a glossy 3D picture in the same style as the products:
  * a clean brand-blue background with a 3D illustration of what the bulletin
  * is about (Smile Campaign → smiling face, Blood Donation → blood drop …).
  * Subjects without their own illustration get their icon as a raised 3D
@@ -49,11 +50,20 @@ const SCENE_ART: Record<string, string> = {
 };
 
 /** Picture filling its parent (parent: relative, sized). */
-export const BulletinArt: React.FC<{ scene?: SceneKey; subject?: Subject | null; className?: string }> = ({
+export const BulletinArt: React.FC<{ scene?: SceneKey; subject?: Subject | null; photoUrl?: string | null; className?: string }> = ({
   scene = 'notice',
   subject,
+  photoUrl,
   className = '',
 }) => {
+  const [broken, setBroken] = React.useState(false);
+  if (photoUrl && !broken) {
+    return (
+      <div className={`absolute inset-0 overflow-hidden bg-slate-200 ${className}`} aria-hidden="true">
+        <img src={photoUrl} alt="" loading="lazy" draggable={false} onError={() => setBroken(true)} className="absolute inset-0 w-full h-full object-cover" />
+      </div>
+    );
+  }
   const art = subject ? SUBJECT_ART[subject.key] || 'icon' : SCENE_ART[scene] || 'bell';
   return (
     <div className={`absolute inset-0 overflow-hidden ${className}`} aria-hidden="true">

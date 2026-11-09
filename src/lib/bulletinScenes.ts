@@ -75,3 +75,9 @@ export function resolveBulletinVisual(
   const subject = findSubject(b.title || '', b.tags || [], b.description || '');
   return { scene: autoBulletinScene(b), subject };
 }
+
+/** A real photo uploaded for the bulletin (stored in color_theme as its URL), or null. */
+export function bulletinPhotoUrl(b: { color_theme?: string | null }): string | null {
+  const v = (b.color_theme || '').trim();
+  return /^(https?:\/\/|\/|blob:|data:image\/)/i.test(v) ? v : null;
+}
