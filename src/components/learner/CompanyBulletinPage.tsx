@@ -20,7 +20,7 @@ import { useLms } from '../../context/LmsContext';
 import { CompanyBulletinItem, BulletinCategory } from '../../types/lms';
 import { PdfViewerModal } from '../common/PdfViewerModal';
 import { BulletinArt } from '../../lib/bulletinArt';
-import { bulletinPhotoUrl, resolveBulletinVisual } from '../../lib/bulletinScenes';
+import { resolveBulletinVisual } from '../../lib/bulletinScenes';
 
 // Helper for formatting time ago
 function formatTimeAgo(isoString: string): string {
@@ -66,7 +66,7 @@ const BulletinCard: React.FC<{
     >
       {/* Picture */}
       <div className={`relative isolate overflow-hidden shrink-0 ${featured ? 'h-48 sm:h-56 md:h-auto md:w-[42%] md:min-h-[280px]' : 'h-40'}`}>
-        <BulletinArt scene={scene} subject={subject} photoUrl={bulletinPhotoUrl(bulletin)} className="-z-10 transition-transform duration-500 group-hover:scale-[1.04]" />
+        <BulletinArt scene={scene} subject={subject} className="-z-10 transition-transform duration-500 group-hover:scale-[1.04]" />
         <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
         <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
           <span className="px-2.5 py-1 rounded-full bg-white/90 text-[#0f3b57] text-[10px] font-black uppercase tracking-wider shadow-sm">
@@ -83,7 +83,7 @@ const BulletinCard: React.FC<{
             </span>
           )}
         </div>
-        <span className="absolute bottom-3 left-3 px-2 py-0.5 rounded-full bg-black/35 backdrop-blur-sm text-[11px] font-semibold text-white flex items-center gap-1">
+        <span className="absolute bottom-3 left-3 text-[11px] font-semibold text-white/90 flex items-center gap-1">
           <Calendar className="w-3.5 h-3.5" /> {formatTimeAgo(bulletin.published_at)}
         </span>
       </div>
