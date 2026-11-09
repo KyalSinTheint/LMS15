@@ -73,7 +73,7 @@ const BulletinCard: React.FC<{
             {bulletin.category}
           </span>
           {featured && (
-            <span className="px-2.5 py-1 rounded-full bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-wider shadow-sm">
+            <span className="px-2.5 py-1 rounded-full bg-sky-200 text-[#0f3b57] text-[10px] font-black uppercase tracking-wider shadow-sm">
               Latest
             </span>
           )}

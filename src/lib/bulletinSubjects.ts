@@ -24,18 +24,19 @@ export interface Palette {
 }
 
 export const SUBJECT_PALETTES: Record<string, Palette> = {
-  sunny: { from: '#f59e0b', to: '#c2410c', accent: '#fde68a' },
-  love: { from: '#e11d48', to: '#881337', accent: '#fecdd3' },
-  fresh: { from: '#10b981', to: '#065f46', accent: '#a7f3d0' },
-  ocean: { from: '#0ea5e9', to: '#1e3a8a', accent: '#bae6fd' },
-  tech: { from: '#6366f1', to: '#312e81', accent: '#c7d2fe' },
-  night: { from: '#475569', to: '#0f172a', accent: '#cbd5e1' },
-  royal: { from: '#1e88c7', to: '#0d3b66', accent: '#bae6fd' },
-  gold: { from: '#e3a008', to: '#92400e', accent: '#fde68a' },
-  party: { from: '#c026d3', to: '#581c87', accent: '#f5d0fe' },
-  care: { from: '#14b8a6', to: '#115e59', accent: '#99f6e4' },
-  fire: { from: '#f97316', to: '#9a3412', accent: '#fed7aa' },
-  sky: { from: '#38bdf8', to: '#0369a1', accent: '#e0f2fe' },
+  // All in KBZ Life brand blues (#176B98 family), varied by depth and tint.
+  sunny: { from: '#38a3d6', to: '#176b98', accent: '#bfe6f7' },
+  love: { from: '#2f7fb8', to: '#123f63', accent: '#cde8f7' },
+  fresh: { from: '#1f9ab5', to: '#0f5a72', accent: '#bdeef5' },
+  ocean: { from: '#1e88c7', to: '#0d3b66', accent: '#bae6fd' },
+  tech: { from: '#3b6fd1', to: '#1a3270', accent: '#c9d8fb' },
+  night: { from: '#2a4d6e', to: '#0b1f33', accent: '#a9c7e3' },
+  royal: { from: '#176b98', to: '#0b2f4a', accent: '#9fd0ec' },
+  gold: { from: '#4a9fd1', to: '#1a5c88', accent: '#d6eefa' },
+  party: { from: '#4c7fd9', to: '#203d86', accent: '#d3e0fb' },
+  care: { from: '#1c90a8', to: '#0c4a5c', accent: '#b8ecf2' },
+  fire: { from: '#2a86c4', to: '#154a78', accent: '#c7e5f8' },
+  sky: { from: '#5ab7e6', to: '#1f74a8', accent: '#e0f2fe' },
 };
 
 export interface Subject {
