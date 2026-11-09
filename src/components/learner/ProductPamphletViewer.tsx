@@ -14,7 +14,7 @@ import { ProductKnowledgeItem, ProductQuizAttempt } from '../../types/lms';
 import { ProductRichTextRenderer } from '../common/ProductRichTextRenderer';
 import { buildPamphletPages, PamphletContentPage, PamphletSection } from '../../lib/pamphlet';
 import { ProductScene } from '../../lib/productScenes';
-import { Product3D } from '../../lib/product3d';
+import { Product3D } from '../../lib/productArt';
 
 // ---------------------------------------------------------------------
 // Types

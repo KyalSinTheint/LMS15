@@ -10,7 +10,7 @@ import { ProductPamphletViewer } from './ProductPamphletViewer';
 import { getProductRichContent } from '../../lib/productKnowledgeUtils';
 import { normalizeProductTheme } from '../../lib/productVisuals';
 import { ProductScene } from '../../lib/productScenes';
-import { Product3D } from '../../lib/product3d';
+import { Product3D } from '../../lib/productArt';
 
 interface ProductDetailPageProps {
   product: ProductKnowledgeItem;

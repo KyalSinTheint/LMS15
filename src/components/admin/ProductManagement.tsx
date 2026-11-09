@@ -42,8 +42,8 @@ import {
   ProductIconOption,
   resolveProductIconKey,
 } from '../../lib/productVisuals';
-import { resolveProductScene, SCENE_LABELS } from '../../lib/productScenes';
-import { Product3D } from '../../lib/product3d';
+import { PRODUCT_ART_LABELS } from '../../lib/product3d';
+import { Product3D, useProductArtMap } from '../../lib/productArt';
 import { uploadImageFile } from '../../lib/storageUtils';
 // The visual editor is only needed by admins: load it on demand
 const ProductKnowledgeRichEditor = lazy(() =>
@@ -66,6 +66,7 @@ export const ProductManagement: React.FC = () => {
     showToast,
   } = useLms();
 
+  const productArt = useProductArtMap();
   const [activeSubTab, setActiveSubTab] = useState<'products' | 'attempts'>('products');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
@@ -643,7 +644,7 @@ export const ProductManagement: React.FC = () => {
                               <span className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#1f8ccb] to-[#0d3b66] flex items-center justify-center shrink-0">
                                 <Product3D product={product} className="w-9 h-9" />
                               </span>
-                              {SCENE_LABELS[resolveProductScene(product)]}
+                              {PRODUCT_ART_LABELS[productArt.get(product.id) || 'shield']}
                             </span>
                           </td>
 
