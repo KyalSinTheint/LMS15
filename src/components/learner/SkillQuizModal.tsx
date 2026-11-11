@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   CheckCircle2,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { SkillQuiz, SkillQuizQuestion } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
+import { QuizTimerBadge, RetakeTimeHint, TimeUpNotice, useRetakeTimer } from '../../lib/quizTimer';
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
@@ -38,7 +39,7 @@ export const SkillQuizModal: React.FC<SkillQuizModalProps> = ({
   resourceTitle,
   onPassed,
 }) => {
-  const { getSkillQuiz, submitSkillQuiz } = useLms();
+  const { getSkillQuiz, submitSkillQuiz, skillQuizAttempts, currentUser } = useLms();
   const [quiz, setQuiz] = useState<SkillQuiz | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -83,6 +84,23 @@ export const SkillQuizModal: React.FC<SkillQuizModalProps> = ({
       isMounted = false;
     };
   }, [isOpen, categoryId, resourceId, getSkillQuiz]);
+
+  // From the second attempt on: 5 minutes, then the quiz closes and is submitted
+  const isRetake = !!quiz && skillQuizAttempts.some((a) => a.quiz_id === quiz.id && a.user_id === currentUser?.id);
+  const submitRef = useRef<() => void>(() => {});
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    if (!result) setTimedOut(false);
+  }, [result]);
+  const secondsLeft = useRetakeTimer({
+    active: isOpen && isRetake && !loading && !result && (quiz?.questions?.length ?? 0) > 0,
+    done: !!result,
+    storageKey: quiz && currentUser ? `quiz-retake-deadline:${currentUser.id}:${quiz.id}` : '',
+    onExpire: () => {
+      setTimedOut(true);
+      submitRef.current();
+    },
+  });
 
   if (!isOpen) return null;
 
@@ -136,6 +154,8 @@ export const SkillQuizModal: React.FC<SkillQuizModalProps> = ({
       setIsSubmitting(false);
     }
   };
+
+  submitRef.current = () => void handleSubmit();
 
   const handleRetry = () => {
     setAnswers({});
@@ -213,6 +233,7 @@ export const SkillQuizModal: React.FC<SkillQuizModalProps> = ({
           ) : result ? (
             /* Results Screen with Breakdown */
             <div className="space-y-6 animate-in fade-in duration-200">
+              {timedOut && <TimeUpNotice />}
               <div
                 className={`p-6 rounded-2xl border text-center space-y-3 ${
                   result.passed
@@ -309,6 +330,12 @@ export const SkillQuizModal: React.FC<SkillQuizModalProps> = ({
           ) : (
             /* Active Question Taking View */
             <div className="space-y-6">
+              {secondsLeft !== null && (
+                <div className="flex items-center justify-between gap-3">
+                  <RetakeTimeHint />
+                  <QuizTimerBadge seconds={secondsLeft} />
+                </div>
+              )}
               {/* Stepper Strip */}
               <div className="flex items-center justify-between text-xs font-semibold text-slate-500 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">

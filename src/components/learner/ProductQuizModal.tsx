@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   CheckCircle2,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ProductKnowledgeItem, ProductQuiz, ProductQuizQuestion } from '../../types/lms';
 import { useLms } from '../../context/LmsContext';
+import { QuizTimerBadge, RetakeTimeHint, TimeUpNotice, useRetakeTimer } from '../../lib/quizTimer';
 import { closeOnBackdrop } from '../../lib/closeOnOutside';
 
 interface ProductQuizModalProps {
@@ -30,7 +31,7 @@ export const ProductQuizModal: React.FC<ProductQuizModalProps> = ({
   product,
   onSuccess,
 }) => {
-  const { getProductQuiz, submitProductQuizAttempt } = useLms();
+  const { getProductQuiz, submitProductQuizAttempt, productQuizAttempts, currentUser } = useLms();
   const [quiz, setQuiz] = useState<ProductQuiz | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -84,6 +85,23 @@ export const ProductQuizModal: React.FC<ProductQuizModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // From the second attempt on: 5 minutes, then the quiz closes and is submitted
+  const isRetake = !!quiz && productQuizAttempts.some((a) => a.quiz_id === quiz.id && a.user_id === currentUser?.id);
+  const submitRef = useRef<() => void>(() => {});
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    if (!result) setTimedOut(false);
+  }, [result]);
+  const secondsLeft = useRetakeTimer({
+    active: isOpen && isRetake && !loading && !result && (quiz?.questions?.length ?? 0) > 0,
+    done: !!result,
+    storageKey: quiz && currentUser ? `quiz-retake-deadline:${currentUser.id}:${quiz.id}` : '',
+    onExpire: () => {
+      setTimedOut(true);
+      submitRef.current();
+    },
+  });
+
   if (!isOpen) return null;
 
   const questions: ProductQuizQuestion[] = quiz?.questions || [];
@@ -136,6 +154,8 @@ export const ProductQuizModal: React.FC<ProductQuizModalProps> = ({
       setIsSubmitting(false);
     }
   };
+
+  submitRef.current = () => void handleSubmit();
 
   const handleRetry = () => {
     setAnswers({});
@@ -212,6 +232,7 @@ export const ProductQuizModal: React.FC<ProductQuizModalProps> = ({
           ) : result ? (
             /* Result View */
             <div className="space-y-6">
+              {timedOut && <TimeUpNotice />}
               {/* Result Banner */}
               <div
                 className={`p-6 sm:p-8 rounded-3xl border text-center space-y-4 ${
@@ -335,6 +356,12 @@ export const ProductQuizModal: React.FC<ProductQuizModalProps> = ({
           ) : (
             /* Active Question Taking Flow */
             <div className="space-y-6">
+              {secondsLeft !== null && (
+                <div className="flex items-center justify-between gap-3">
+                  <RetakeTimeHint />
+                  <QuizTimerBadge seconds={secondsLeft} />
+                </div>
+              )}
               {/* Progress & Question Counter */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
