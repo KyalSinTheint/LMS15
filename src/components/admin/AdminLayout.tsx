@@ -34,7 +34,8 @@ import { LicenseTrainingManagement } from './LicenseTrainingManagement';
 import { SkillDevelopmentManagement } from './SkillDevelopmentManagement';
 import { ProductManagement } from './ProductManagement';
 import { CompanyBulletinManagement } from './CompanyBulletinManagement';
-import { Newspaper, Film, Award, Key, User, Lock, Settings as SettingsIcon, Package, Bell, Sun, Moon } from 'lucide-react';
+import { Newspaper, Film, Award, Key, User, Lock, Settings as SettingsIcon, Package, Bell, Sun, Moon, LifeBuoy } from 'lucide-react';
+import { HelpGuidePage } from '../HelpGuidePage';
 import { AdminLoginModal } from './AdminLoginModal';
 import { getUserAvatar, avatarFallbackOnError } from '../../lib/avatar';
 import { useClickOutside } from '../../lib/closeOnOutside';
@@ -61,7 +62,8 @@ export type AdminTabId =
   | 'performers'
   | 'team'
   | 'audit-logs'
-  | 'settings';
+  | 'settings'
+  | 'help';
 
 interface AdminLayoutProps {
   onReturnToUserPortal?: () => void;
@@ -164,6 +166,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
     { id: 'team', label: 'L&D Team & HOD Motto', icon: Users },
     { id: 'audit-logs', label: 'Audit Trail', icon: Clock },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
+    { id: 'help', label: 'Help (Admin Guide)', icon: LifeBuoy },
   ];
 
   return (
@@ -401,6 +404,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = () => {
         {activeTab === 'team' && <TeamManagement />}
         {activeTab === 'audit-logs' && <AuditLogsView />}
         {activeTab === 'settings' && <AdminSettingsView />}
+        {activeTab === 'help' && <HelpGuidePage audience="admin" />}
       </main>
 
       {/* Admin Profile & Password Modal */}

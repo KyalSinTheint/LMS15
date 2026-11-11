@@ -17,6 +17,7 @@ import {
   GraduationCap,
   Sun,
   Moon,
+  LifeBuoy,
 } from 'lucide-react';
 
 import { useLms } from '../context/LmsContext';
@@ -24,7 +25,7 @@ import { LearnerProfileModal } from './learner/LearnerProfileModal';
 import { getUserAvatar, avatarFallbackOnError } from '../lib/avatar';
 import { useClickOutside } from '../lib/closeOnOutside';
 
-export type NavTabId = 'our-company' | 'product-knowledge' | 'learning-dev' | 'company-bulletin';
+export type NavTabId = 'our-company' | 'product-knowledge' | 'learning-dev' | 'company-bulletin' | 'help';
 export type OurCompanySubpage = 'overview' | 'news' | 'videos' | 'top-performers';
 export type LdSubpage = 'overview' | 'license-training' | 'skill-development';
 
@@ -39,6 +40,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'learning-dev', label: 'Learning and Development Hub', isReady: true },
   { id: 'product-knowledge', label: 'Product Knowledge Hub', isReady: true },
   { id: 'company-bulletin', label: 'Company Bulletin', isReady: true },
+  { id: 'help', label: 'Help', isReady: true },
 ];
 
 export const OUR_COMPANY_DROPDOWN_ITEMS: {
@@ -435,6 +437,25 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
                 />
               )}
             </button>
+            {/* Tab 5: Help */}
+            <button
+              onClick={() => onSelectTab('help')}
+              aria-current={activeTab === 'help' ? 'page' : undefined}
+              className={`relative px-3 py-2 text-sm font-semibold rounded-md transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'help'
+                  ? 'text-[#176B98] dark:text-[#38bdf8] bg-[#F3F8FB] dark:bg-slate-800'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-[#176B98] dark:hover:text-[#38bdf8] hover:bg-slate-50 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              <LifeBuoy className="w-4 h-4" />
+              <span>Help</span>
+              {activeTab === 'help' && (
+                <span
+                  className="absolute bottom-0 left-2 right-2 h-0.5 bg-[#176B98] dark:bg-[#38bdf8] rounded-full"
+                  aria-hidden="true"
+                />
+              )}
+            </button>
           </nav>
 
           {/* Zone 3: Primary Action & Profile Switcher & Theme Switcher */}
@@ -667,6 +688,21 @@ export const PortalHeader: React.FC<PortalHeaderProps> = ({
               role="menuitem"
             >
               <span>4. Company Bulletin</span>
+            </button>
+            {/* 5. Help */}
+            <button
+              onClick={() => {
+                onSelectTab('help');
+                setMobileMenuOpen(false);
+              }}
+              className={`w-full text-left px-3.5 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-between ${
+                activeTab === 'help'
+                  ? 'bg-[#176B98] text-white shadow-xs'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+              role="menuitem"
+            >
+              <span>5. Help</span>
             </button>
           </div>
 
