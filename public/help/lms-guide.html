@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KBZ Life LMS လမ်းညွှန်</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;600;700;800&family=Inter:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: a two-audience handbook — header with User/Admin switch, section chips, then numbered chapters whose flowcharts read left→right on desktop and top→bottom on phones */
+:root {
+  --bg: #f3f7fa;
+  --surface: #ffffff;
+  --surface-2: #eaf2f7;
+  --ink: #10283a;
+  --muted: #557086;
+  --line: #d3e1ea;
+  --brand: #176b98;
+  --brand-deep: #0d3b66;
+  --brand-soft: #dceef8;
+  --ok: #157a52;
+  --ok-soft: #dcf3e8;
+  --warn: #9a5b06;
+  --warn-soft: #fdf0d8;
+  --stop: #b42318;
+  --stop-soft: #fde4e1;
+  --font-my: "Noto Sans Myanmar", "Padauk", "Myanmar Text", "Pyidaungsu", sans-serif;
+  --font-ui: "Inter", "Noto Sans Myanmar", system-ui, sans-serif;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1824; --surface: #11263a; --surface-2: #163049; --ink: #e6f0f7; --muted: #9db4c6; --line: #24435e;
+    --brand: #5fb4e4; --brand-deep: #9fd3f2; --brand-soft: #173d5c;
+    --ok: #5fd39f; --ok-soft: #133a2b; --warn: #f2b45c; --warn-soft: #3a2a12; --stop: #ff8a7d; --stop-soft: #3f1c19;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1824; --surface: #11263a; --surface-2: #163049; --ink: #e6f0f7; --muted: #9db4c6; --line: #24435e;
+  --brand: #5fb4e4; --brand-deep: #9fd3f2; --brand-soft: #173d5c;
+  --ok: #5fd39f; --ok-soft: #133a2b; --warn: #f2b45c; --warn-soft: #3a2a12; --stop: #ff8a7d; --stop-soft: #3f1c19;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-my); font-size: 15.5px; line-height: 1.85;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; }
+h1, h2, h3 { line-height: 1.5; text-wrap: balance; margin: 0; }
+p { margin: 0; }
+a { color: var(--brand); }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; border-radius: 6px; }
+
+/* Header */
+.top { padding-block: 28px 18px; display: grid; gap: 14px; }
+.eyebrow { font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); }
+.top h1 { font-size: clamp(26px, 4.6vw, 38px); font-weight: 800; color: var(--brand-deep); }
+.top .lead { color: var(--muted); max-width: 62ch; }
+.switch { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; width: fit-content; max-width: 100%; }
+.switch a {
+  text-decoration: none; color: var(--muted); font-weight: 700; padding: 8px 18px; border-radius: 999px; white-space: nowrap; font-size: 15px;
+}
+.switch a[aria-current="page"] { background: var(--brand); color: #fff; }
+:root[data-theme="dark"] .switch a[aria-current="page"] { color: #06223a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .switch a[aria-current="page"] { color: #06223a; } }
+
+/* Chips (table of contents) */
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 6px 22px; }
+.toc a {
+  text-decoration: none; font-size: 13.5px; font-weight: 600; color: var(--brand-deep);
+  background: var(--brand-soft); padding: 4px 12px; border-radius: 999px;
+}
+
+/* Chapters */
+.chapter { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px clamp(16px, 3vw, 28px); display: grid; gap: 14px; margin-bottom: 18px; scroll-margin-top: 16px; }
+.chapter h2 { font-size: 20px; font-weight: 800; display: flex; gap: 10px; align-items: baseline; }
+.chapter h2 .n { font-family: var(--font-ui); font-size: 13px; font-weight: 800; color: var(--brand); background: var(--brand-soft); border-radius: 8px; padding: 1px 8px; flex-shrink: 0; }
+.chapter h3 { font-size: 16px; font-weight: 700; color: var(--brand-deep); }
+.chapter > p, .note p { max-width: 70ch; }
+ul.tips { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+ul.tips li::marker { color: var(--brand); }
+
+/* Flowchart */
+.flow-box { overflow-x: auto; background: var(--surface-2); border-radius: 12px; padding: 14px; }
+.flow { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; }
+.flow > li { display: flex; align-items: center; }
+.step {
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 12px;
+  min-width: 0; max-width: 220px; font-size: 14.5px; line-height: 1.7; display: grid; gap: 2px;
+}
+.step b { font-weight: 700; }
+.step small { color: var(--muted); font-size: 12.5px; }
+.step.who-user { border-color: var(--brand); }
+.step.who-admin { border-color: var(--warn); background: var(--warn-soft); }
+.step.done { border-color: var(--ok); background: var(--ok-soft); }
+.step.ask { border-style: dashed; border-color: var(--brand); }
+.step.ask b::before { content: "?"; font-family: var(--font-ui); display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%; background: var(--brand); color: var(--surface); font-size: 12px; font-weight: 800; vertical-align: 1px; }
+.arrow { color: var(--brand); font-family: var(--font-ui); font-weight: 800; font-size: 20px; padding-inline: 2px; }
+.arrow::before { content: "→"; }
+.branch { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.pill { font-size: 13.5px; border-radius: 999px; padding: 3px 12px; font-weight: 600; }
+.pill.yes { background: var(--ok-soft); color: var(--ok); }
+.pill.no { background: var(--stop-soft); color: var(--stop); }
+.pill.info { background: var(--brand-soft); color: var(--brand-deep); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; border: 1.5px solid var(--line); }
+.legend .l-user::before { border-color: var(--brand); }
+.legend .l-admin::before { border-color: var(--warn); background: var(--warn-soft); }
+.legend .l-done::before { border-color: var(--ok); background: var(--ok-soft); }
+.legend .l-ask::before { border-style: dashed; border-color: var(--brand); }
+@media (max-width: 640px) {
+  .flow { flex-direction: column; }
+  .flow > li { justify-content: flex-start; }
+  .step { max-width: none; width: 100%; }
+  .arrow { padding-left: 18px; }
+  .arrow::before { content: "↓"; }
+}
+
+/* Cards grid for portal map / admin tabs */
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.card { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.card h4 { margin: 0; font-size: 15px; font-weight: 700; color: var(--brand-deep); }
+.card h4 .en { font-family: var(--font-ui); font-weight: 600; font-size: 12.5px; color: var(--muted); display: block; line-height: 1.4; }
+.card p { font-size: 14px; color: var(--ink); }
+
+/* Notes */
+.note { border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; font-size: 14.5px; }
+.note.warn { background: var(--warn-soft); }
+.note.warn strong { color: var(--warn); }
+.note.good { background: var(--ok-soft); }
+.note.good strong { color: var(--ok); }
+.note.info { background: var(--brand-soft); }
+.note.info strong { color: var(--brand-deep); }
+
+/* Rules table */
+.table-box { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 460px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 700; color: var(--muted); font-size: 13px; }
+td:first-child { font-weight: 700; white-space: nowrap; }
+.en-term { font-family: var(--font-ui); font-weight: 600; }
+
+kbd { font-family: var(--font-ui); font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 0 6px; }
+footer { color: var(--muted); font-size: 13px; text-align: center; margin-top: 26px; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">KBZ LIFE · Employee Learning Portal</span>
+    <h1>KBZ Life LMS အသုံးပြုနည်း လမ်းညွှန်</h1>
+    <p class="lead">Portal ကို စသုံးမယ့် ဝန်ထမ်း (User) နဲ့ စီမံခန့်ခွဲသူ (Admin) တွေအတွက် အဆင့်လိုက် flow chart နဲ့ ရှင်းပြထားပါတယ်။ ခလုတ်နာမည်တွေကို website ပေါ်မှာ မြင်ရတဲ့အတိုင်း အင်္ဂလိပ်လို ထားပေးပါတယ်။</p>
+    <nav class="switch" aria-label="လမ်းညွှန်ရွေးရန်">
+      <a href="#user" id="tab-user" aria-current="page">👤 User လမ်းညွှန်</a>
+      <a href="#admin" id="tab-admin">🛠️ Admin လမ်းညွှန်</a>
+    </nav>
+    <div class="legend" aria-label="Flow chart အရောင်အဓိပ္ပာယ်">
+      <span class="l-user">User လုပ်ရမယ့်အဆင့်</span>
+      <span class="l-admin">Admin လုပ်ရမယ့်အဆင့်</span>
+      <span class="l-ask">စစ်ဆေးချက် / ရွေးချယ်ချက်</span>
+      <span class="l-done">ပြီးဆုံးပြီ</span>
+    </div>
+  </header>
+
+  <!-- ================= USER GUIDE ================= -->
+  <main id="view-user">
+    <nav class="toc" aria-label="User လမ်းညွှန် အခန်းများ">
+      <a href="#u-register">အကောင့်ဖွင့်ခြင်း</a>
+      <a href="#u-signin">Sign In</a>
+      <a href="#u-forgot">Password မေ့ရင်</a>
+      <a href="#u-map">Portal မြေပုံ</a>
+      <a href="#u-learn">သင်ယူပုံ</a>
+      <a href="#u-quiz">Quiz စည်းကမ်း</a>
+      <a href="#u-dept">ဌာနပြောင်းရင်</a>
+      <a href="#u-help">အကူအညီ</a>
+    </nav>
+
+    <section class="chapter" id="u-register">
+      <h2><span class="n">1</span>အကောင့်ဖွင့်ခြင်း (Register)</h2>
+      <p>အကောင့်အသစ်ဖွင့်ပြီးရင် Admin က အတည်ပြုပေးမှ စသုံးလို့ရပါမယ်။</p>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-user"><b>Sign Up ကိုနှိပ်</b><small>Login စာမျက်နှာ အောက်ခြေ</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>အချက်အလက်ဖြည့်</b><small>အမည်၊ Username၊ Email၊ ဌာန၊ Password</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>Submit Registration for Approval</b><small>“Waiting for approval” ပြပါမယ်</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>Admin စစ်ဆေး</b><small>Approve (သို့) Reject</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>Approve ရပြီ</b><small>“You're approved!” → Sign In</small></div></li>
+        </ol>
+        <div class="branch">
+          <span class="pill yes">✓ Approve → Sign in ဝင်လို့ရ</span>
+          <span class="pill no">✗ Reject → Admin ကို ဆက်သွယ်ပါ</span>
+        </div>
+      </div>
+      <h3>ဖြည့်တဲ့အခါ သတိထားရန်</h3>
+      <ul class="tips">
+        <li><b>အမည် (Full Name)</b> ကို နောက်မှ ပြင်လို့မရပါ။ မှတ်ပုံတင်ပါအတိုင်း သေချာရိုက်ပါ။</li>
+        <li><b>ဌာန (Department)</b> — Operations၊ Admin၊ Human Resources၊ Learning &amp; Development၊ Finance၊ Bancassurance၊ Corporate Direct Sales၊ IT၊ Marketing၊ Agency ထဲက ရွေးပါ။</li>
+        <li><b>Agency / Bancassurance / Corporate Direct Sales</b> ဆိုရင် <b>Internal (staff)</b> လား <b>External</b> လား ထပ်ရွေးရပါမယ်။</li>
+        <li><b>User ID</b> ကို စနစ်က ဌာနအလိုက် အလိုအလျောက် ထုတ်ပေးပါတယ် (ဥပမာ AE-002၊ HR-004)။ ကိုယ်တိုင် ရိုက်စရာမလိုပါ။</li>
+      </ul>
+      <div class="note info">
+        <p><strong>Strong Password စည်းကမ်း</strong> — အနည်းဆုံး <b>စာလုံး ၆ လုံး</b>၊ စာလုံးကြီး (A–Z)၊ စာလုံးသေး (a–z)၊ ဂဏန်း (0–9) နဲ့ သင်္ကေတ (! @ # $ %) တစ်ခုစီ ပါရပါမယ်။ ဥပမာ <kbd>Kbz@26</kbd></p>
+      </div>
+    </section>
+
+    <section class="chapter" id="u-signin">
+      <h2><span class="n">2</span>Sign In ဝင်ခြင်း</h2>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-user"><b>Email (သို့) Username ရိုက်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>Password ရိုက်</b><small>ကိုယ့်စက်ဆိုရင် “Remember me” ကို အမှန်ခြစ်နိုင်</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step ask"><b>အကောင့် Approve ရပြီလား</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>Portal ပင်မစာမျက်နှာ</b></div></li>
+        </ol>
+        <div class="branch">
+          <span class="pill yes">✓ ရပြီ → Portal ထဲဝင်</span>
+          <span class="pill no">✗ မရသေး → “Waiting for approval” စာမျက်နှာ ပြ</span>
+        </div>
+      </div>
+      <p>အကောင့်ကို Admin က ယာယီပိတ်ထားရင် (Suspended) ဝင်လို့မရပါ။ Admin ကို ဆက်သွယ်ပါ။</p>
+    </section>
+
+    <section class="chapter" id="u-forgot">
+      <h2><span class="n">3</span>Password မေ့သွားရင်</h2>
+      <p>Email ပို့စရာမလိုပါ။ Admin က ကိုယ်တိုင်စစ်ပြီး ယာယီ Password ပေးပါတယ်။</p>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-user"><b>Forgot password? ကိုနှိပ်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>Email (သို့) User ID ရိုက်ပြီး Send Request</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>Admin က ကိုယ်တိုင်ဟုတ်မဟုတ် စစ်</b><small>ဖုန်း (သို့) လူကိုယ်တိုင်</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>ယာယီ Password ပေး</b><small>၂၄ နာရီအတွင်းပဲ သုံးလို့ရ</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>Sign in → Password အသစ်ပြောင်း</b></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="chapter" id="u-map">
+      <h2><span class="n">4</span>Portal မြေပုံ — ဘယ်မှာ ဘာရှိလဲ</h2>
+      <div class="grid">
+        <div class="card"><h4>Our Company<span class="en">Overview · News · Company Update Video</span></h4><p>ကုမ္ပဏီအကြောင်း၊ Vision / Mission၊ Core Values၊ CEO Motto၊ သတင်းနဲ့ Video များ။</p></div>
+        <div class="card"><h4>Learning and Development Hub<span class="en">License Training · Skill Development</span></h4><p>လိုင်စင်သင်တန်း အခန်းလိုက်လေ့လာခြင်းနဲ့ ကျွမ်းကျင်မှုဖွံ့ဖြိုးရေး သင်ခန်းစာများ။</p></div>
+        <div class="card"><h4>Product Knowledge Hub<span class="en">Products · Pamphlet · Quiz</span></h4><p>Product တစ်ခုချင်းစီရဲ့ အကျဉ်းချုပ်ကို စာစောင်ပုံစံ ဖတ်ပြီး Quiz ဖြေရပါတယ်။</p></div>
+        <div class="card"><h4>Company Bulletin<span class="en">Campaign · Policy Memo · Notice</span></h4><p>ကုမ္ပဏီကြေညာချက်၊ Campaign နဲ့ မူဝါဒစာတမ်း PDF များ။ <b>View Document</b> နဲ့ ဖတ်ပါ။</p></div>
+        <div class="card"><h4>LMS Assistant 🐼<span class="en">ညာဘက်အောက်ထောင့်က Panda</span></h4><p>Handbook၊ Product နဲ့ Portal ပေါ်က အချက်အလက်တွေကို မြန်မာ / English နှစ်မျိုးလုံးနဲ့ မေးလို့ရပါတယ်။</p></div>
+        <div class="card"><h4>Profile<span class="en">ညာဘက်အပေါ်ထောင့်က ကိုယ့်နာမည်</span></h4><p>Profile ပုံပြောင်းခြင်း၊ Password ပြောင်းခြင်း၊ ဌာနပြောင်းရန် တောင်းဆိုခြင်း၊ Sign out။</p></div>
+      </div>
+      <p>ညာဘက်အပေါ်က 🌙 ခလုတ်နဲ့ အလင်း / အမှောင် (Dark mode) ပြောင်းလို့ရပါတယ်။</p>
+    </section>
+
+    <section class="chapter" id="u-learn">
+      <h2><span class="n">5</span>သင်ယူပုံ အဆင့်ဆင့်</h2>
+
+      <h3>License Training — အခန်းလိုက် ဖွင့်ပေးတဲ့စနစ်</h3>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-user"><b>Chapter ကိုဖွင့်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>Video ကြည့် + PDF စာမျက်နှာများ ဖတ်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>Quiz ပွင့်လာ → ဖြေ</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step ask"><b>Passing Mark ရလား</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>နောက် Chapter ပွင့်</b></div></li>
+        </ol>
+        <div class="branch">
+          <span class="pill yes">✓ အောင် → နောက် Chapter</span>
+          <span class="pill no">✗ မအောင် → သင်ခန်းစာပြန်ဖတ်ပြီး Retry</span>
+        </div>
+      </div>
+
+      <h3>Product Knowledge Hub</h3>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-user"><b>Product ကတ်ကို နှိပ်</b><small>ကတ်ပေါ် ဘယ်နေရာနှိပ်နှိပ် ဝင်</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>Pamphlet ဖတ်</b><small>ညာ/ဘယ်ခြမ်းကိုနှိပ် စာမျက်နှာလှန်</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>နောက်ဆုံးစာမျက်နှာ → Take Quiz</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>Passed ✓ ကတ်ပေါ်မှာ ပြ</b></div></li>
+        </ol>
+      </div>
+
+      <h3>Skill Development</h3>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-user"><b>ကျွမ်းကျင်မှုအမျိုးအစား ရွေး</b><small>ဥပမာ Business English</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>Video / စာရွက်စာတမ်း လေ့လာ</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>Take Assessment Quiz</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>ရလဒ်နဲ့ အဖြေရှင်းလင်းချက် ကြည့်</b></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="chapter" id="u-quiz">
+      <h2><span class="n">6</span>Quiz ဖြေခြင်း စည်းကမ်းများ</h2>
+      <div class="table-box">
+        <table>
+          <thead><tr><th>အကြောင်းအရာ</th><th>စည်းကမ်း</th></tr></thead>
+          <tbody>
+            <tr><td>မေးခွန်းအရေအတွက်</td><td>မေးခွန်းဘဏ်ထဲကနေ တစ်ယောက်ချင်းစီကို <b>မတူညီတဲ့ မေးခွန်း ၁၀ ပုဒ်</b> ကျပန်းထုတ်ပေးပါတယ်။</td></tr>
+            <tr><td>အမှတ်ပေးပုံ</td><td>ပေးထားတဲ့ ၁၀ ပုဒ်ပေါ်မှာပဲ တွက်ပါတယ် (ဥပမာ <b>8 / 10 = 80%</b>)။</td></tr>
+            <tr><td>အောင်မှတ်</td><td>Admin သတ်မှတ်ထားတဲ့ <span class="en-term">Passing Mark</span> (Quiz အပေါ်မှာ ပြထားပါတယ်)။</td></tr>
+            <tr><td>ပထမအကြိမ်</td><td>အချိန်ကန့်သတ်ချက် <b>မရှိပါ</b>။</td></tr>
+            <tr><td>ဒုတိယအကြိမ်ကစ</td><td><b>၅ မိနစ်</b> timer ပါပါတယ်။ နောက်ဆုံး ၁ မိနစ်မှာ အနီရောင် ပြောင်းပါတယ်။</td></tr>
+            <tr><td>အချိန်ပြည့်ရင်</td><td>Quiz ပိတ်ပြီး ဖြေထားသလောက် <b>အလိုအလျောက် Submit</b> ဖြစ်ပါတယ်။ မဖြေရသေးတဲ့မေးခွန်း = အမှား။</td></tr>
+            <tr><td>Retry</td><td>ပြန်ဖြေတိုင်း မေးခွန်းအသစ် ၁၀ ပုဒ် ထပ်ထုတ်ပေးပါတယ်။</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-user"><b>Quiz စ</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step ask"><b>ဒုတိယအကြိမ်လား</b><small>ဟုတ်ရင် ⏱ 5:00 စရေ</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>အဖြေရွေး → Next</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-user"><b>Submit</b><small>(သို့) အချိန်ပြည့်လို့ အလိုအလျောက်</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>ရလဒ် + အဖြေရှင်းလင်းချက်</b></div></li>
+        </ol>
+      </div>
+      <div class="note warn"><p><strong>သတိ —</strong> Timer ဖြေနေတုန်း Quiz ကို ပိတ်ပြီးပြန်ဖွင့်လည်း အချိန်ပြန်မစပါ။ ကျန်တဲ့အချိန်ကနေပဲ ဆက်ရေပါတယ်။</p></div>
+    </section>
+
+    <section class="chapter" id="u-dept">
+      <h2><span class="n">7</span>ဌာနပြောင်းချင်ရင်</h2>
+      <p>ဌာနကို ကိုယ်တိုင်တိုက်ရိုက် ပြောင်းလို့မရပါ။ Admin ခွင့်ပြုမှ ပြောင်းပါမယ်။</p>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-user"><b>Profile → ဌာနပြောင်းရန် တောင်းဆို</b><small>ဌာနအသစ် + အကြောင်းပြချက်</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>Admin ဆီ Notification ရောက်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step ask"><b>Admin ခွင့်ပြုလား</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>ဌာနအသစ် + User ID အသစ်</b></div></li>
+        </ol>
+        <div class="branch">
+          <span class="pill yes">✓ Approve → ဌာနနဲ့ User ID ပြောင်း</span>
+          <span class="pill no">✗ Reject → မူလဌာနအတိုင်း</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="u-help">
+      <h2><span class="n">8</span>အကူအညီလိုရင်</h2>
+      <ul class="tips">
+        <li><b>LMS Assistant 🐼</b> ကို အရင်မေးကြည့်ပါ — ဥပမာ “အာမခံဆိုတာဘာလဲ”၊ “ခွင့်ဘယ်နှရက်ရလဲ”၊ “Top performer ဘယ်သူလဲ”။</li>
+        <li>Website အသစ်မပေါ်ရင် <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd> (Mac: <kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd>) နဲ့ Refresh လုပ်ပါ။</li>
+        <li>Password၊ အကောင့်၊ ဌာန ပြဿနာများအတွက် Learning &amp; Development (Admin) ကို ဆက်သွယ်ပါ။</li>
+      </ul>
+      <div class="note good"><p><strong>အကြံပြုချက် —</strong> ကိုယ့် Password ကို ဘယ်သူ့ကိုမှ မပေးပါနဲ့။ ဘုံကွန်ပျူတာမှာ သုံးပြီးရင် Sign out လုပ်ပါ။</p></div>
+    </section>
+  </main>
+
+  <!-- ================= ADMIN GUIDE ================= -->
+  <main id="view-admin" hidden>
+    <nav class="toc" aria-label="Admin လမ်းညွှန် အခန်းများ">
+      <a href="#a-daily">နေ့စဉ်လုပ်ငန်းစဉ်</a>
+      <a href="#a-approve">User အတည်ပြုခြင်း</a>
+      <a href="#a-reset">Password Reset</a>
+      <a href="#a-dept">ဌာနပြောင်းခြင်း</a>
+      <a href="#a-quiz">Quiz မေးခွန်းဘဏ်</a>
+      <a href="#a-content">Content စီမံခြင်း</a>
+      <a href="#a-progress">Learning Progress</a>
+      <a href="#a-bot">LMS Assistant</a>
+      <a href="#a-rules">လိုက်နာရန်</a>
+    </nav>
+
+    <section class="chapter" id="a-daily">
+      <h2><span class="n">1</span>Admin နေ့စဉ် လုပ်ငန်းစဉ်</h2>
+      <p>Admin Panel ကို ဝင်ပြီး အပေါ်က Menu (Tab) တွေကနေ စီမံပါတယ်။ အောက်ပါအစီအစဉ်အတိုင်း နေ့စဉ် စစ်ပေးပါ။</p>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-admin"><b>Admin အကောင့်နဲ့ Sign in</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>Dashboard ကြည့်</b><small>စုစုပေါင်း user၊ စောင့်ဆိုင်းနေတာများ</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step ask"><b>စောင့်နေတဲ့ တောင်းဆိုချက် ရှိလား</b><small>Approvals · Password Resets · Dept Changes</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>Content အသစ်တင် / ပြင်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>Learning Progress စစ်</b></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="chapter" id="a-approve">
+      <h2><span class="n">2</span>User အသစ် အတည်ပြုခြင်း</h2>
+      <p class="en-term">Tab: User Management &amp; Approvals</p>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-user"><b>User က Register လုပ်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>Pending စာရင်းမှာ ကြည့်</b><small>အမည်၊ Email၊ ဌာန၊ Internal/External</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step ask"><b>ကုမ္ပဏီဝန်ထမ်း အစစ်လား</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>Approve Registration</b><small>User ID ထုတ်ပြီး ဝင်ခွင့်ရ</small></div></li>
+        </ol>
+        <div class="branch">
+          <span class="pill yes">✓ ဟုတ် → Approve</span>
+          <span class="pill no">✗ မဟုတ် / မသေချာ → Reject</span>
+          <span class="pill info">စည်းကမ်းဖောက်ရင် → Suspend (ယာယီပိတ်)</span>
+        </div>
+      </div>
+      <p>Admin အသစ်ခန့်ရင် (သို့) အခွင့်အရေးပြောင်းရင် <b class="en-term">User Permissions &amp; Access</b> Tab မှာ လုပ်ပါ။</p>
+    </section>
+
+    <section class="chapter" id="a-reset">
+      <h2><span class="n">3</span>Password Reset တောင်းဆိုချက်</h2>
+      <p class="en-term">Tab: Password Resets</p>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-user"><b>User က Send Request</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>ကိုယ်တိုင်ဟုတ်မဟုတ် စစ်</b><small>ဖုန်းခေါ် (သို့) လူကိုယ်တိုင်</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>ယာယီ Password ထုတ်</b><small>၂၄ နာရီ သက်တမ်း</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>User ဆီ လုံခြုံစွာ ပေး</b><small>ဖုန်း / လူကိုယ်တိုင်</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>User က Password အသစ်ပြောင်း</b></div></li>
+        </ol>
+      </div>
+      <div class="note warn"><p><strong>သတိ —</strong> တောင်းဆိုသူ ကိုယ်တိုင်ဟုတ်ကြောင်း မသေချာရင် ယာယီ Password မပေးပါနဲ့။ Group chat မှာ မပို့ပါနဲ့။</p></div>
+    </section>
+
+    <section class="chapter" id="a-dept">
+      <h2><span class="n">4</span>ဌာနပြောင်း တောင်းဆိုချက်</h2>
+      <p class="en-term">Tab: Dept Changes</p>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-user"><b>User က ဌာနပြောင်းရန် တောင်းဆို</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>Notification (Tab ဘေးက နံပါတ်)</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step ask"><b>HR / မန်နေဂျာ အတည်ပြုထားလား</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>Approve → User ID အသစ် အလိုအလျောက်</b></div></li>
+        </ol>
+        <div class="branch">
+          <span class="pill yes">✓ Approve</span>
+          <span class="pill no">✗ Reject (မှတ်ချက်ရေးပေးပါ)</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="a-quiz">
+      <h2><span class="n">5</span>Quiz မေးခွန်းဘဏ် တင်ခြင်း</h2>
+      <p>Product၊ License Training နဲ့ Skill Development တို့မှာ မေးခွန်းများများ (မေးခွန်းဘဏ်) တင်ထားရင် User တစ်ယောက်ချင်းစီကို မတူတဲ့ ၁၀ ပုဒ် ကျပန်းထုတ်ပေးပါတယ်။</p>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-admin"><b>Quiz ပြင်ဆင်ရာ ဖွင့်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>PDF (သို့) Excel (.xlsx) တင်</b><small>Sheet များရင် Sheet ရွေး</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step ask"><b>မေးခွန်း/အဖြေ မှန်မှန်ကန်ကန် ဝင်လား</b><small>Preview စစ်</small></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>Questions per attempt = 10၊ Passing Mark သတ်မှတ်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>Save / Publish</b></div></li>
+        </ol>
+      </div>
+      <h3>Excel ဖိုင် ပြင်ဆင်ပုံ</h3>
+      <div class="table-box">
+        <table>
+          <thead><tr><th>Column</th><th>ဥပမာ</th></tr></thead>
+          <tbody>
+            <tr><td>Question</td><td>Motor Insurance ဆိုတာ ဘာလဲ။</td></tr>
+            <tr><td>A / B / C / D</td><td>အဖြေရွေးစရာ ၄ ခု (က / ခ / ဂ / ဃ လည်း ရပါတယ်)</td></tr>
+            <tr><td>Answer</td><td><kbd>D</kbd> (သို့) <kbd>D.Motor Insurance</kbd> (သို့) <kbd>ဃ</kbd></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note info"><p><strong>မှတ်ချက် —</strong> Zawgyi ဖောင့်နဲ့ရေးထားတဲ့ မြန်မာစာကို Unicode အဖြစ် အလိုအလျောက် ပြောင်းပေးပါတယ်။ ဒုတိယအကြိမ်ဖြေတဲ့ user တွေအတွက် ၅ မိနစ် timer အလိုအလျောက် ပါပါတယ်။</p></div>
+    </section>
+
+    <section class="chapter" id="a-content">
+      <h2><span class="n">6</span>Content စီမံခြင်း — Tab တစ်ခုချင်းစီ</h2>
+      <div class="grid">
+        <div class="card"><h4>Company Bulletin</h4><p>ကြေညာချက် PDF တင်၊ Category (Campaign / Policy Memo / Notice)၊ Priority၊ Tag ထည့်ပြီး Publish။</p></div>
+        <div class="card"><h4>Product Knowledge Hub</h4><p>Product အသစ်၊ Pamphlet စာမျက်နှာများ (ပုံပါ)၊ Quiz။ ကတ်ပုံကို နာမည်ကြည့်ပြီး အလိုအလျောက် မထပ်အောင် ပေးပါတယ်။</p></div>
+        <div class="card"><h4>License Training</h4><p>Chapter၊ Video (50 MB ကျော်ရင် အပိုင်းခွဲ)၊ PDF နဲ့ Chapter Quiz။</p></div>
+        <div class="card"><h4>Skill Development</h4><p>ကျွမ်းကျင်မှုအမျိုးအစား၊ Resource၊ Instructor ဓာတ်ပုံ upload နဲ့ Assessment Quiz။</p></div>
+        <div class="card"><h4>Company News · Update Videos</h4><p>သတင်း (ပုံပါ) နဲ့ YouTube video link များ။</p></div>
+        <div class="card"><h4>Top Performers</h4><p>လစဉ် ထူးချွန်သူစာရင်း။ LMS Assistant ကလည်း ဒီစာရင်းကို ဖြေပေးပါတယ်။</p></div>
+        <div class="card"><h4>L&amp;D Team &amp; HOD Motto</h4><p>အဖွဲ့ဝင်များ၊ CEO ဓာတ်ပုံ / အမည် / ရာထူး ပြင်ဆင်ခြင်း။</p></div>
+        <div class="card"><h4>Audit Trail · Settings</h4><p>ဘယ်သူ ဘာပြင်ခဲ့လဲ မှတ်တမ်း၊ Portal ဆက်တင်များ။</p></div>
+      </div>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-admin"><b>Tab ရွေး → Add / Edit</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>ဖိုင် / စာ ဖြည့်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step ask"><b>အားလုံးမြင်စေချင်ပြီလား</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>Publish</b><small>မဟုတ်ရင် Draft အဖြစ် သိမ်း</small></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="chapter" id="a-progress">
+      <h2><span class="n">7</span>Learning Progress နဲ့ Excel ထုတ်ခြင်း</h2>
+      <p class="en-term">Tab: Learning Progress</p>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-admin"><b>Learning Progress ဖွင့်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>ဌာနရွေး / နာမည်၊ User ID နဲ့ ရှာ</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>Export to Excel</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>.xlsx ဖိုင်ရ</b><small>Report အတွက် သုံးနိုင်</small></div></li>
+        </ol>
+      </div>
+      <p>User တစ်ယောက်ချင်းစီရဲ့ Quiz ရလဒ်၊ ဖြေခဲ့တဲ့အကြိမ်၊ အောင်/မအောင်၊ သင်ခန်းစာ ပြီးဆုံးမှုကို ကြည့်နိုင်ပါတယ်။</p>
+    </section>
+
+    <section class="chapter" id="a-bot">
+      <h2><span class="n">8</span>LMS Assistant (Chatbot) သင်ကြားပေးခြင်း</h2>
+      <p class="en-term">Tab: LMS Assistant</p>
+      <div class="flow-box">
+        <ol class="flow">
+          <li><div class="step who-admin"><b>Handbook (.docx / PDF) Upload</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>View နဲ့ ဖတ်လို့ရလား စစ်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step who-admin"><b>FAQ အမေးအဖြေ ထပ်ထည့်</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step ask"><b>Bot မဖြေနိုင်တဲ့ မေးခွန်း ရှိလား</b></div></li>
+          <li class="arrow" aria-hidden="true"></li>
+          <li><div class="step done"><b>အဖြေရေးပေး → Bot ပိုတော်လာ</b></div></li>
+        </ol>
+      </div>
+      <p>Bot က Handbook၊ Product Knowledge Hub နဲ့ Portal ပေါ်က အချက်အလက် (လူနာမည်၊ Top Performer စသည်) တွေကို ဖတ်ပြီး မြန်မာ / English နှစ်မျိုးလုံးနဲ့ ဖြေပါတယ်။</p>
+    </section>
+
+    <section class="chapter" id="a-rules">
+      <h2><span class="n">9</span>Admin လိုက်နာရန် စည်းကမ်းများ</h2>
+      <ul class="tips">
+        <li>User Approve မလုပ်ခင် ဝန်ထမ်းအစစ် ဟုတ်မဟုတ် အမြဲစစ်ပါ။</li>
+        <li>ယာယီ Password ကို ကိုယ်တိုင်ဟုတ်ကြောင်း စစ်ပြီးမှ ပေးပါ။</li>
+        <li>လျှို့ဝှက်စာရွက်စာတမ်းတွေကို Public link နဲ့ မမျှဝေပါနဲ့။</li>
+        <li>Content ပြင်ရင် Audit Trail မှာ မှတ်တမ်းကျန်ပါတယ်။ ကိုယ့်အကောင့်ကို အခြားသူ မသုံးစေပါနဲ့။</li>
+        <li>Quiz မေးခွန်း တင်ပြီးတိုင်း Preview နဲ့ အဖြေမှန် ပြန်စစ်ပါ။</li>
+      </ul>
+      <div class="note good"><p><strong>အချိန်ဇယား အကြံပြုချက် —</strong> မနက်တိုင်း Approvals / Password Resets / Dept Changes စစ်၊ အပတ်စဉ် Learning Progress Excel ထုတ်၊ လစဉ် Top Performers နဲ့ News update လုပ်ပါ။</p></div>
+    </section>
+  </main>
+
+  <footer>KBZ Life Insurance · Learning &amp; Development · Employee Learning Portal လမ်းညွှန်</footer>
+</div>
+
+<script>
+(function () {
+  var views = { user: document.getElementById('view-user'), admin: document.getElementById('view-admin') };
+  var tabs = { user: document.getElementById('tab-user'), admin: document.getElementById('tab-admin') };
+  function which(hash) {
+    var h = (hash || '').replace('#', '');
+    if ((h === 'admin' || h.indexOf('a-') === 0) && document.getElementById('view-admin')) return 'admin';
+    return 'user';
+  }
+  function show() {
+    var v = which(location.hash);
+    Object.keys(views).forEach(function (k) {
+      if (!views[k]) return;
+      views[k].hidden = k !== v;
+      if (k === v) tabs[k].setAttribute('aria-current', 'page'); else tabs[k].removeAttribute('aria-current');
+    });
+    var id = location.hash.replace('#', '');
+    if (id && id !== 'user' && id !== 'admin') {
+      var el = document.getElementById(id);
+      if (el) el.scrollIntoView();
+    }
+  }
+  window.addEventListener('hashchange', show);
+  show();
+})();
+</script>
+
+<script>
+/* Embedded in the portal: follow the portal's light/dark theme, optionally show
+   only one guide (?lock=user), and tell the portal how tall the page is. */
+(function () {
+  var params = new URLSearchParams(location.search);
+  var root = document.documentElement;
+  var lock = params.get('lock');
+  if (lock === 'user') {
+    var sw = document.querySelector('.switch'); if (sw) sw.hidden = true;
+    var av = document.getElementById('view-admin'); if (av) av.remove();
+  }
+  function syncTheme() {
+    try {
+      var dark = window.parent !== window && window.parent.document.documentElement.classList.contains('dark');
+      root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    } catch (e) {
+      var t = params.get('theme'); if (t) root.setAttribute('data-theme', t);
+    }
+  }
+  syncTheme();
+  try {
+    new MutationObserver(syncTheme).observe(window.parent.document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  } catch (e) { /* not same-origin */ }
+  if (window.parent !== window) {
+    var send = function () {
+      window.parent.postMessage({ type: 'lms-help-height', height: document.documentElement.scrollHeight }, '*');
+    };
+    if ('ResizeObserver' in window) new ResizeObserver(send).observe(document.body);
+    window.addEventListener('load', send);
+    document.fonts && document.fonts.ready.then(send);
+    send();
+  }
+})();
+</script>
+</body>
+</html>

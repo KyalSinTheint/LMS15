@@ -1,3 +1,4 @@
+import { HelpGuidePage } from './components/HelpGuidePage';
 import React, { useState, useEffect } from 'react';
 import { loadSiteContent, type SiteContent } from './lib/siteContent';
 import {
@@ -443,6 +444,11 @@ function AppContent() {
           /* TAB 3: PRODUCT KNOWLEDGE HUB */
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <ProductKnowledgeHubPage openRequest={productOpenRequest} />
+          </div>
+        ) : activeTab === 'help' ? (
+          /* TAB 5: HELP — illustrated user guide (Myanmar) */
+          <div className="max-w-7xl mx-auto px-0 sm:px-4 lg:px-8 py-4">
+            <HelpGuidePage audience="user" />
           </div>
         ) : (
           /* TAB 4: COMPANY BULLETIN */

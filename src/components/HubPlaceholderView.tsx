@@ -8,7 +8,7 @@ interface HubPlaceholderViewProps {
 }
 
 const HUB_META: Record<
-  Exclude<NavTabId, 'our-company'>,
+  Exclude<NavTabId, 'our-company' | 'help'>,
   {
     title: string;
     description: string;
@@ -62,7 +62,7 @@ export const HubPlaceholderView: React.FC<HubPlaceholderViewProps> = ({
   hubId,
   onReturnToCompany,
 }) => {
-  if (hubId === 'our-company') return null;
+  if (hubId === 'our-company' || hubId === 'help') return null;
 
   const info = HUB_META[hubId];
   const IconComponent = info.icon;
